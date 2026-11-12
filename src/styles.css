@@ -220,7 +220,12 @@ select, input[type='date'] {
 .option.wrong .letter { background: var(--bad); color: var(--surface); }
 .option.dim { opacity: 0.55; }
 .option.chosen { border-color: var(--accent); background: var(--accent-soft); }
-.feedback { border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+.feedback { border-radius: 12px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
+.feedback .answer-line { font-weight: 550; }
+.feedback .why span, .feedback .trap span { font-weight: 650; color: var(--muted); }
+.trap { border-left: 3px solid var(--bad); padding-left: 8px; }
+.counter { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); white-space: nowrap; }
+.counter .pill { font-size: 0.72rem; padding: 2px 8px; }
 .feedback.ok { background: var(--good-soft); }
 .feedback.ok strong { color: var(--good); }
 .feedback.no { background: var(--bad-soft); }
@@ -244,4 +249,6 @@ select, input[type='date'] {
   .launcher-row .btn { flex: 1; }
   .quiz-actions .btn { flex: 1; }
   .keys-hint { display: none; }
+  .quiz-top > .muted { display: none; }
 }
+.quiz-top .link-btn { white-space: nowrap; }

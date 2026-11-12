@@ -6,7 +6,8 @@ const REQUEUE_GAP = 4; // a missed question comes back a few questions later
 
 function prepare(q, again = false) {
   // q.a[0] is the correct answer; shuffle once per appearance.
-  const options = shuffle(q.a.map((text, i) => ({ text, correct: i === 0 })));
+  // q.w (optional) explains why each wrong answer is wrong: q.w[i-1] belongs to q.a[i].
+  const options = shuffle(q.a.map((text, i) => ({ text, correct: i === 0, why: i > 0 ? q.w?.[i - 1] : null })));
   return { q, options, again };
 }
 
@@ -43,6 +44,7 @@ export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinis
       const record = {
         q: item.q,
         chosen: item.options[i].text,
+        chosenWhy: item.options[i].why,
         correctText: item.options.find((o) => o.correct).text,
         ok,
       };
@@ -112,16 +114,29 @@ export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinis
 
   if (!item) return null;
 
-  const done = idx;
-  const pct = (done / queue.length) * 100;
+  // Progress counts only the questions the session started with;
+  // re-queued mistakes are shown separately so the total never "grows".
+  const total = questions.length;
+  const originalsBefore = queue.slice(0, idx).filter((x) => !x.again).length;
+  const current = Math.min(originalsBefore + (item.again ? 0 : 1), total);
+  const repeatsLeft = queue.slice(idx + 1).filter((x) => x.again).length;
+  const pct = (originalsBefore / total) * 100;
   const pickedOk = picked !== null && item.options[picked].correct;
+  const correctIdx = item.options.findIndex((o) => o.correct);
 
   return (
     <div className="quiz">
       <div className="quiz-top">
         <button className="link-btn" onClick={onExit}>✕ Zakończ</button>
         <span className="muted small">{title}</span>
-        <span className="muted small tabular">{idx + 1} / {queue.length}</span>
+        <span className="counter small tabular">
+          {item.again ? 'Powtórka błędu' : `Pytanie ${current} / ${total}`}
+          {repeatsLeft > 0 && (
+            <span className="pill bad" title="Pytania, na które odpowiedziałeś źle, wrócą jeszcze w tej sesji">
+              +{repeatsLeft} {repeatsLeft === 1 ? 'powtórka' : repeatsLeft < 5 ? 'powtórki' : 'powtórek'}
+            </span>
+          )}
+        </span>
       </div>
       <div className="bar thin"><span style={{ width: `${pct}%` }} /></div>
 
@@ -151,7 +166,18 @@ export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinis
         {revealed && (
           <div className={`feedback ${pickedOk ? 'ok' : 'no'}`}>
             <strong>{pickedOk ? 'Dobrze!' : 'Niestety nie.'}</strong>
-            <p>{item.q.e}</p>
+            {!pickedOk && (
+              <p className="answer-line">
+                Poprawna odpowiedź: <b>{LETTERS[correctIdx]}</b> · {item.options[correctIdx].text}
+              </p>
+            )}
+            {!pickedOk && item.options[picked].why && (
+              <p className="trap"><span>Twój wybór ({LETTERS[picked]}):</span> {item.options[picked].why}</p>
+            )}
+            <p className="why"><span>Dlaczego:</span> {item.q.e}</p>
+            {!pickedOk && !item.again && (
+              <p className="muted small">To pytanie wróci za kilka pytań.</p>
+            )}
           </div>
         )}
       </article>

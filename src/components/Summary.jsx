@@ -49,6 +49,7 @@ export default function Summary({ results, mode, title, onBack, onRetry }) {
                 <span className="tag">{r.q.lectureTitle}</span>
                 <p className="question sm">{r.q.q}</p>
                 <p className="ans bad-text">✕ {r.chosen}</p>
+                {r.chosenWhy && <p className="small trap">{r.chosenWhy}</p>}
                 <p className="ans good-text">✓ {r.correctText}</p>
                 <p className="muted small">{r.q.e}</p>
               </li>

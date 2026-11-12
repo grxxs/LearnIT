@@ -1,0 +1,7 @@
+{
+  "id": "net",
+  "name": "Architektura i programowanie w .NET",
+  "short": ".NET",
+  "description": "C#, platforma .NET, ASP.NET Core MVC i Razor Pages, DI, EF Core, Web API, Identity. Test podchwytliwy!",
+  "lectures": ["w01", "w02", "w03", "w04", "w05"]
+}
