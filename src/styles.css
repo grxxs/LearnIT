@@ -136,6 +136,7 @@ kbd {
   color: var(--accent); background: var(--accent-soft); padding: 2px 8px; border-radius: 999px; margin-bottom: 4px;
 }
 .tag.again { color: var(--bad); background: var(--bad-soft); margin-left: 6px; }
+.tag.official { color: var(--good); background: var(--good-soft); margin-left: 6px; }
 .pill { font-size: 0.8rem; padding: 4px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-weight: 600; }
 .pill.bad { background: var(--bad-soft); color: var(--bad); }
 
@@ -183,9 +184,15 @@ select, input[type='date'] {
 .link-btn { background: none; border: 0; padding: 4px 0; color: var(--muted); font-size: 0.9rem; align-self: flex-start; }
 .link-btn:hover { color: var(--text); }
 
+/* Page heading & compact stats */
+.page-title { padding: 8px 0 0; }
+.stat-line { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 0.85rem; color: var(--muted); }
+.stat-line strong { font-variant-numeric: tabular-nums; color: var(--text); font-weight: 650; }
+.stat-line .good strong { color: var(--good); }
+.stat-line .bad strong { color: var(--bad); }
+.stat-line .accent strong { color: var(--accent); }
+
 /* Subject view */
-.exam-date { display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; margin-top: 6px; }
-.exam-date label { display: flex; flex-direction: column; gap: 4px; }
 .lectures { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
 .lectures li {
   display: flex; align-items: center; gap: 10px; background: var(--surface); border: 1px solid var(--border);

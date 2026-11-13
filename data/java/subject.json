@@ -1,0 +1,7 @@
+{
+  "id": "java",
+  "name": "Zaawansowane programowanie w Javie",
+  "short": "Java",
+  "description": "Adnotacje, strumienie, XML, TCP/IP, Hibernate/JPA, Spring Framework i Spring Boot.",
+  "lectures": ["w01", "w02", "w03", "w04", "w05", "w06", "w07"]
+}

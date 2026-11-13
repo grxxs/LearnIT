@@ -1,0 +1,486 @@
+{
+  "id": "w07",
+  "title": "W7 · Spring Framework (2/2) – Spring Boot i stereotypy",
+  "questions": [
+    {
+      "id": "w07-01",
+      "q": "Czym jest Spring Boot wg wykładu?",
+      "a": [
+        "Automatyzacją Spring Framework (auto-konfiguracja, startery, wbudowane serwery)",
+        "Osobnym frameworkiem niezwiązanym ze Springiem",
+        "Biblioteką do testów",
+        "Serwerem aplikacji"
+      ],
+      "w": [
+        "Opiera się na Spring Framework.",
+        "Testy to Spring Test.",
+        "Zawiera wbudowany serwer, ale nim nie jest."
+      ],
+      "e": "Spring Framework → aplikacje z komponentów; Spring Boot → automatyzacja Spring Framework."
+    },
+    {
+      "id": "w07-02",
+      "q": "Jak startuje się projekt Spring Boot wg wykładu?",
+      "a": [
+        "Za pomocą Spring Initializr",
+        "Tylko ręcznie przez Gradle",
+        "Przez kopiowanie plików JAR",
+        "Przez Maven Archetype EJB"
+      ],
+      "w": [
+        "To tradycyjna procedura dla Spring bez Boot.",
+        "Nie kopiuje się JAR-ów.",
+        "EJB to inna technologia."
+      ],
+      "e": "Spring: procedura tradycyjna (np. Gradle Initializer); Spring Boot: Spring Initializr."
+    },
+    {
+      "id": "w07-03",
+      "q": "Czy zwykły Spring Framework (bez Boot) ma wbudowany serwer HTTP?",
+      "a": [
+        "Nie",
+        "Tak, Tomcat zawsze",
+        "Tak, Jetty",
+        "Tak, Netty"
+      ],
+      "w": [
+        "Wbudowany serwer daje Spring Boot (jeśli rozwiązanie tego wymaga).",
+        "To nie Spring Framework.",
+        "To nie Spring Framework."
+      ],
+      "e": "Spring: brak serwera; Spring Boot: wbudowany, jeżeli rozwiązanie tego wymaga."
+    },
+    {
+      "id": "w07-04",
+      "q": "Z jakich adnotacji składa się @SpringBootApplication?",
+      "a": [
+        "@Configuration, @EnableAutoConfiguration, @ComponentScan",
+        "@Component, @Service, @Repository",
+        "@Bean, @Autowired, @Value",
+        "@Controller, @ResponseBody"
+      ],
+      "w": [
+        "To stereotypy komponentów.",
+        "To definicja i wstrzykiwanie.",
+        "To @RestController."
+      ],
+      "e": "@SpringBootApplication = @Configuration + @EnableAutoConfiguration + @ComponentScan."
+    },
+    {
+      "id": "w07-05",
+      "q": "Co robi SpringApplication.run(App.class, args)?",
+      "a": [
+        "Tworzy kontekst, inicjalizuje beany, opakowuje args w ApplicationArguments i uruchamia serwer HTTP (jeśli jest)",
+        "Tylko kompiluje aplikację",
+        "Tylko uruchamia serwer HTTP",
+        "Tworzy plik JAR"
+      ],
+      "w": [
+        "Kompilacja to zadanie narzędzi budowania.",
+        "Robi znacznie więcej.",
+        "To zadanie Mavena/Gradle."
+      ],
+      "e": "run tworzy kontekst na podstawie klasy konfiguracyjnej (App), inicjalizuje beany, ApplicationArguments, serwer."
+    },
+    {
+      "id": "w07-06",
+      "q": "Gdzie powinna znajdować się klasa startowa z @SpringBootApplication?",
+      "a": [
+        "W głównym pakiecie projektu (komponenty w podpakietach)",
+        "W dowolnym podpakiecie",
+        "W pakiecie test",
+        "W katalogu resources"
+      ],
+      "w": [
+        "@ComponentScan skanuje pakiet klasy i podpakiety – w podpakiecie pominęłaby resztę.",
+        "To nie kod produkcyjny.",
+        "Resources to nie kod."
+      ],
+      "e": "@ComponentScan szuka komponentów w podpakietach pakietu klasy startowej."
+    },
+    {
+      "id": "w07-07",
+      "q": "Klasa startowa jest w com.example.app, a serwis w com.example.service. Co się stanie (domyślny skan)?",
+      "a": [
+        "Serwis nie zostanie znaleziony – nie jest w podpakiecie com.example.app",
+        "Serwis zostanie znaleziony",
+        "Spring przeskanuje cały classpath",
+        "Błąd kompilacji"
+      ],
+      "w": [
+        "com.example.service nie jest podpakietem com.example.app.",
+        "Skan obejmuje tylko pakiet klasy startowej i podpakiety.",
+        "To błąd w czasie działania (brak beana), nie kompilacji."
+      ],
+      "e": "Domyślny @ComponentScan – pakiet klasy startowej i jego podpakiety."
+    },
+    {
+      "id": "w07-08",
+      "q": "Jaka jest relacja @Repository, @Service, @Controller do @Component?",
+      "a": [
+        "Są specjalizacjami @Component (same są nią oznaczone)",
+        "Są od niej niezależne",
+        "@Component jest specjalizacją @Service",
+        "Zastępują @Bean"
+      ],
+      "w": [
+        "W ich definicji jest @Component.",
+        "Odwrotnie.",
+        "@Bean to inny mechanizm (metoda w konfiguracji)."
+      ],
+      "e": "Każda z nich ma w definicji @Component – różnice są semantyczne (rola w architekturze)."
+    },
+    {
+      "id": "w07-09",
+      "q": "Na czym polegają różnice między @Component, @Service, @Repository, @Controller?",
+      "a": [
+        "Głównie semantyczne – oznaczają rolę komponentu; @Repository dodaje tłumaczenie wyjątków",
+        "Każda tworzy inny rodzaj kontenera",
+        "Tylko @Service tworzy beany",
+        "Różnią się scope"
+      ],
+      "w": [
+        "Kontener jest jeden.",
+        "Wszystkie tworzą beany.",
+        "Scope domyślnie singleton dla wszystkich."
+      ],
+      "e": "Różnice semantyczne; @Repository dodatkowo konwertuje SQLException → DataAccessException."
+    },
+    {
+      "id": "w07-10",
+      "q": "Jaką dodatkową możliwość daje @Repository?",
+      "a": [
+        "Automatyczne tłumaczenie wyjątków bazodanowych na DataAccessException",
+        "Automatyczne generowanie zapytań SQL",
+        "Tworzenie tabel",
+        "Cache drugiego poziomu"
+      ],
+      "w": [
+        "Generowanie zapytań to Spring Data (interfejsy repozytoriów).",
+        "Tabele tworzy ORM.",
+        "Cache to Hibernate/@Cacheable."
+      ],
+      "e": "@Repository – konwersja SQLException → DataAccessException."
+    },
+    {
+      "id": "w07-11",
+      "q": "Czym jest @RestController?",
+      "a": [
+        "@Controller + @ResponseBody – zwracana wartość to ciało odpowiedzi HTTP",
+        "@Service dla REST",
+        "@Repository dla REST",
+        "Kontrolerem zwracającym tylko widoki HTML"
+      ],
+      "w": [
+        "Nie jest serwisem.",
+        "To nie repozytorium.",
+        "Właśnie nie zwraca widoków."
+      ],
+      "e": "@RestController = @Controller + @ResponseBody (na wszystkich metodach)."
+    },
+    {
+      "id": "w07-12",
+      "q": "Co oznacza @ResponseBody?",
+      "a": [
+        "Wartość zwracana z metody jest ciałem odpowiedzi HTTP, a nie nazwą widoku",
+        "Odczyt ciała żądania",
+        "Ustawienie statusu HTTP",
+        "Walidację odpowiedzi"
+      ],
+      "w": [
+        "To @RequestBody.",
+        "To @ResponseStatus.",
+        "To @Valid."
+      ],
+      "e": "@ResponseBody → wynik metody to treść odpowiedzi (np. JSON)."
+    },
+    {
+      "id": "w07-13",
+      "q": "Metoda w klasie @Controller zwraca String \"home\" bez @ResponseBody. Co zobaczy klient?",
+      "a": [
+        "Wyrenderowany widok o nazwie home",
+        "Tekst \"home\"",
+        "JSON {\"home\"}",
+        "Błąd 500"
+      ],
+      "w": [
+        "Tekst byłby przy @RestController/@ResponseBody.",
+        "To nie JSON.",
+        "To normalne zachowanie MVC."
+      ],
+      "e": "W @Controller String to nazwa widoku; w @RestController – ciało odpowiedzi."
+    },
+    {
+      "id": "w07-14",
+      "q": "Do czego służy @ControllerAdvice?",
+      "a": [
+        "Do centralizacji logiki wspólnej dla wielu kontrolerów (np. @ExceptionHandler)",
+        "Do definiowania endpointów",
+        "Do konfiguracji bazy",
+        "Do testów kontrolerów"
+      ],
+      "w": [
+        "Endpointy definiują kontrolery.",
+        "Baza to konfiguracja danych.",
+        "Testy to Spring Test."
+      ],
+      "e": "@ControllerAdvice – obsługa wyjątków (@ExceptionHandler), atrybuty modelu (@ModelAttribute), binding (@InitBinder)."
+    },
+    {
+      "id": "w07-15",
+      "q": "Jaki jest odpowiednik @ControllerAdvice dla @RestController?",
+      "a": [
+        "@RestControllerAdvice",
+        "@RestAdvice",
+        "@ExceptionAdvice",
+        "@ApiAdvice"
+      ],
+      "w": [
+        "Nie istnieje.",
+        "Nie istnieje.",
+        "Nie istnieje."
+      ],
+      "e": "@RestControllerAdvice – odpowiednik dla komponentów REST."
+    },
+    {
+      "id": "w07-16",
+      "q": "Co robi @RepositoryRestResource na interfejsie UserRepository extends CrudRepository<User, Long>?",
+      "a": [
+        "Eksponuje repozytorium jako zasób REST z automatycznymi endpointami CRUD",
+        "Tworzy tabelę users",
+        "Generuje kontroler MVC z widokami",
+        "Wymaga ręcznej implementacji metod"
+      ],
+      "w": [
+        "Tabele to sprawa ORM.",
+        "Generuje REST, nie widoki.",
+        "Metody CRUD są generowane automatycznie."
+      ],
+      "e": "Spring Data REST – GET/POST/PUT/DELETE /users generowane automatycznie."
+    },
+    {
+      "id": "w07-17",
+      "q": "W jakim formacie Spring Data REST zwraca dane?",
+      "a": [
+        "HATEOAS JSON (z linkami do powiązanych zasobów)",
+        "XML",
+        "CSV",
+        "HTML"
+      ],
+      "w": [
+        "Domyślnie JSON.",
+        "Nie CSV.",
+        "Nie HTML."
+      ],
+      "e": "HATEOAS – Hypermedia As The Engine Of Application State; klient nie musi znać całej struktury API."
+    },
+    {
+      "id": "w07-18",
+      "q": "Który endpoint NIE jest generowany automatycznie przez @RepositoryRestResource(path=\"users\")?",
+      "a": [
+        "GET /users/top10 – własny, niezdefiniowany endpoint",
+        "GET /users",
+        "GET /users/{id}",
+        "DELETE /users/{id}"
+      ],
+      "w": [
+        "Lista jest generowana.",
+        "Szczegóły są generowane.",
+        "Usuwanie jest generowane."
+      ],
+      "e": "Generowane: GET /users, GET /users/{id}, POST, PUT /users/{id}, DELETE /users/{id}."
+    },
+    {
+      "id": "w07-19",
+      "q": "Czy w Spring Boot klasa z @Configuration jest wymagana?",
+      "a": [
+        "Nie – istnieje auto-konfiguracja, ale można nią nadpisać lub rozszerzyć ustawienia",
+        "Tak, zawsze",
+        "Tak, ale tylko jedna",
+        "Nie można jej używać w Boot"
+      ],
+      "w": [
+        "W Spring bez Boot jest wymagana.",
+        "Nie jest wymagana w Boot.",
+        "Można jej używać."
+      ],
+      "e": "W Spring (bez Boot) klasa konfiguracyjna jest wymagana; w Boot – opcjonalna."
+    },
+    {
+      "id": "w07-20",
+      "q": "Klasa Greeter bez adnotacji, a w @Configuration jest metoda @Bean public Greeter greeter(). Czy Greeter będzie beanem?",
+      "a": [
+        "Tak – bean definiuje metoda @Bean w klasie konfiguracyjnej",
+        "Nie – Greeter musi mieć @Component",
+        "Tylko w trybie prototype",
+        "Nie – @Bean działa tylko na klasach"
+      ],
+      "w": [
+        "@Component nie jest potrzebne przy @Bean.",
+        "Domyślnie singleton.",
+        "@Bean jest na metodach."
+      ],
+      "e": "Brak konieczności oznaczania klas adnotacjami – bean powstaje z metody @Bean."
+    },
+    {
+      "id": "w07-21",
+      "q": "Definicja @Component ma @Target(ElementType.TYPE) i @Retention(RetentionPolicy.RUNTIME). Co to oznacza?",
+      "a": [
+        "Stosuje się ją do typów (klasy, interfejsy, enumy) i jest widoczna w runtime przez refleksję",
+        "Jest widoczna tylko w kodzie źródłowym",
+        "Stosuje się ją tylko do metod",
+        "Jest widoczna tylko w bytecode"
+      ],
+      "w": [
+        "Gdyby była SOURCE, Spring nie mógłby jej odczytać w runtime.",
+        "TYPE to klasy/interfejsy/enumy, nie metody.",
+        "CLASS nie byłoby widoczne przez refleksję."
+      ],
+      "e": "Definicja @Component: @Target(ElementType.TYPE), @Retention(RetentionPolicy.RUNTIME), @Documented."
+    },
+    {
+      "id": "w07-22",
+      "q": "Jak nadać własną nazwę beanowi komponentu?",
+      "a": [
+        "@Component(\"myBean\")",
+        "@Component(name = \"myBean\") jako obowiązkowe",
+        "@Name(\"myBean\")",
+        "Nie można – nazwa zawsze z klasy"
+      ],
+      "w": [
+        "Wartość podaje się jako value (domyślnie \"\").",
+        "Nie ma @Name.",
+        "Można – jest to opcjonalne."
+      ],
+      "e": "String value() default \"\"; – opcjonalna nazwa; bez niej nazwa generowana z nazwy klasy."
+    },
+    {
+      "id": "w07-23",
+      "q": "Który projekt Spring służy do uwierzytelniania i autoryzacji?",
+      "a": [
+        "Spring Security",
+        "Spring Data",
+        "Spring Batch",
+        "Spring Cloud"
+      ],
+      "w": [
+        "Data – dostęp do danych.",
+        "Batch – przetwarzanie wsadowe.",
+        "Cloud – mikroserwisy."
+      ],
+      "e": "Spring Security → uwierzytelnianie, autoryzacja."
+    },
+    {
+      "id": "w07-24",
+      "q": "Który projekt Spring służy do programowania reaktywnego?",
+      "a": [
+        "Spring WebFlux",
+        "Spring MVC",
+        "Spring Batch",
+        "Spring Test"
+      ],
+      "w": [
+        "MVC – klasyczne (blokujące) aplikacje web/REST.",
+        "Batch – wsadowo.",
+        "Test – testy."
+      ],
+      "e": "Spring Web: MVC (REST/MVC) i WebFlux (reaktywnie)."
+    },
+    {
+      "id": "w07-25",
+      "q": "Jak nazywają się zależności Spring Boot włączające auto-konfigurację danego obszaru?",
+      "a": [
+        "Startery spring-boot-starter-...",
+        "Pluginy spring-plugin-...",
+        "Moduły spring-module-...",
+        "Rozszerzenia spring-ext-..."
+      ],
+      "w": [
+        "Nie istnieją takie nazwy.",
+        "Nie istnieją takie nazwy.",
+        "Nie istnieją takie nazwy."
+      ],
+      "e": "Automatyczna konfiguracja (Spring Boot) → startery spring-boot-starter-…"
+    },
+    {
+      "id": "w07-26",
+      "q": "Do czego służy Spring Data?",
+      "a": [
+        "Do dostępu do danych (JPA, MongoDB, Redis…)",
+        "Do mikroserwisów",
+        "Do AI",
+        "Do przetwarzania wsadowego"
+      ],
+      "w": [
+        "To Spring Cloud.",
+        "To Spring AI.",
+        "To Spring Batch."
+      ],
+      "e": "Spring Data → dostęp do danych."
+    },
+    {
+      "id": "w07-27",
+      "q": "Jaki komunikat wyświetla Spring Boot, gdy nie ustawiono profilu?",
+      "a": [
+        "No active profile set, falling back to 1 default profile: \"default\"",
+        "Profile error – application stopped",
+        "Using profile prod",
+        "No beans found"
+      ],
+      "w": [
+        "Aplikacja się nie zatrzymuje.",
+        "Domyślny profil to default, nie prod.",
+        "To nie ten komunikat."
+      ],
+      "e": "Log startowy: brak aktywnego profilu → profil \"default\"."
+    },
+    {
+      "id": "w07-28",
+      "q": "Co dzieje się przy starcie aplikacji ze spring-boot-starter (bez web)?",
+      "a": [
+        "Kontekst startuje bez serwera HTTP i aplikacja się kończy po wykonaniu",
+        "Uruchamia się Tomcat na porcie 8080",
+        "Aplikacja nie startuje bez web",
+        "Wymagany jest plik XML"
+      ],
+      "w": [
+        "Serwer jest tylko, jeśli projekt go zawiera (np. starter-web).",
+        "Startuje poprawnie.",
+        "XML nie jest wymagany."
+      ],
+      "e": "Serwer HTTP uruchamia się, jeżeli jest częścią projektu."
+    },
+    {
+      "id": "w07-29",
+      "q": "Co przyjmuje SpringApplication.run jako pierwszy argument?",
+      "a": [
+        "Klasę konfiguracyjną (np. App.class)",
+        "Ścieżkę do pliku XML",
+        "Nazwę pakietu jako String",
+        "Instancję kontrolera"
+      ],
+      "w": [
+        "W przykładzie nie ma XML.",
+        "Nie String pakietu.",
+        "Nie instancję."
+      ],
+      "e": "SpringApplication.run(App.class, args) – kontekst tworzony na podstawie przekazanej klasy konfiguracyjnej."
+    },
+    {
+      "id": "w07-30",
+      "q": "Które stwierdzenie o hierarchii adnotacji Spring jest prawdziwe?",
+      "a": [
+        "@RestControllerAdvice wywodzi się z @RestController, a ta z @Controller i @Component",
+        "@Component wywodzi się z @Service",
+        "@Configuration nie jest komponentem",
+        "@Repository wywodzi się z @Service"
+      ],
+      "w": [
+        "Odwrotnie.",
+        "@Configuration też jest pod @Component.",
+        "Oba są bezpośrednio pod @Component."
+      ],
+      "e": "@Component → @Repository, @Service, @Controller → @RestController → @RestControllerAdvice; @ControllerAdvice; @Configuration."
+    }
+  ]
+}

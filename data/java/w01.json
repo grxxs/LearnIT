@@ -1,0 +1,502 @@
+{
+  "id": "w01",
+  "title": "W1 · Adnotacje",
+  "questions": [
+    {
+      "id": "w01-01",
+      "q": "Adnotacje można dodać:",
+      "a": [
+        "do pakietów",
+        "tylko do klas",
+        "tylko do klas i metod"
+      ],
+      "w": [
+        "Nie tylko – także do metod, pól, parametrów, typów i pakietów.",
+        "Także do pól, parametrów, zmiennych, typów i pakietów."
+      ],
+      "e": "Pytanie testowe z wykładu (lista wykładowcy). Adnotacje można dodać m.in. do klasy, konstruktora, pola, metody, parametru, zmiennej lokalnej, typu i pakietu (w package-info.java).",
+      "official": true
+    },
+    {
+      "id": "w01-02",
+      "q": "Adnotacje można dodać:",
+      "a": [
+        "w miejscu definicji metody",
+        "w miejscu wywołania metody",
+        "w żadnym z powyższych miejsc"
+      ],
+      "w": [
+        "Przy wywołaniu nie ma adnotacji – w przykładzie Main wywołuje getHello bez @.",
+        "Miejsce definicji metody jest poprawne."
+      ],
+      "e": "Pytanie testowe z wykładu (lista wykładowcy). Adnotację dopina się w definicji; przy wywołaniu metody adnotacji nie ma.",
+      "official": true
+    },
+    {
+      "id": "w01-03",
+      "q": "Adnotacja jest:",
+      "a": [
+        "interfejsem",
+        "klasą",
+        "żadna z powyższych"
+      ],
+      "w": [
+        "Nie klasą – definiuje się ją przez @interface.",
+        "Jest interfejsem (public @interface …)."
+      ],
+      "e": "Pytanie testowe z wykładu (lista wykładowcy). Adnotacje to interfejsy – definicja: public @interface RepeatYourself { … }.",
+      "official": true
+    },
+    {
+      "id": "w01-04",
+      "q": "Czym są adnotacje wg podsumowania wykładu?",
+      "a": [
+        "Metadanymi – nie są samodzielne",
+        "Samodzielnie wykonywanym kodem",
+        "Komentarzami ignorowanymi przez kompilator",
+        "Instrukcjami preprocesora"
+      ],
+      "w": [
+        "Adnotacja sama nic nie robi – logikę dostarcza kod, który ją odczyta.",
+        "Nie są ignorowane – kompilator i refleksja je widzą.",
+        "Java nie ma preprocesora."
+      ],
+      "e": "Adnotacja to metadane, nie jest samodzielna; może mieć parametry."
+    },
+    {
+      "id": "w01-05",
+      "q": "Który poziom RetentionPolicy pozwala odczytać adnotację w czasie działania programu przez refleksję?",
+      "a": [
+        "RetentionPolicy.RUNTIME",
+        "RetentionPolicy.SOURCE",
+        "RetentionPolicy.CLASS",
+        "RetentionPolicy.COMPILE"
+      ],
+      "w": [
+        "SOURCE – tylko kod źródłowy, kompilator ją odrzuca.",
+        "CLASS – trafia do bytecode, ale nie jest widoczna przez refleksję.",
+        "Taki poziom nie istnieje."
+      ],
+      "e": "SOURCE → tylko źródło; CLASS → j.w. + bytecode; RUNTIME → j.w. + java.lang.Class (refleksja)."
+    },
+    {
+      "id": "w01-06",
+      "q": "Gdzie jest dostępna adnotacja z RetentionPolicy.SOURCE?",
+      "a": [
+        "Tylko w kodzie źródłowym",
+        "W kodzie i w bytecode",
+        "W kodzie, bytecode i w czasie wykonania",
+        "Tylko w czasie wykonania"
+      ],
+      "w": [
+        "To CLASS.",
+        "To RUNTIME.",
+        "Żaden poziom nie jest „tylko runtime”."
+      ],
+      "e": "SOURCE – tylko kod źródłowy (np. @Override, @SuppressWarnings)."
+    },
+    {
+      "id": "w01-07",
+      "q": "Gdzie jest dostępna adnotacja z RetentionPolicy.CLASS?",
+      "a": [
+        "W kodzie źródłowym i w bytecode (ale nie przez refleksję)",
+        "Tylko w kodzie źródłowym",
+        "W czasie wykonania przez refleksję",
+        "Tylko w pliku JAR"
+      ],
+      "w": [
+        "To SOURCE.",
+        "To RUNTIME.",
+        "Nie ma takiego poziomu."
+      ],
+      "e": "CLASS = SOURCE + bytecode."
+    },
+    {
+      "id": "w01-08",
+      "q": "Jak określa się, do jakich elementów (np. metod) można dołączyć własną adnotację?",
+      "a": [
+        "@Target(ElementType.METHOD)",
+        "@Retention(RetentionPolicy.METHOD)",
+        "@Documented",
+        "@Inherited(METHOD)"
+      ],
+      "w": [
+        "@Retention określa widoczność, a METHOD nie jest wartością RetentionPolicy.",
+        "@Documented dotyczy dokumentacji.",
+        "@Inherited dotyczy dziedziczenia przez podklasy i nie ma parametru."
+      ],
+      "e": "Definiując adnotację określa się widoczność (@Retention) i cel (@Target)."
+    },
+    {
+      "id": "w01-09",
+      "q": "Jak zapisać w adnotacji parametr int howManyTimes z wartością domyślną 3?",
+      "a": [
+        "int howManyTimes() default 3;",
+        "int howManyTimes = 3;",
+        "int howManyTimes default(3);",
+        "@Default(3) int howManyTimes;"
+      ],
+      "w": [
+        "Elementy adnotacji to metody, nie pola.",
+        "Zła składnia – default stoi po ().",
+        "Nie ma adnotacji @Default."
+      ],
+      "e": "public @interface RepeatYourself { int howManyTimes() default 3; }"
+    },
+    {
+      "id": "w01-10",
+      "q": "Co można określić w definicji adnotacji @RepeatYourself?",
+      "a": [
+        "Parametry, widoczność i cel – ale nie sposób, w jaki metoda ją wykorzysta",
+        "Pełną logikę działania metody",
+        "Kolejność wywołań metod",
+        "Treść zwracaną przez metodę"
+      ],
+      "w": [
+        "Logikę pisze się w metodzie lub frameworku odczytującym adnotację.",
+        "Adnotacja nie steruje kolejnością.",
+        "Adnotacja nie zwraca treści."
+      ],
+      "e": "❗Ze slajdu: w definicji nie ma możliwości określić, w jaki sposób adnotację wykorzysta metoda."
+    },
+    {
+      "id": "w01-11",
+      "q": "Jak metoda getHello w przykładzie odczytuje swoją adnotację @RepeatYourself?",
+      "a": [
+        "Przez refleksję: getMethod(...).getAnnotation(RepeatYourself.class)",
+        "Przez zmienną this.annotation",
+        "Automatycznie jako parametr metody",
+        "Przez System.getProperty"
+      ],
+      "w": [
+        "Nie ma takiego pola.",
+        "Adnotacja nie jest parametrem.",
+        "To właściwości systemowe."
+      ],
+      "e": "Konieczne jest użycie mechanizmu refleksji (java.lang.reflect.Method) i obsługa wyjątku NoSuchMethodException."
+    },
+    {
+      "id": "w01-12",
+      "q": "@RepeatYourself(howManyTimes = 5) na getHello, metoda zwraca (\"Hello \" + name + \"\\n\").repeat(times).stripTrailing(). Ile linii wypisze getHello(\"World\")?",
+      "a": [
+        "5",
+        "3",
+        "1",
+        "0"
+      ],
+      "w": [
+        "3 to wartość domyślna – nadpisana przez 5.",
+        "1 byłoby bez adnotacji (repeat == null).",
+        "Adnotacja jest obecna, więc tekst jest."
+      ],
+      "e": "howManyTimes = 5 → 5 × \"Hello World\"."
+    },
+    {
+      "id": "w01-13",
+      "q": "W tym samym kodzie: co by się stało, gdyby adnotacja miała @Retention(RetentionPolicy.CLASS)?",
+      "a": [
+        "getAnnotation zwróci null → times = 1 → jedna linia",
+        "Nadal 5 linii",
+        "Błąd kompilacji",
+        "3 linie (wartość domyślna)"
+      ],
+      "w": [
+        "CLASS nie jest widoczne przez refleksję.",
+        "Kod się skompiluje.",
+        "Domyślna wartość też nie jest dostępna – brak adnotacji w runtime."
+      ],
+      "e": "Tylko RUNTIME jest dostępne przez refleksję; przy innych getAnnotation zwraca null."
+    },
+    {
+      "id": "w01-14",
+      "q": "Czy może być więcej niż 1 adnotacja?",
+      "a": [
+        "Tak – także dla metod, pól i innych elementów",
+        "Tak, ale tylko dla klasy",
+        "Nie, maksymalnie jedna",
+        "Tylko adnotacje z JDK"
+      ],
+      "w": [
+        "Pułapka z listy wykładowcy – ograniczenia do klas nie ma.",
+        "Element może mieć wiele adnotacji, np. @Autowired @NotNull.",
+        "Można łączyć adnotacje JDK i bibliotek."
+      ],
+      "e": "Pytanie testowe z wykładu (lista wykładowcy). Element może mieć wiele adnotacji, np. pole z @NotNull @Size.",
+      "official": true
+    },
+    {
+      "id": "w01-15",
+      "q": "Jakie adnotacje mogą być tworzone przez programistę?",
+      "a": [
+        "Własne, definiowane przez @interface",
+        "Tylko nowe adnotacje JDK",
+        "Żadne – tylko frameworki je tworzą",
+        "Tylko adnotacje bez parametrów"
+      ],
+      "w": [
+        "JDK dostarcza Oracle; programista tworzy własne.",
+        "Programista może tworzyć własne.",
+        "Mogą mieć parametry (np. howManyTimes)."
+      ],
+      "e": "Pytanie testowe z wykładu (lista wykładowcy). Programista tworzy własne adnotacje przez @interface; pozostałe pochodzą z JDK lub bibliotek/frameworków.",
+      "official": true
+    },
+    {
+      "id": "w01-31",
+      "q": "Widoczność adnotacji (Retention Policy) – jakie są jej poziomy?",
+      "a": [
+        "SOURCE, CLASS, RUNTIME",
+        "PUBLIC, PROTECTED, PRIVATE",
+        "COMPILE, TEST, RUNTIME",
+        "LOCAL, GLOBAL"
+      ],
+      "w": [
+        "To modyfikatory dostępu, nie Retention Policy.",
+        "To zakresy zależności Mavena.",
+        "Nie istnieją takie poziomy."
+      ],
+      "e": "Pytanie testowe z wykładu (lista wykładowcy). SOURCE → tylko kod źródłowy; CLASS → + bytecode; RUNTIME → + dostępne przez refleksję (java.lang.Class).",
+      "official": true
+    },
+    {
+      "id": "w01-16",
+      "q": "Co robi adnotacja @Override?",
+      "a": [
+        "Kompilator sprawdza, czy metoda faktycznie nadpisuje metodę bazową",
+        "Nadpisuje metodę w czasie działania",
+        "Ostrzega przy użyciu metody",
+        "Wyłącza ostrzeżenia"
+      ],
+      "w": [
+        "Nadpisanie robi samo dziedziczenie – @Override tylko sprawdza.",
+        "To @Deprecated.",
+        "To @SuppressWarnings."
+      ],
+      "e": "@Override → Sprawdź; @Deprecated → Ostrzeż; @SuppressWarnings → Ignoruj."
+    },
+    {
+      "id": "w01-17",
+      "q": "Co robi @Deprecated?",
+      "a": [
+        "Powoduje ostrzeżenie przy użyciu oznaczonego elementu",
+        "Usuwa element z kodu",
+        "Blokuje kompilację",
+        "Wyłącza ostrzeżenia"
+      ],
+      "w": [
+        "Element nadal istnieje.",
+        "Kompilacja przechodzi – jest ostrzeżenie.",
+        "To odwrotność – wyłączanie to @SuppressWarnings."
+      ],
+      "e": "Klasa, metoda, pole → ostrzeżenie przy użyciu."
+    },
+    {
+      "id": "w01-18",
+      "q": "Do czego służy @SuppressWarnings(\"unchecked\")?",
+      "a": [
+        "Do wyłączenia (zignorowania) określonego ostrzeżenia kompilatora",
+        "Do sprawdzenia typów generycznych",
+        "Do oznaczenia interfejsu funkcyjnego",
+        "Do walidacji danych"
+      ],
+      "w": [
+        "Sprawdzenia nie robi – wycisza ostrzeżenie.",
+        "To @FunctionalInterface.",
+        "Walidacja to np. @NotNull."
+      ],
+      "e": "@SuppressWarnings → Ignoruj sytuację (klasa, metoda, pole, zmienna)."
+    },
+    {
+      "id": "w01-19",
+      "q": "Co oznacza @FunctionalInterface?",
+      "a": [
+        "Interfejs ma dokładnie 1 metodę abstrakcyjną (interfejs funkcyjny)",
+        "Interfejs nie ma metod",
+        "Interfejs ma tylko metody domyślne",
+        "Klasa implementuje lambdę"
+      ],
+      "w": [
+        "Interfejs funkcyjny ma jedną metodę abstrakcyjną.",
+        "Metody domyślne są dozwolone, ale wymagana jest 1 abstrakcyjna.",
+        "Adnotacja dotyczy interfejsu, nie klasy."
+      ],
+      "e": "@FunctionalInterface → interfejs z 1 metodą abstrakcyjną (np. do lambd)."
+    },
+    {
+      "id": "w01-20",
+      "q": "Gdzie stosuje się @SafeVarargs?",
+      "a": [
+        "Na metodzie z varargs – deklaracja braku konfliktu z typami generycznymi",
+        "Na klasie generycznej",
+        "Na polu typu tablicowego",
+        "Na interfejsie"
+      ],
+      "w": [
+        "Dotyczy metod varargs.",
+        "Nie na polach.",
+        "To @FunctionalInterface dotyczy interfejsu."
+      ],
+      "e": "@SafeVarargs – metoda varargs, deklaracja braku konfliktu z typami generycznymi."
+    },
+    {
+      "id": "w01-21",
+      "q": "Która z adnotacji służy do walidacji danych?",
+      "a": [
+        "@Email",
+        "@Transactional",
+        "@Component",
+        "@Override"
+      ],
+      "w": [
+        "@Transactional steruje logiką (transakcja).",
+        "@Component konfiguruje framework.",
+        "@Override to informacja dla kompilatora."
+      ],
+      "e": "Walidacja: @NotNull @Size @Email @PastOrPresent."
+    },
+    {
+      "id": "w01-22",
+      "q": "Do jakiej kategorii zadań należy @Scheduled?",
+      "a": [
+        "Sterowanie logiką programu – uruchamianie cykliczne",
+        "Walidacja danych",
+        "Informacja dla kompilatora",
+        "Generowanie dokumentacji"
+      ],
+      "w": [
+        "Walidacja to np. @NotNull.",
+        "Kompilator: @Override, @Deprecated.",
+        "Dokumentacja: @Documented, @author."
+      ],
+      "e": "Sterowanie logiką: @Transactional → uruchomienie metody (w transakcji), @Scheduled → cyklicznie."
+    },
+    {
+      "id": "w01-23",
+      "q": "Do jakiej kategorii należą @Getter @Setter @Builder (Lombok)?",
+      "a": [
+        "Generowanie kodu lub konfiguracji",
+        "Walidacja danych",
+        "Informacja dla kompilatora",
+        "Sterowanie logiką"
+      ],
+      "w": [
+        "Walidacja to @NotNull/@Size.",
+        "Kompilator to @Override itp.",
+        "Logika to @Transactional/@Scheduled."
+      ],
+      "e": "Generowanie kodu/konfiguracji: @Getter @Setter @Builder @Entity @Table."
+    },
+    {
+      "id": "w01-24",
+      "q": "Do jakiej kategorii należą @Autowired @Component @Service @Repository @Test?",
+      "a": [
+        "Konfiguracja frameworku w czasie kompilacji lub wykonania",
+        "Generowanie dokumentacji",
+        "Walidacja danych",
+        "Informacja dla kompilatora"
+      ],
+      "w": [
+        "Dokumentacja to @Documented/@author/@since.",
+        "Walidacja to @NotNull itp.",
+        "To nie są adnotacje kompilatora JDK."
+      ],
+      "e": "Konfiguracja frameworku: @Autowired @Component @Service @Repository @Test."
+    },
+    {
+      "id": "w01-25",
+      "q": "Która adnotacja jest przykładem adnotacji na parametrze metody?",
+      "a": [
+        "@RequestParam",
+        "@Entity",
+        "@Inject (na konstruktorze)",
+        "@Override"
+      ],
+      "w": [
+        "@Entity jest na klasie.",
+        "@Inject w przykładzie dotyczy konstruktora.",
+        "@Override jest na metodzie."
+      ],
+      "e": "Parametr metody: np. @RequestParam @Valid."
+    },
+    {
+      "id": "w01-26",
+      "q": "W jakim pliku umieszcza się adnotacje pakietu?",
+      "a": [
+        "package-info.java",
+        "module-info.java",
+        "pom.xml",
+        "MANIFEST.MF"
+      ],
+      "w": [
+        "module-info dotyczy modułów (JPMS).",
+        "pom.xml to Maven.",
+        "MANIFEST.MF to metadane JAR."
+      ],
+      "e": "Pakiet: adnotacje w package-info.java."
+    },
+    {
+      "id": "w01-27",
+      "q": "Gdzie dostępne są adnotacje dostarczane przez biblioteki (np. @Entity)?",
+      "a": [
+        "Po dodaniu zależności (biblioteki) do projektu",
+        "Zawsze, w każdym JDK",
+        "Tylko w Java EE serwerach",
+        "Tylko w trybie debug"
+      ],
+      "w": [
+        "Zawsze dostępne są tylko wbudowane adnotacje JDK.",
+        "Nie tylko na serwerach aplikacyjnych.",
+        "Tryb debug nie ma znaczenia."
+      ],
+      "e": "Adnotacje bibliotek/frameworków są dostępne po dodaniu zależności."
+    },
+    {
+      "id": "w01-28",
+      "q": "W jakim pakiecie znajdują się Retention, Target, ElementType?",
+      "a": [
+        "java.lang.annotation",
+        "java.lang.reflect",
+        "java.util.annotation",
+        "javax.annotation.meta"
+      ],
+      "w": [
+        "reflect zawiera Method, Class – narzędzia odczytu.",
+        "Taki pakiet nie istnieje.",
+        "To nie standardowy pakiet tych klas."
+      ],
+      "e": "Definicja adnotacji importuje java.lang.annotation.*."
+    },
+    {
+      "id": "w01-29",
+      "q": "Kiedy ustalana jest wartość parametru adnotacji (np. howManyTimes = 5)?",
+      "a": [
+        "Na etapie kodowania (stała w kodzie)",
+        "W czasie wykonania z pliku konfiguracyjnego",
+        "Przy każdym wywołaniu metody",
+        "Przez użytkownika w GUI"
+      ],
+      "w": [
+        "Adnotacja nie czyta konfiguracji sama.",
+        "Nie zmienia się między wywołaniami.",
+        "GUI nie ma z tym związku."
+      ],
+      "e": "Adnotacja oraz wartość jej parametru jest ustalana na etapie kodowania."
+    },
+    {
+      "id": "w01-30",
+      "q": "Która adnotacja na typie generycznym jest pokazana na wykładzie?",
+      "a": [
+        "List<@NotNull ...>",
+        "@Generic List",
+        "List<@Override>",
+        "@List<NotNull>"
+      ],
+      "w": [
+        "@Generic nie istnieje.",
+        "@Override dotyczy metod.",
+        "Zła składnia."
+      ],
+      "e": "Typ generyczny: List<@NotNull> – adnotacje mogą być stosowane do argumentów typu."
+    }
+  ]
+}

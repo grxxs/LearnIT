@@ -142,6 +142,7 @@ export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinis
 
       <article className="card question-card">
         <span className="tag">{item.q.lectureTitle}</span>
+        {item.q.official && <span className="tag official" title="Oryginalne pytanie z listy pytań testowych wykładowcy">📝 pytanie od wykładowcy</span>}
         {item.again && <span className="tag again">powtórka</span>}
         <h2 className="question">{item.q.q}</h2>
 

@@ -1,0 +1,7 @@
+{
+  "id": "zpwo",
+  "name": "Zarządzanie projektami wytwarzania oprogramowania",
+  "short": "ZPWO",
+  "description": "Zarządzanie projektami, PMBOK i PRINCE2, XP, FDD, Lean, DSDM, jakość, TDD i refaktoryzacja.",
+  "lectures": ["w01", "w02", "w03"]
+}

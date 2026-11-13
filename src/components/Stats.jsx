@@ -9,22 +9,22 @@ export function Bar({ value, label }) {
   );
 }
 
-export function StatRow({ s }) {
+/** Compact one-line summary: only non-zero numbers, in a fixed order. */
+export function StatLine({ s }) {
+  const items = [
+    { v: s.due, label: 'do powtórki', tone: 'accent' },
+    { v: s.weak, label: 'słabe', tone: 'bad' },
+    { v: s.fresh, label: 'nowe' },
+    { v: s.mastered, label: 'opanowane', tone: 'good' },
+  ].filter((x) => x.v > 0);
+  if (!items.length) return null;
   return (
-    <div className="stat-row">
-      <Stat value={s.mastered} label="opanowane" tone="good" />
-      <Stat value={s.due} label="do powtórki" tone="accent" />
-      <Stat value={s.weak} label="słabe" tone="bad" />
-      <Stat value={s.fresh} label="nowe" />
-    </div>
-  );
-}
-
-function Stat({ value, label, tone }) {
-  return (
-    <div className={`stat ${tone ?? ''}`}>
-      <strong>{value}</strong>
-      <span>{label}</span>
-    </div>
+    <p className="stat-line">
+      {items.map((x) => (
+        <span key={x.label} className={x.tone ?? ''}>
+          <strong>{x.v}</strong> {x.label}
+        </span>
+      ))}
+    </p>
   );
 }
