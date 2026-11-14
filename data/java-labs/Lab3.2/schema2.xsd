@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<xs:schema version="1.0" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:ns1="http://example.org/weather-observation">
+
+  <xs:import namespace="http://example.org/weather-observation" schemaLocation="schema1.xsd"/>
+
+  <xs:complexType name="observation">
+    <xs:sequence>
+      <xs:element name="timeStamp" type="xs:string"/>
+      <xs:element name="unit" type="temperatureUnit"/>
+      <xs:element name="value" type="xs:double"/>
+      <xs:element name="comment" type="xs:string" minOccurs="0"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="observationList">
+    <xs:sequence>
+      <xs:element name="observation" type="observation" minOccurs="0" maxOccurs="unbounded"/>
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="temperatureUnit">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Celsius"/>
+      <xs:enumeration value="Fahrenheit"/>
+      <xs:enumeration value="Kelvin"/>
+    </xs:restriction>
+  </xs:simpleType>
+</xs:schema>
+

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<ns2:weather-observation xmlns:ns2="http://example.org/weather-observation">
+    <timeStamp>2026-10-10T21:15:33.200496182</timeStamp>
+    <unit>Fahrenheit</unit>
+    <value>49.36224072341234</value>
+    <comment>Sunny</comment>
+</ns2:weather-observation>
