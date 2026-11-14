@@ -4,6 +4,7 @@ import { loadProgress, saveProgress, grade } from './srs.js';
 import Header from './components/Header.jsx';
 import Home from './components/Home.jsx';
 import SubjectView from './components/SubjectView.jsx';
+import NotesView from './components/NotesView.jsx';
 import Quiz from './components/Quiz.jsx';
 import Summary from './components/Summary.jsx';
 
@@ -35,6 +36,15 @@ export default function App() {
         progress={progress}
         onBack={() => setView({ name: 'home' })}
         onStart={(qs, mode, title) => startSession(qs, mode, title, view)}
+        onNotes={(lectureId) => setView({ name: 'notes', id: view.id, lectureId })}
+      />
+    );
+  } else if (view.name === 'notes') {
+    body = (
+      <NotesView
+        subject={subjectById(view.id)}
+        lectureId={view.lectureId}
+        onBack={() => setView({ name: 'subject', id: view.id })}
       />
     );
   } else if (view.name === 'quiz') {

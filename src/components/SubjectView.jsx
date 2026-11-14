@@ -3,7 +3,7 @@ import { statsFor, masteryFor, buildSession } from '../srs.js';
 import SessionLauncher from './SessionLauncher.jsx';
 import { Bar, StatLine } from './Stats.jsx';
 
-export default function SubjectView({ subject, progress, onBack, onStart }) {
+export default function SubjectView({ subject, progress, onBack, onStart, onNotes }) {
   const [selected, setSelected] = useState(() => new Set(subject.lectures.map((l) => l.id)));
 
   const pool = useMemo(
@@ -68,6 +68,11 @@ export default function SubjectView({ subject, progress, onBack, onStart }) {
                   </span>
                 </div>
               </label>
+              {l.notes?.length > 0 && (
+                <button className="btn ghost sm" title="Kody z repo i ich wyjaśnienia" onClick={() => onNotes(l.id)}>
+                  Notatki
+                </button>
+              )}
               <button
                 className="btn ghost sm"
                 title="Szybka sesja tylko z tego wykładu"

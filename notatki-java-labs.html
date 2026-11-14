@@ -1,0 +1,2123 @@
+<!doctype html><html lang="pl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Java – laboratoria: kody i wyjaśnienia</title><style>
+:root{--bg:#fff;--fg:#1d232a;--mut:#637080;--card:#f6f8fa;--bd:#e1e5ea;--ac:#5b7a99}
+@media(prefers-color-scheme:dark){:root{--bg:#15181c;--fg:#e6e9ec;--mut:#96a1ad;--card:#1f2429;--bd:#2c333a}}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 system-ui,sans-serif}
+main{max-width:900px;margin:0 auto;padding:16px}nav{display:flex;flex-wrap:wrap;gap:8px 14px;margin:8px 0 20px}
+nav a{color:var(--ac)}h2{margin-top:36px;border-bottom:2px solid var(--bd);padding-bottom:4px}
+details{background:var(--card);border:1px solid var(--bd);border-radius:10px;margin:10px 0;padding:10px 14px}
+summary{cursor:pointer;font-weight:650}pre{background:var(--bg);border:1px solid var(--bd);border-radius:8px;padding:10px 12px;overflow-x:auto;font:13.5px/1.45 ui-monospace,Consolas,monospace;margin:12px 0 4px}
+code{font-family:ui-monospace,Consolas,monospace;font-size:.92em;background:var(--bg);padding:1px 5px;border-radius:5px;border:1px solid var(--bd)}
+p{white-space:pre-wrap}p.e{margin-top:4px}</style></head><body><main>
+<h1>Java – laboratoria: kody i wyjaśnienia</h1><p style="color:var(--mut)">Treść zadań, kod z repozytorium (data/java-labs) i objaśnienie każdego fragmentu. Notatki Lab 5 i przykłady do 2.2, 2.3, 3.3 są odtworzone (brak ich kodu w repo) – zaznaczone w tekście.</p>
+<nav><a href="#l1">L1 · Generyki, lambdy, adnotacje i refleksja (1.1–1.3)</a><a href="#l2">L2 · Strumienie, pliki tekstowe i CSV (2.1–2.4)</a><a href="#l3">L3 · XML i JAXB (3.1–3.4)</a><a href="#l4">L4 · Sieć TCP/IP – gra „zgadnij liczbę” (4.1–4.2)</a><a href="#l5">L5 · Hibernate/JPA, Lombok, Thymeleaf (5.1–5.2)</a><a href="#l6">L6 · Wzorzec Request Processor: klasycznie, Spring, Spring Boot (6.1–6.3)</a></nav><h2 id="l1">L1 · Generyki, lambdy, adnotacje i refleksja (1.1–1.3)</h2>
+<details open><summary>Treść zadań Lab 1 (z nowicki.house/java2/labs/01-lab)</summary>
+<p><strong>Zakres:</strong> typy generyczne, wyrażenia lambda, adnotacje + refleksja.
+
+<strong>Zadanie 1.1 – typy generyczne</strong> (projekt <code>La1</code>)
+1. Klasa <code>SecretData</code> z dwoma prywatnymi polami generycznymi <code>data1</code> i <code>data2</code>, konstruktorem przyjmującym oba, getterami i setterami.
+2. Interfejs <code>HaveFunctionPrintOnScreen</code> z jedną metodą <code>void printOnScreen()</code>.
+3. Klasa <code>SecretDataWithPrintOnScreen</code> dziedziczy po <code>SecretData</code> i implementuje interfejs; metoda wypisuje <code>data1</code> i <code>data2</code>; klasa ma własny konstruktor.
+4. Klasa <code>SecretDataActions</code> ze statycznymi metodami: <code>printOnScreen</code> dla obiektu dowolnej klasy implementującej <code>HaveFunctionPrintOnScreen</code>; <code>printOnScreen</code> dla <code>SecretData</code> (wypis w inny sposób, żeby odróżnić przeciążenia); <code>sumOfData</code> (tylko gdy oba pola są liczbami, zwraca sumę); <code>writeToStream</code> (tylko gdy pierwsze pole to <code>String</code>, a drugie podklasa <code>OutputStream</code>; zapisuje tekst do strumienia, zwraca <code>true</code> / <code>false</code>).
+5. <code>Main</code> wywołuje wszystkie metody <code>SecretDataActions</code>, tworząc potrzebne obiekty. 6. Uruchomić.
+
+<strong>Zadanie 1.2 – interfejsy funkcyjne i lambdy</strong> (projekt <code>Lab1.2</code>)
+1. Interfejs funkcyjny <code>MathOperation</code> z metodą <code>performOperation(double, double)</code> zwracającą <code>double</code>.
+2. <code>MathCalculator1.executeOperation(double, double, MathOperation)</code> zwraca wynik przekazanej operacji.
+3. W <code>main</code>: dwa obiekty <code>MathOperation</code> (dodawanie i mnożenie) oraz wzór f(x,y) = sin(x) + cos(y) przekazany wprost jako lambda.
+4. <code>MathCalculator2</code> – to samo, ale z <code>BiFunction&lt;Double, Double, Double&gt;</code>.
+
+<strong>Zadanie 1.3 – adnotacje i refleksja</strong> (projekt <code>Lab1.3</code>)
+Biblioteka Reflections (ronmamo) wyszukuje klasy w czasie działania po adnotacji, interfejsie lub nazwie (katalogi klas i JAR-y). Dodać slf4j (Reflections używa go przy starcie; bez niego są ostrzeżenia). Pakiet <code>tasks</code> skanowany przy starcie; znaleźć klasy z adnotacją <code>@Task</code> implementujące <code>HaveRunMethod</code>, utworzyć obiekt każdej i wywołać jej metodę; parametr <code>@Task</code> określa, ile razy ją wywołać.</p>
+</details>
+<details><summary>1.1 · HaveFunctionPrintOnScreen.java</summary>
+<pre>package org.example;
+
+public interface HaveFunctionPrintOnScreen {
+    void printOnScreen();
+}</pre><p class="e">Interfejs z jedną metodą abstrakcyjną – „umowa”: każda klasa, która go implementuje, umie wypisać się na ekran. Dzięki niemu <code>SecretDataActions.printOnScreen(T data)</code> przyjmie obiekt dowolnej klasy z tą umiejętnością (polimorfizm przez interfejs).</p>
+</details>
+<details><summary>1.1 · SecretData.java – klasa generyczna</summary>
+<pre>package org.example;</pre><p class="e">Pakiet <code>org.example</code>.</p>
+<pre>public class SecretData &lt;T1, T2&gt;{</pre><p class="e"><code>&lt;T1, T2&gt;</code> – dwa parametry typu. Klasa nie wie, czym będą pola, dopóki ktoś nie utworzy obiektu, np. <code>SecretData&lt;String, PrintStream&gt;</code> albo <code>SecretData&lt;Integer, Double&gt;</code>. Kompilator pilnuje typów (bez rzutowań).</p>
+<pre>    private T1 data1;
+    private T2 data2;</pre><p class="e">Dwa pola prywatne typów T1 i T2 – dostęp tylko przez gettery/settery (enkapsulacja).</p>
+<pre>    public SecretData(T1 data1, T2 data2){
+        this.data1 = data1;
+        this.data2 = data2;
+    }</pre><p class="e">Konstruktor ustawia oba pola. Nie ma konstruktora bezargumentowego – dlatego podklasa musi wywołać <code>super(data1, data2)</code>.</p>
+<pre>    public void setData1(T1 data1) {this.data1 = data1;}
+    public void setData2(T2 data2) {this.data2 = data2;}
+
+    public T1 getData1() {return data1;}
+    public T2 getData2() {return data2;}
+
+}</pre><p class="e">Settery (<code>setData1</code>, <code>setData2</code>) przyjmują wartość typu T1/T2 i zmieniają pole. Gettery zwracają T1/T2, więc <code>getData1()</code> dla <code>SecretData&lt;String,…&gt;</code> zwraca od razu <code>String</code>.</p>
+</details>
+<details><summary>1.1 · SecretDataWithPrintOnScreen.java – dziedziczenie + interfejs</summary>
+<pre>package org.example;
+
+public class SecretDataWithPrintOnScreen&lt;T1, T2&gt; extends SecretData&lt;T1, T2&gt; implements HaveFunctionPrintOnScreen {</pre><p class="e">Klasa jest generyczna (<code>&lt;T1, T2&gt;</code>), dziedziczy po <code>SecretData&lt;T1, T2&gt;</code> (jedna klasa bazowa) i implementuje <code>HaveFunctionPrintOnScreen</code> (interfejs). Kolejność: najpierw <code>extends</code>, potem <code>implements</code>.</p>
+<pre>    public SecretDataWithPrintOnScreen(T1 data1, T2 data2){
+        super(data1, data2);
+    }</pre><p class="e">Własny konstruktor wymagany w zadaniu. <code>super(data1, data2)</code> woła jedyny konstruktor klasy bazowej – obowiązkowe, bo <code>SecretData</code> nie ma konstruktora domyślnego.</p>
+<pre>    @Override
+    public void printOnScreen(){
+        System.out.println(&quot;Data 1 -&gt; &quot; + getData1());
+        System.out.println(&quot;Data 2 -&gt; &quot; + getData2());
+    }
+}</pre><p class="e">Implementacja metody interfejsu. <code>@Override</code> – kompilator sprawdzi, że faktycznie nadpisujemy metodę z interfejsu. Pola <code>data1</code>/<code>data2</code> są prywatne w klasie bazowej, więc odczyt przez <code>getData1()</code> / <code>getData2()</code>.</p>
+</details>
+<details><summary>1.1 · SecretDataActions.java – metody generyczne z ograniczeniami</summary>
+<pre>package org.example;
+
+import java.io.IOException;
+import java.io.OutputStream;
+
+public class SecretDataActions {</pre><p class="e">Klasa narzędziowa – tylko metody <code>static</code> (nie tworzymy jej obiektów).</p>
+<pre>    public static &lt;T extends HaveFunctionPrintOnScreen&gt; void printOnScreen(T data) {
+        System.out.println(&quot;Wykonuję: &lt;T extends HavaFunctionPrintOnScreen&gt; void printOnScreen(T data)&quot;);
+        data.printOnScreen();
+    }</pre><p class="e"><strong>Przeciążenie 1.</strong> <code>&lt;T extends HaveFunctionPrintOnScreen&gt;</code> – ograniczenie górne: T musi implementować interfejs. Metoda wypisuje komunikat „Wykonuję: …” i woła <code>data.printOnScreen()</code> (metoda obiektu). Po wymazaniu typów (type erasure) sygnatura to <code>printOnScreen(HaveFunctionPrintOnScreen)</code>.</p>
+<pre>    public static &lt;T1, T2&gt; void printOnScreen(SecretData&lt;T1, T2&gt; data){
+        System.out.println(&quot;Wykonuję: &lt;T1, T2&gt; void printOnScreen(SecretData&lt;T1, T2&gt; data&quot;);
+        System.out.println(data.getData1() + &quot; &quot; + data.getData2());
+    }</pre><p class="e"><strong>Przeciążenie 2.</strong> Przyjmuje dowolny <code>SecretData&lt;T1,T2&gt;</code> i wypisuje oba pola jedną linią (<code>data1 + &quot; &quot; + data2</code>) – inny sposób wypisania niż w 1, żeby dało się odróżnić, które przeciążenie zadziałało. Po wymazaniu: <code>printOnScreen(SecretData)</code> – inna sygnatura, więc przeciążenia mogą współistnieć.</p>
+<pre>    public static &lt;T1 extends Number, T2 extends Number&gt; double sumOfData(SecretData&lt;T1, T2&gt;data){
+        double sum = data.getData1().doubleValue() + data.getData2().doubleValue();
+        return sum;
+    }</pre><p class="e"><code>sumOfData</code> – oba parametry typu mają ograniczenie <code>extends Number</code> (Integer, Double, Long…). Dzięki temu wolno wywołać <code>doubleValue()</code> i zsumować różne typy liczbowe. Dla <code>SecretData&lt;String,…&gt;</code> wywołanie się nie skompiluje.</p>
+<pre>    public static &lt;T2 extends OutputStream&gt; boolean writeToStream(SecretData&lt;String, T2&gt; data){
+
+        OutputStream outputStream = data.getData2();
+        String text = data.getData1();
+
+        try{
+            outputStream.write(text.getBytes());
+            outputStream.write(&#x27;\n&#x27;);
+            return true;
+        } catch (IOException e){
+            return false;
+        }
+
+    }
+
+}</pre><p class="e"><code>writeToStream</code> – pierwszy typ to dokładnie <code>String</code>, drugi dowolna podklasa <code>OutputStream</code> (np. <code>PrintStream</code> z <code>System.out</code>, <code>FileOutputStream</code>). Zapisuje bajty tekstu (<code>getBytes()</code>) i znak <code>&#x27;\n&#x27;</code>; <code>IOException</code> jest łapany i metoda zwraca <code>false</code>, sukces → <code>true</code>.</p>
+</details>
+<details><summary>1.1 · Main.java (La1) – wywołania i rzutowania</summary>
+<pre>package org.example;
+import java.io.PrintStream;
+
+public class Main {
+    static void main() {</pre><p class="e"><code>static void main()</code> bez <code>public</code> i bez <code>String[] args</code> – nowy, uproszczony punkt wejścia (Java 25, w <code>pom.xml</code> źródła ustawione na 25). W starszych wersjach: <code>public static void main(String[] args)</code>.</p>
+<pre>        SecretData&lt;String, PrintStream&gt; tekstWithOutputStreamSecretData = new SecretData&lt;&gt;(&quot;Dane tekstowe&quot;, System.out);
+        SecretDataActions.writeToStream(tekstWithOutputStreamSecretData);
+        SecretDataActions.printOnScreen(tekstWithOutputStreamSecretData);</pre><p class="e">Dane tekstowe + <code>System.out</code> (typu <code>PrintStream</code>, podklasa <code>OutputStream</code>). Diamond <code>&lt;&gt;</code> – typy wnioskowane. <code>writeToStream</code> wypisze „Dane tekstowe” + nowa linia. <code>printOnScreen(...)</code> wybierze <strong>przeciążenie 2</strong> (zwykły SecretData nie implementuje interfejsu).</p>
+<pre>        SecretData&lt;Integer, Double&gt; numericData = new SecretData&lt;&gt;(5, 2.2);
+        SecretDataActions.printOnScreen(numericData);
+        double sum = SecretDataActions.sumOfData(numericData);
+        System.out.println(&quot;suma=&quot; + sum);</pre><p class="e">Liczby: 5 (autoboxing do Integer) i 2.2 (Double). <code>sumOfData</code> → 5.0 + 2.2 = 7.2, wypis: <code>suma=7.2</code>.</p>
+<pre>        SecretDataWithPrintOnScreen&lt;String, Integer&gt; secretDataWithPrintOnScreen = new SecretDataWithPrintOnScreen&lt;&gt;(&quot;Opis&quot;, 5);
+        SecretDataActions.printOnScreen((HaveFunctionPrintOnScreen) secretDataWithPrintOnScreen);
+        SecretDataActions.printOnScreen((SecretData&lt;?,?&gt;)secretDataWithPrintOnScreen);
+    }
+}</pre><p class="e">Obiekt pasuje do <strong>obu</strong> przeciążeń (jest <code>SecretData</code> i <code>HaveFunctionPrintOnScreen</code>) – bez rzutowania kompilator zgłosiłby „ambiguous”. Rzutowanie na <code>(HaveFunctionPrintOnScreen)</code> → przeciążenie 1 (wypis „Data 1 -&gt; …”, „Data 2 -&gt; …”). Rzutowanie na <code>(SecretData&lt;?,?&gt;)</code> → przeciążenie 2 (wildcard <code>?</code> = dowolne argumenty typu).</p>
+</details>
+<details><summary>1.2 · MathOperation.java – interfejs funkcyjny</summary>
+<pre>package org.example;
+
+@FunctionalInterface
+public interface MathOperation {
+
+    double performOperation(double x, double y);
+}</pre><p class="e"><code>@FunctionalInterface</code> – kompilator pilnuje, żeby była dokładnie jedna metoda abstrakcyjna. Taki interfejs można zaimplementować lambdą: <code>(a, b) -&gt; a + b</code>. Metoda bierze dwa <code>double</code> i zwraca <code>double</code>.</p>
+</details>
+<details><summary>1.2 · MathCalculator1.java i MathCalculator2.java</summary>
+<pre>package org.example;
+
+public class MathCalculator1 {
+
+    public static double executeOperation(double x, double y, MathOperation operation){
+
+        return operation.performOperation(x, y);
+    }
+}</pre><p class="e"><strong>Wersja 1 – własny interfejs.</strong> <code>executeOperation</code> dostaje dwie liczby i operację, i zwraca <code>operation.performOperation(x, y)</code>. To funkcja wyższego rzędu: kod (operacja) przekazany jak dane – wzorzec strategii.</p>
+<pre>package org.example;
+
+import java.util.function.BiFunction;
+
+public class MathCalculator2 {
+
+    public static double executeOperation(
+            double x,
+            double y,
+            BiFunction&lt;Double, Double, Double&gt; operation ){
+
+        return operation.apply(x, y);
+    }
+
+}</pre><p class="e"><strong>Wersja 2 – standardowy <code>BiFunction&lt;Double, Double, Double&gt;</code></strong> z <code>java.util.function</code> (dwa argumenty → wynik; metoda <code>apply</code>). W typach generycznych muszą być klasy opakowujące (<code>Double</code>, nie <code>double</code>); argumenty <code>x</code>, <code>y</code> są autoboxowane, a wynik rozpakowany do <code>double</code>.</p>
+</details>
+<details><summary>1.2 · Main.java (Lab1.2) – lambdy</summary>
+<pre>package org.example;
+
+//TIP To &lt;b&gt;Run&lt;/b&gt; code, press &lt;shortcut actionId=&quot;Run&quot;/&gt; or
+// click the &lt;icon src=&quot;AllIcons.Actions.Execute&quot;/&gt; icon in the gutter.
+public class Main {
+    static void main() {</pre><p class="e">Pakiet; komentarz „TIP” to ślad generatora IntelliJ.</p>
+<pre>        MathOperation adding = (a, b) -&gt; a + b;
+        MathOperation multiply = (a, b) -&gt; a * b;</pre><p class="e">Dwie operacje jako lambdy przypisane do zmiennych typu <code>MathOperation</code>: dodawanie <code>(a, b) -&gt; a + b</code> i mnożenie <code>(a, b) -&gt; a * b</code>. Typy <code>a</code>, <code>b</code> wnioskuje kompilator z <code>performOperation(double, double)</code>.</p>
+<pre>        double resultAdding1 = MathCalculator1.executeOperation(2.1, -1.3, adding);
+        double resultMuliply1 = MathCalculator1.executeOperation(2.1, -1.3, multiply);
+
+        double resultFunction1
+                = MathCalculator1.executeOperation(2.1, -1.3, (a, b) -&gt; Math.sin(a) + Math.cos(b));</pre><p class="e">Wywołania <code>MathCalculator1.executeOperation(2.1, -1.3, …)</code>: z <code>adding</code> (≈0,8), z <code>multiply</code> (≈−2,73) i ze wzorem podanym bezpośrednio <code>Math.sin(a) + Math.cos(b)</code> (≈1,13; funkcje trygonometryczne liczą w radianach).</p>
+<pre>        System.out.println(resultAdding1);
+        System.out.println(resultMuliply1);
+        System.out.println(resultFunction1);</pre><p class="e">Wypisanie trzech wyników wersji 1.</p>
+<pre>        double resultAdding2
+                = MathCalculator2.executeOperation(2.1, -1.3, (a, b) -&gt; a + b);
+
+        double resultMuliply2
+                = MathCalculator2.executeOperation(2.1, -1.3, (a, b) -&gt; a * b);
+
+        double resultFunction2
+                = MathCalculator2.executeOperation(2.1, -1.3, (a, b) -&gt; Math.sin(a) + Math.cos(b));
+
+        System.out.println(resultAdding2);
+        System.out.println(resultMuliply2);
+        System.out.println(resultFunction2);
+    }
+}</pre><p class="e">To samo z <code>MathCalculator2</code> (BiFunction) – lambdy podane od razu w wywołaniu, bez osobnych zmiennych; wyniki identyczne jak w wersji 1.</p>
+</details>
+<details><summary>1.3 · build.gradle.kts (Lab1.3) – zależności</summary>
+<pre>plugins {
+    id(&quot;java&quot;)
+}
+
+group = &quot;org.example&quot;
+version = &quot;1.0-SNAPSHOT&quot;
+
+repositories {
+    mavenCentral()
+}</pre><p class="e">Plugin <code>java</code>, grupa/wersja, repozytorium Maven Central.</p>
+<pre>dependencies {
+    testImplementation(platform(&quot;org.junit:junit-bom:6.0.0&quot;))
+    testImplementation(&quot;org.junit.jupiter:junit-jupiter&quot;)
+    testRuntimeOnly(&quot;org.junit.platform:junit-platform-launcher&quot;)
+    implementation(&quot;org.reflections:reflections:0.10.2&quot;)
+    implementation(&quot;org.slf4j:slf4j-nop:2.0.9&quot;)
+}
+
+tasks.test {
+    useJUnitPlatform()
+}</pre><p class="e"><code>org.reflections:reflections:0.10.2</code> – skanowanie klas po adnotacji/interfejsie/pakiecie. <code>org.slf4j:slf4j-nop:2.0.9</code> – „pusty” logger SLF4J; Reflections loguje przez SLF4J, a bez implementacji drukowałby ostrzeżenia. Pozostałe linie to JUnit do testów (<code>useJUnitPlatform()</code>).</p>
+</details>
+<details><summary>1.3 · Task.java i HaveRunMethod.java – adnotacja i interfejs</summary>
+<pre>package org.example;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
+@Retention(RetentionPolicy.RUNTIME)
+public @interface Task {
+
+    int numberOfRepetition() default 1;
+
+}</pre><p class="e"><code>@interface</code> definiuje adnotację. <code>@Retention(RetentionPolicy.RUNTIME)</code> – dostępna w czasie działania przez refleksję (bez tego domyślnie CLASS i <code>isAnnotationPresent</code> zwróciłoby false). Element <code>int numberOfRepetition() default 1;</code> to parametr adnotacji z wartością domyślną; użycie: <code>@Task(numberOfRepetition = 5)</code>.</p>
+<pre>package org.example;
+
+public interface HaveRunMethod {
+
+    void run();
+}</pre><p class="e">Interfejs z metodą <code>run()</code> – wspólny kontrakt wszystkich zadań. Skaner szuka klas, które go implementują.</p>
+</details>
+<details><summary>1.3 · TaskRunner.java – skanowanie i uruchamianie</summary>
+<pre>package org.example;
+
+import org.reflections.Reflections;
+import java.util.Set;
+import java.util.Map;
+import java.util.HashMap;
+
+public class TaskRunner {</pre><p class="e">Importy: <code>Reflections</code> oraz kolekcje.</p>
+<pre>    public void scanPackageAndRun(String packageName) {
+
+        System.out.println(&quot; -&gt; Skanuję pakiet: &quot; + packageName);</pre><p class="e">Metoda dostaje nazwę pakietu do przeszukania i wypisuje informację.</p>
+<pre>        Reflections reflections = new Reflections(packageName);
+
+        Set&lt;Class&lt;? extends HaveRunMethod&gt;&gt; classes
+                = reflections.getSubTypesOf(HaveRunMethod.class);</pre><p class="e"><code>new Reflections(packageName)</code> – skanuje classpath w podanym pakiecie. <code>getSubTypesOf(HaveRunMethod.class)</code> zwraca zbiór obiektów <code>Class</code> – wszystkich klas implementujących interfejs (nie instancje!).</p>
+<pre>        Map&lt;HaveRunMethod, Integer&gt; tasksWithCounters = new HashMap&lt;&gt;();</pre><p class="e">Mapa: instancja zadania → liczba powtórzeń. Użyty <code>HashMap</code>, więc kolejność wykonania tasków nie jest określona.</p>
+<pre>        for(Class&lt;? extends HaveRunMethod&gt; cls : classes){
+
+            if(!cls.isAnnotationPresent(Task.class)) continue;
+
+            Task annotation = cls.getAnnotation(Task.class);
+
+            try {
+
+                HaveRunMethod instance = cls.getDeclaredConstructor().newInstance();
+
+                tasksWithCounters.put(instance, annotation.numberOfRepetition());
+
+            } catch (Exception e) {
+            }
+
+        }</pre><p class="e">Dla każdej znalezionej klasy: <code>isAnnotationPresent(Task.class)</code> – pominięcie tych bez adnotacji; <code>cls.getAnnotation(Task.class)</code> – odczyt adnotacji; <code>cls.getDeclaredConstructor().newInstance()</code> – utworzenie obiektu przez refleksję (wymaga konstruktora bezargumentowego); <code>annotation.numberOfRepetition()</code> – odczyt parametru. Pusty <code>catch</code> połyka błędy tworzenia obiektu.</p>
+<pre>        tasksWithCounters.forEach((taskInstance, numeberOfRepetitions) -&gt; {
+
+            for(int i=0; i&lt;numeberOfRepetitions; i++) taskInstance.run();
+
+        });
+
+        System.out.println(&quot; -&gt; Wszystkie taski wykonane&quot;);
+    }
+}</pre><p class="e">Wykonanie: dla każdego zadania pętla <code>numberOfRepetitions</code> razy woła <code>taskInstance.run()</code>. Na końcu komunikat „Wszystkie taski wykonane”.</p>
+</details>
+<details><summary>1.3 · TaskRed.java (+ TaskGreen, TaskYellow) i Main.java</summary>
+<pre>package org.example.tasks;
+
+import org.example.HaveRunMethod;
+import org.example.Task;
+
+@Task(numberOfRepetition = 3)
+public class TaskRed implements HaveRunMethod {
+
+    static final String RED = &quot;\u001B[31m&quot;;
+    static final String RESET = &quot;\u001B[0m&quot;;</pre><p class="e"><code>@Task(numberOfRepetition = 3)</code> – metadane: wykonaj 3 razy. Klasa implementuje <code>HaveRunMethod</code>, więc skaner ją znajdzie. <code>\u001B[31m</code> to sekwencja ANSI zmieniająca kolor tekstu w konsoli (31 – czerwony, 32 – zielony, 33 – żółty), <code>\u001B[0m</code> – reset koloru. <code>TaskGreen</code> ma <code>numberOfRepetition = 5</code> i kolor zielony, <code>TaskYellow</code> – 4 i żółty; poza tym są identyczne.</p>
+<pre>    @Override
+    public void run() {
+        System.out.println( RED + &quot;Task RED -&gt; wykonuję swoje zadanie&quot; + RESET);
+    }
+
+}</pre><p class="e"><code>run()</code> wypisuje kolorowy komunikat. Łącznie wypisze się 3 + 5 + 4 = 12 linii (w nieokreślonej kolejności tasków).</p>
+<pre>package org.example;
+
+public class Main {
+
+    public static void main(String[] args) {
+
+        TaskRunner taskRunner = new TaskRunner();
+
+        taskRunner.scanPackageAndRun(&quot;org.example.tasks&quot;);
+    }
+
+}</pre><p class="e"><code>Main</code> tworzy <code>TaskRunner</code> i prosi o przeskanowanie pakietu <code>org.example.tasks</code>. Dodanie nowego zadania = nowa klasa w tym pakiecie z <code>@Task</code> i <code>implements HaveRunMethod</code> – bez zmian w <code>Main</code> i <code>TaskRunner</code>.</p>
+</details><h2 id="l2">L2 · Strumienie, pliki tekstowe i CSV (2.1–2.4)</h2>
+<details open><summary>Treść zadań Lab 2 (z nowicki.house/java2/labs/02-lab)</summary>
+<p><strong>Zakres:</strong> operacje pośrednie strumieni (<code>filter</code>, <code>map</code>, <code>distinct</code>, <code>sorted</code>), końcowe (<code>toList</code>, <code>collect</code>, <code>forEach</code>), odczyt/zapis plików tekstowych, try-with-resources, biblioteka OpenCSV.
+
+<strong>2.1 Strumienie i dane statyczne.</strong> Statyczna lista 32 napisów typu <code>&quot;ID-30492-a&quot;</code>, <code>&quot;key-330345-C&quot;</code>, <code>&quot;kEy-333594-a&quot;</code>… Metody: <code>clean</code> (wielkie litery, bez duplikatów, posortowane, zwraca listę), <code>filterByPrefix</code> (filtr po prefiksie np. <code>&quot;key&quot;</code>, bez rozróżniania wielkości liter, wynik w oryginalnej pisowni, zwraca listę), <code>countBySuffix</code> (sufiks = litera po ostatnim myślniku, wielkość liter ignorowana; zlicza wystąpienia, zwraca <code>Map</code>). Uruchomić i wyświetlić wyniki.
+
+<strong>2.2 Strumienie i pliki tekstowe.</strong> Pobrać <code>dane-raw.txt</code> do katalogu projektu. Wczytać poprawnie sformatowane liczby, pominąć pozostałe linie, posortować liczby i zapisać do nowego pliku (np. <code>dane-clean.txt</code>).
+
+<strong>2.3 Strumienie i CSV (OpenCSV).</strong> Plik <code>data2d.csv</code>: kolumny <code>x</code>, <code>y</code>, <code>value</code> (nagłówek + wiersze; dane nieposortowane; pary (x,y) mogą się powtarzać z różnymi wartościami). Klasa modelu; odczyt jako strumień obiektów; wybór obiektów wewnątrz koła o danym środku i promieniu (np. r=0,5, środek x=0, y=1); sortowanie rosnąco po odległości od środka, a przy równej odległości malejąco po <code>value</code>; zapis wyniku do nowego pliku <code>.csv</code>.
+
+<strong>✫ 2.4 Aplikacja CLI.</strong> <code>java -jar data2dCircleFilter.jar data2d.csv data2d_X0.0_Y1.0_D0.5</code> – plik wejściowy i nazwa pliku wyjściowego kodująca parametry filtra (x=0.0, y=1.0, promień 0.5). Obsługa błędów w pliku danych. (Na stronie jest niespójność <code>_D0.5</code> / <code>_R0.5</code>.)</p>
+</details>
+<details><summary>2.1 · Main.java (Lab2.1) – dane i metody strumieniowe</summary>
+<pre>package org.example;
+
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+public class Main {</pre><p class="e">Importy: <code>List</code>, <code>Map</code> i <code>Collectors</code> (do grupowania/zliczania).</p>
+<pre>    static List&lt;String&gt; dataRaw = List.of(
+            &quot;ID-30492-a&quot;, &quot;ID-60492-a&quot;, &quot;key-330345-C&quot;, &quot;kEy-333594-a&quot;, &quot;key-330494-c&quot;, &quot;Id-30262-c&quot;,
+            &quot;key-333594-a&quot;, &quot;key-330494-c&quot;, &quot;KEY-550494-A&quot;, &quot;uid-304911-a&quot;, &quot;key-550494-a&quot;, &quot;uid-304911-A&quot;,
+            &quot;uid-304944-a&quot;, &quot;key-660494-b&quot;, &quot;ID-30435-B&quot;, &quot;ID-99435-b&quot;, &quot;id-30435-b&quot;, &quot;uid-304923-b&quot;,
+            &quot;uid-304234-b&quot;, &quot;id-60492-a&quot;, &quot;ID-38462-c&quot;, &quot;uid-364984-A&quot;, &quot;uid-304944-c&quot;, &quot;uid-304923-b&quot;,
+            &quot;KEY-330494-c&quot;, &quot;uid-304944-C&quot;, &quot;key-330494-a&quot;, &quot;Key-340494-a&quot;, &quot;key-330494-b&quot;, &quot;kEy-550494-a&quot;,
+            &quot;key-660494-B&quot;, &quot;keY-660494-b&quot;
+    );</pre><p class="e"><code>List.of(...)</code> – niemodyfikowalna lista 32 napisów (dane wsadowe z zadania). Napisy mają format <code>PREFIKS-numer-sufiks</code>, z mieszaną wielkością liter.</p>
+<pre>    static List&lt;String&gt; clean(List&lt;String&gt; dataRaw) {
+        return dataRaw.stream()
+                .map(s -&gt; s.toUpperCase())
+                .distinct()
+                .sorted()
+                .toList();
+    }</pre><p class="e"><code>clean</code>: <code>stream()</code> → <code>map(s -&gt; s.toUpperCase())</code> (ujednolicenie wielkości liter) → <code>distinct()</code> (usuwa duplikaty – po ujednoliceniu np. <code>key-330494-c</code> i <code>KEY-330494-c</code> są takie same) → <code>sorted()</code> (porządek naturalny Stringów) → <code>toList()</code> (operacja końcowa; lista niemodyfikowalna). Wynik: 20 elementów. Kolejność operacji ma znaczenie: distinct przed uppercase nie usunąłby duplikatów różniących się wielkością liter.</p>
+<pre>    static List&lt;String&gt; filterByPrefix(List&lt;String&gt; rawData, String prefix) {
+        return dataRaw.stream()
+                .filter(s -&gt; s.toUpperCase().startsWith(prefix.toUpperCase()))
+                .toList();
+    }</pre><p class="e"><code>filterByPrefix</code>: <code>filter(s -&gt; s.toUpperCase().startsWith(prefix.toUpperCase()))</code> – porównanie bez rozróżniania wielkości liter, ale elementy przechodzą dalej bez zmian (oryginalna pisownia). Dla <code>&quot;key&quot;</code> – 15 elementów. Uwaga: strumień budowany jest z pola <code>dataRaw</code>, a nie z parametru <code>rawData</code> (działa, bo w <code>main</code> przekazano tę samą listę – poprawniej <code>rawData.stream()</code>).</p>
+<pre>    public static Map&lt;String, Long&gt; countBySuffix(List&lt;String&gt; data) {
+        return data.stream()
+                .map(s -&gt; s.substring(s.lastIndexOf(&#x27;-&#x27;) + 1))
+                .map(String::toLowerCase)
+                .collect(Collectors.groupingBy(
+                        s -&gt; s,
+                        Collectors.counting()
+                ));
+    }</pre><p class="e"><code>countBySuffix</code>: <code>s.substring(s.lastIndexOf(&#x27;-&#x27;) + 1)</code> – wycina tekst po ostatnim myślniku; <code>String::toLowerCase</code> – referencja do metody (ujednolicenie a/A); <code>collect(Collectors.groupingBy(s -&gt; s, Collectors.counting()))</code> – grupuje identyczne sufiksy i zlicza (<code>Long</code>). Wynik: a→14, b→10, c→8. Zwracany <code>HashMap</code>, więc kolejność wypisu jest dowolna.</p>
+<pre>    public static void main(String[] args) {
+        System.out.println(&quot;Zadanie 2.1&quot;);
+        System.out.println(&quot;---&quot;);
+        clean(dataRaw).forEach(System.out::println);
+        System.out.println(&quot;---&quot;);
+        filterByPrefix(dataRaw, &quot;key&quot;).forEach(System.out::println);
+        System.out.println(&quot;---&quot;);
+        countBySuffix(dataRaw).forEach((k, v) -&gt; System.out.println(k + &quot;-&gt;&quot; + v));
+        System.out.println(&quot;---&quot;);
+    }
+}</pre><p class="e"><code>main</code>: wypisuje nagłówek i trzy sekcje oddzielone „---”: <code>forEach(System.out::println)</code> dla <code>clean</code> i <code>filterByPrefix(dataRaw, &quot;key&quot;)</code>, a dla mapy <code>forEach((k, v) -&gt; System.out.println(k + &quot;-&gt;&quot; + v))</code> (BiConsumer: klucz, wartość).</p>
+</details>
+<details><summary>2.1 · build.gradle.kts (Lab2.1)</summary>
+<pre>plugins {
+    id(&quot;java&quot;)
+}
+
+group = &quot;org.example&quot;
+version = &quot;1.0-SNAPSHOT&quot;
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testImplementation(platform(&quot;org.junit:junit-bom:6.0.0&quot;))
+    testImplementation(&quot;org.junit.jupiter:junit-jupiter&quot;)
+    testRuntimeOnly(&quot;org.junit.platform:junit-platform-launcher&quot;)
+}
+
+tasks.test {
+    useJUnitPlatform()
+}</pre><p class="e">Zwykły projekt Gradle bez zewnętrznych bibliotek (strumienie są w JDK); tylko JUnit do testów.</p>
+</details>
+<details><summary>2.2 · Przykładowe rozwiązanie – plik tekstowy (brak kodu w repo)</summary>
+<pre>package org.example;
+
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.List;
+import java.util.stream.Stream;
+
+public class Task22 {
+    public static void main(String[] args) throws IOException {
+        try (Stream&lt;String&gt; lines = Files.lines(Path.of(&quot;dane-raw.txt&quot;))) {
+            List&lt;Double&gt; numbers = lines
+                    .map(String::trim)
+                    .filter(l -&gt; l.matches(&quot;-?\\d+(\\.\\d+)?&quot;))   // tylko poprawne liczby
+                    .map(Double::parseDouble)
+                    .sorted()                                     // sortowanie liczbowe
+                    .toList();
+
+            Files.write(Path.of(&quot;dane-clean.txt&quot;),
+                    numbers.stream().map(String::valueOf).toList());
+        }
+    }
+}</pre><p class="e"><strong>Uwaga:</strong> tego labu nie ma w repozytorium – to szkic zgodny z treścią zadania (format pliku <code>dane-raw.txt</code> należy sprawdzić; przy przecinku dziesiętnym zmień regex i <code>replace(&#x27;,&#x27;, &#x27;.&#x27;)</code>). Działanie: <code>Files.lines</code> daje <code>Stream&lt;String&gt;</code> trzymający otwarty plik, więc <strong>try-with-resources</strong>; <code>trim</code> usuwa spacje; <code>filter</code> + <code>matches</code> (regex) zostawia tylko linie będące liczbami; <code>parseDouble</code> zamienia na liczby; <code>sorted()</code> sortuje numerycznie (a nie tekstowo); <code>Files.write(path, Iterable&lt;String&gt;)</code> zapisuje kolejne linie do <code>dane-clean.txt</code>.</p>
+</details>
+<details><summary>2.3 · Przykładowe rozwiązanie – CSV z OpenCSV (brak kodu w repo)</summary>
+<pre>// build.gradle.kts
+dependencies {
+    implementation(&quot;com.opencsv:opencsv:5.9&quot;)
+}
+
+// Point.java – model wiersza CSV
+public class Point {
+    @CsvBindByName private double x;
+    @CsvBindByName private double y;
+    @CsvBindByName private double value;
+
+    public Point() {}                       // wymagany przez OpenCSV
+    public double getX() { return x; }  public void setX(double x) { this.x = x; }
+    public double getY() { return y; }  public void setY(double y) { this.y = y; }
+    public double getValue() { return value; }  public void setValue(double v) { this.value = v; }
+
+    public double distanceTo(double cx, double cy) {
+        return Math.hypot(x - cx, y - cy);  // sqrt((x-cx)^2 + (y-cy)^2)
+    }
+}</pre><p class="e">Model: pola oznaczone <code>@CsvBindByName</code> są mapowane po nazwach kolumn nagłówka (<code>x</code>, <code>y</code>, <code>value</code>). OpenCSV tworzy obiekty refleksją, więc potrzebuje konstruktora bezargumentowego i setterów. <code>Math.hypot</code> liczy odległość od środka koła.</p>
+<pre>double cx = 0, cy = 1, r = 0.5;
+
+try (Reader in = Files.newBufferedReader(Path.of(&quot;data2d.csv&quot;));
+     Writer out = Files.newBufferedWriter(Path.of(&quot;data2d_X0.0_Y1.0_D0.5.csv&quot;))) {
+
+    List&lt;Point&gt; result = new CsvToBeanBuilder&lt;Point&gt;(in)
+            .withType(Point.class).build()
+            .stream()                                           // strumień obiektów Point
+            .filter(p -&gt; p.distanceTo(cx, cy) &lt;= r)             // wewnątrz koła
+            .sorted(Comparator.comparingDouble((Point p) -&gt; p.distanceTo(cx, cy))
+                    .thenComparing(Comparator.comparingDouble(Point::getValue).reversed()))
+            .toList();
+
+    new StatefulBeanToCsvBuilder&lt;Point&gt;(out).build().write(result);
+}</pre><p class="e"><code>CsvToBeanBuilder&lt;Point&gt;(reader).withType(Point.class).build()</code> tworzy <code>CsvToBean</code>, który udostępnia <code>stream()</code> obiektów. <code>filter</code> zostawia punkty w kole (odległość ≤ r). Sortowanie: najpierw rosnąco po odległości (<code>comparingDouble</code>), przy remisie (<code>thenComparing</code>) malejąco po <code>value</code> (<code>.reversed()</code>). <code>StatefulBeanToCsvBuilder</code> zapisuje listę beanów do pliku CSV (domyślnie nagłówki wielkimi literami; można dopasować adnotacjami). Zadanie 2.4 (CLI) = ten sam kod, ale <code>args[0]</code> = plik wejściowy, <code>args[1]</code> = nazwa pliku wyjściowego, oraz <code>try/catch</code> dla błędów danych (<code>CsvException</code>, <code>IOException</code>, zła liczba argumentów).</p>
+</details><h2 id="l3">L3 · XML i JAXB (3.1–3.4)</h2>
+<details open><summary>Treść zadań Lab 3 (z nowicki.house/java2/labs/03-lab)</summary>
+<p><strong>Zakres:</strong> JAXB do obsługi plików XML i XSD.
+
+<strong>3.1 Zapis danych w XML.</strong> Modele JAXB: <code>Observation</code> (pomiar temperatury: znacznik czasu, jednostka Celsius/Fahrenheit/Kelvin, wartość, opcjonalny komentarz) i <code>ObservationList</code> (lista pomiarów). Wygenerować pliki XSD dla modelu; napisać generator losowych pomiarów; wygenerować jeden pomiar do pliku XML oraz 1000 pomiarów do pliku XML.
+
+<strong>3.2 Odczyt z lokalnych plików XML.</strong> Nowy projekt z modelem z 3.1; skopiować wygenerowane XSD i XML. Zwalidować XML względem XSD; wczytać plik z jednym pomiarem i wyświetlić; wczytać serię i wyświetlić rosnąco wszystkie pomiary z wartością od −1 do +1 °C, które mają komentarz (bez komentarza pomijać).
+
+<strong>3.3 Odczyt XML z publicznego API.</strong> Dane: <code>https://nowicki.house/java2/labs/observations.xml</code> (ten sam model). Wczytać prosto z zasobu sieciowego do strumienia; wyświetlić pierwsze 5 rekordów; policzyć i wyświetlić: łączną liczbę pomiarów, liczbę z komentarzem i bez, liczbę w każdej jednostce, średnią temperaturę dla każdej jednostki.
+
+<strong>✫ 3.4 Kursy NBP.</strong> XML: <code>https://api.nbp.pl/api/exchangerates/tables/a/YYYY-MM-DD/?format=xml</code>. Obliczyć średnie kursy USD i EUR z ostatnich n dostępnych dni.</p>
+</details>
+<details><summary>3.1 · build.gradle.kts – zależności JAXB</summary>
+<pre>plugins {
+    id(&quot;java&quot;)
+}
+
+group = &quot;org.example&quot;
+version = &quot;1.0-SNAPSHOT&quot;
+
+repositories {
+    mavenCentral()
+}</pre><p class="e">Plugin <code>java</code>, repozytorium Maven Central.</p>
+<pre>dependencies {
+    implementation(&quot;jakarta.xml.bind:jakarta.xml.bind-api:4.0.2&quot;)
+    runtimeOnly(&quot;org.glassfish.jaxb:jaxb-runtime:4.0.5&quot;)
+    testImplementation(platform(&quot;org.junit:junit-bom:6.0.0&quot;))
+    testImplementation(&quot;org.junit.jupiter:junit-jupiter&quot;)
+    testRuntimeOnly(&quot;org.junit.platform:junit-platform-launcher&quot;)
+}
+
+tasks.test {
+    useJUnitPlatform()
+}</pre><p class="e"><code>jakarta.xml.bind-api:4.0.2</code> – API JAXB (adnotacje, <code>JAXBContext</code>, <code>Marshaller</code>, <code>Unmarshaller</code>) potrzebne do kompilacji. <code>runtimeOnly(&quot;org.glassfish.jaxb:jaxb-runtime:4.0.5&quot;)</code> – implementacja, wymagana dopiero w czasie działania. Pakiet to <code>jakarta.xml.bind</code> (dawniej <code>javax.xml.bind</code>). Reszta – JUnit.</p>
+</details>
+<details><summary>3.1 · Observation.java – model z adnotacjami JAXB</summary>
+<pre>package org.example.model;
+
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import jakarta.xml.bind.annotation.XmlElement;
+import java.time.LocalDateTime;</pre><p class="e">Importy adnotacji JAXB, adaptera i <code>LocalDateTime</code>.</p>
+<pre>@XmlRootElement(name = &quot;weather-observation&quot;, namespace = &quot;http://example.org/weather-observation&quot;)
+@XmlAccessorType(XmlAccessType.FIELD)
+public class Observation {</pre><p class="e"><code>@XmlRootElement(name=…, namespace=…)</code> – klasa może być korzeniem dokumentu XML: tag <code>weather-observation</code> w przestrzeni nazw <code>http://example.org/weather-observation</code> (w pliku pojawia się jako <code>ns2:weather-observation</code>). <code>@XmlAccessorType(FIELD)</code> – JAXB mapuje pola klasy (także prywatne), nie gettery/settery.</p>
+<pre>    public enum TemperatureUnit { Celsius, Fahrenheit, Kelvin }</pre><p class="e">Enum z jednostkami – trafia do XSD jako typ prosty z listą dozwolonych wartości (<code>xs:enumeration</code>).</p>
+<pre>    @XmlElement(required = true)
+    @XmlJavaTypeAdapter(LocalDateTimeAdapter.class)
+    private LocalDateTime timeStamp;
+
+    @XmlElement(required = true)
+    private TemperatureUnit unit;
+
+    @XmlElement(required = true)
+    private double value;
+
+    @XmlElement(required = false)
+    private String comment;</pre><p class="e">Pola: <code>timeStamp</code> (<code>@XmlJavaTypeAdapter(LocalDateTimeAdapter.class)</code> – JAXB nie zna <code>LocalDateTime</code>, adapter zamienia go na tekst), <code>unit</code>, <code>value</code> – wszystkie <code>required = true</code> (w XSD bez <code>minOccurs</code>), oraz <code>comment</code> z <code>required = false</code> (w XSD <code>minOccurs=&quot;0&quot;</code>, a przy <code>null</code> tag w ogóle nie jest zapisywany).</p>
+<pre>    public Observation() {}
+
+    public Observation(LocalDateTime timeStamp, TemperatureUnit unit, double value, String comment) {
+        this.timeStamp = timeStamp;
+        this.unit = unit;
+        this.value = value;
+        this.comment = comment;
+    }</pre><p class="e">Konstruktor bezargumentowy – <strong>wymagany</strong> przez JAXB do tworzenia obiektów przy odczycie (unmarshalling). Drugi konstruktor ustawia wszystkie pola; używa go generator losowych pomiarów.</p>
+<pre>    public String getComment() { return comment; }
+    public void setComment(String comment) { this.comment = comment; }
+
+    public LocalDateTime getTimeStamp() { return timeStamp; }
+    public void setTimeStamp(LocalDateTime timeStamp) { this.timeStamp = timeStamp; }
+
+    public TemperatureUnit getUnit() { return unit; }
+    public void setUnit(TemperatureUnit unit) { this.unit = unit; }
+
+    public double getValue() { return value; }
+    public void setValue(double value) { this.value = value; }
+
+    @Override
+    public String toString() {
+        return &quot;Observation{&quot; +
+                &quot;timeStamp=&#x27;&quot; + timeStamp + &#x27;\&#x27;&#x27; +
+                &quot;, unit=&#x27;&quot; + unit + &#x27;\&#x27;&#x27; +
+                &quot;, value=&quot; + value +
+                &quot;, comment=&#x27;&quot; + comment + &#x27;\&#x27;&#x27; +
+                &#x27;}&#x27;;
+    }
+}</pre><p class="e">Gettery i settery (dla własnego kodu; przy FIELD JAXB ich nie potrzebuje) oraz <code>toString()</code> do czytelnego wypisu pomiaru.</p>
+</details>
+<details><summary>3.1 · ObservationList.java i LocalDateTimeAdapter.java</summary>
+<pre>package org.example.model;
+
+import jakarta.xml.bind.annotation.XmlRootElement;
+import jakarta.xml.bind.annotation.XmlAccessorType;
+import jakarta.xml.bind.annotation.XmlElement;
+import jakarta.xml.bind.annotation.XmlAccessType;
+import java.util.List;
+import java.util.ArrayList;</pre><p class="e">Importy JAXB i kolekcji.</p>
+<pre>@XmlRootElement(name = &quot;weather-observations&quot;, namespace = &quot;http://example.org/weather-observation&quot;)
+@XmlAccessorType(XmlAccessType.FIELD)
+public class ObservationList {</pre><p class="e">Korzeń <code>weather-observations</code> w tej samej przestrzeni nazw; pola mapowane bezpośrednio.</p>
+<pre>    @XmlElement(name = &quot;observation&quot;)
+    private List&lt;Observation&gt; observations = new ArrayList&lt;&gt;();</pre><p class="e">Lista <code>observations</code>; <code>name = &quot;observation&quot;</code> sprawia, że każdy element listy jest zapisywany jako tag <code>&lt;observation&gt;</code> (bez dodatkowego opakowania). W XSD: <code>minOccurs=&quot;0&quot; maxOccurs=&quot;unbounded&quot;</code>. Inicjalizacja <code>new ArrayList&lt;&gt;()</code> zapobiega <code>null</code>.</p>
+<pre>    public ObservationList() {}
+
+    public ObservationList(List&lt;Observation&gt; observations) {
+        this.observations = observations;
+    }
+
+    public List&lt;Observation&gt; getObservations() {
+        return observations;
+    }
+
+    public void setObservations(List&lt;Observation&gt; observations) {
+        this.observations = observations;
+    }
+
+    public void addObservation(Observation observation) {
+        this.observations.add(observation);
+    }
+
+    @Override
+    public String toString() {
+        return &quot;ObservationList{&quot; +
+                &quot;observations=&quot; + observations +
+                &#x27;}&#x27;;
+    }
+}</pre><p class="e">Konstruktor domyślny dla JAXB, drugi z gotową listą, <code>addObservation</code> dopisuje pomiar, <code>toString</code> wypisuje listę.</p>
+<pre>package org.example.model;
+
+import jakarta.xml.bind.annotation.adapters.XmlAdapter;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+
+public class LocalDateTimeAdapter extends XmlAdapter&lt;String, LocalDateTime&gt; {
+
+    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_DATE_TIME;
+
+    @Override</pre><p class="e"><code>XmlAdapter&lt;String, LocalDateTime&gt;</code>: typ w XML = <code>String</code>, typ w Javie = <code>LocalDateTime</code>. Format <code>ISO_DATE_TIME</code> (np. <code>2026-10-10T21:15:33.200496182</code>).</p>
+<pre>    public LocalDateTime unmarshal(String v) {
+        return LocalDateTime.parse(v, FORMATTER);
+    }
+
+    @Override
+    public String marshal(LocalDateTime v) {
+        return v.format(FORMATTER);
+    }
+}</pre><p class="e"><code>unmarshal</code> – tekst z XML → <code>LocalDateTime</code> (przy odczycie); <code>marshal</code> – <code>LocalDateTime</code> → tekst (przy zapisie).</p>
+</details>
+<details><summary>3.1 · RandomObservation.java – generator losowych pomiarów</summary>
+<pre>package org.example.service;
+
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.Random;
+import org.example.model.Observation;
+
+public class RandomObservation {</pre><p class="e">Importy: czas, <code>Random</code>, model.</p>
+<pre>    private static final Observation.TemperatureUnit[] UNITS
+            = Observation.TemperatureUnit.values();
+
+    private static final String[] COMMENTS
+            = {&quot;Sunny&quot;, &quot;Cloudy&quot;, &quot;Rainy&quot;, &quot;Windy&quot;, &quot;Foggy&quot;, &quot;Stormy&quot;, &quot;Clear night&quot;};
+
+    private static final Random RANDOM = new Random();</pre><p class="e">Stałe: tablica jednostek (<code>values()</code> enuma), lista możliwych komentarzy i jeden współdzielony <code>Random</code>.</p>
+<pre>    public static Observation generate() {
+
+        LocalDateTime timeStamp = LocalDateTime.now()
+                .minus(RANDOM.nextInt(7 * 24), ChronoUnit.HOURS)
+                .minus(RANDOM.nextInt(60), ChronoUnit.MINUTES);
+
+        Observation.TemperatureUnit unit = UNITS[RANDOM.nextInt(UNITS.length)];</pre><p class="e">Czas = teraz minus losowa liczba godzin (0–167, czyli do 7 dni) minus losowe minuty. Jednostka losowana z <code>UNITS</code>.</p>
+<pre>        double value = switch (unit) {
+            case Celsius -&gt; -10 + RANDOM.nextDouble() * 45;
+            case Fahrenheit -&gt; 14 + RANDOM.nextDouble() * 95;
+            case Kelvin -&gt; 263 + RANDOM.nextDouble() * 45;
+        };</pre><p class="e">Wartość zależna od jednostki – <code>switch</code> jako wyrażenie (<code>-&gt;</code>, Java 14+), musi pokryć wszystkie stałe enuma: Celsius −10…35, Fahrenheit 14…109, Kelvin 263…308.</p>
+<pre>        String comment = RANDOM.nextBoolean() ? COMMENTS[RANDOM.nextInt(COMMENTS.length)] : null;
+
+        return new Observation(timeStamp, unit, value, comment);
+    }
+}</pre><p class="e">Losowo (<code>nextBoolean</code>) komentarz z listy albo <code>null</code> (wtedy brak tagu <code>&lt;comment&gt;</code>). Na końcu <code>new Observation(...)</code>.</p>
+</details>
+<details><summary>3.1 · XmlFileWriter.java i XsdFileGenerator.java</summary>
+<pre>package org.example.service;
+
+import java.io.File;
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Marshaller;
+
+public class XmlFileWriter {</pre><p class="e">Importy JAXB.</p>
+<pre>    public static boolean write(Object data, String fileName) {
+
+        try {
+            JAXBContext context = JAXBContext.newInstance(data.getClass());
+            Marshaller marshaller = context.createMarshaller();
+            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);
+            marshaller.marshal(data, new File(fileName));
+            return true;
+        } catch (JAXBException ex) { return false; }
+    }
+}</pre><p class="e"><strong>Marshalling</strong> (obiekt → XML): <code>JAXBContext.newInstance(data.getClass())</code> – kontekst dla klasy obiektu; <code>createMarshaller()</code>; <code>JAXB_FORMATTED_OUTPUT = true</code> – wcięcia; <code>marshal(obiekt, plik)</code>. Zwraca <code>true</code>, a przy <code>JAXBException</code> <code>false</code>.</p>
+<pre>package org.example.service;
+
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.SchemaOutputResolver;
+import javax.xml.transform.Result;
+import javax.xml.transform.stream.StreamResult;
+import java.io.File;
+import java.io.IOException;
+
+public class XsdFileGenerator {</pre><p class="e">Importy JAXB oraz klasy do zapisu wyniku.</p>
+<pre>    public static boolean generate(Class&lt;?&gt;... jaxbClasses) {
+
+        try {
+            JAXBContext context = JAXBContext.newInstance(jaxbClasses);</pre><p class="e">Przyjmuje klasy JAXB (varargs <code>Class&lt;?&gt;...</code>) i tworzy kontekst dla wszystkich.</p>
+<pre>            SchemaOutputResolver resolver = new SchemaOutputResolver() {
+                @Override
+                public Result createOutput(String namespaceUri, String suggestedFileName) throws IOException {
+                    File file = new File(suggestedFileName);
+                    StreamResult result = new StreamResult(file);
+                    result.setSystemId(file.getAbsolutePath());
+                    return result;
+                }
+            };</pre><p class="e"><code>SchemaOutputResolver</code> – decyduje, gdzie zapisać każdy generowany plik schematu: <code>createOutput</code> zwraca <code>StreamResult</code> dla <code>new File(suggestedFileName)</code>. Klasa anonimowa nadpisuje jedną metodę.</p>
+<pre>            context.generateSchema(resolver);
+            return true;
+
+        } catch (JAXBException ex) {
+            return false;
+        } catch (IOException ex) {
+            return false;
+        }
+    }
+}</pre><p class="e"><code>generateSchema</code> zapisuje XSD (tu <code>schema1.xsd</code> z elementami głównymi i <code>schema2.xsd</code> z typami). Błędy <code>JAXBException</code>/<code>IOException</code> → <code>false</code>.</p>
+</details>
+<details><summary>3.1 · App.java i wygenerowane XSD/XML</summary>
+<pre>package org.example;
+
+import org.example.model.Observation;
+import org.example.model.ObservationList;
+import org.example.service.RandomObservation;
+import org.example.service.XmlFileWriter;
+import org.example.service.XsdFileGenerator;
+
+public class App {
+
+    public static void main(String[] args) {</pre><p class="e">Importy modelu i serwisów.</p>
+<pre>        XsdFileGenerator.generate(Observation.class, ObservationList.class);
+
+        Observation observation = RandomObservation.generate();
+        XmlFileWriter.write(observation, &quot;observation.xml&quot;);
+
+        ObservationList observationList = new ObservationList();
+        for(int i=0; i&lt;1000; i++) observationList.addObservation(RandomObservation.generate());
+        XmlFileWriter.write(observationList, &quot;observations.xml&quot;);
+    }
+}</pre><p class="e">Kroki zadania: 1) generuje schematy XSD z klas <code>Observation</code> i <code>ObservationList</code>; 2) generuje jeden pomiar i zapisuje <code>observation.xml</code>; 3) pętla 1000 razy dodaje losowy pomiar do <code>ObservationList</code> i zapisuje całość do <code>observations.xml</code>.</p>
+<pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;
+&lt;xs:schema version=&quot;1.0&quot; xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot; xmlns:ns1=&quot;http://example.org/weather-observation&quot;&gt;
+
+  &lt;xs:import namespace=&quot;http://example.org/weather-observation&quot; schemaLocation=&quot;schema1.xsd&quot;/&gt;</pre><p class="e">Wygenerowany schemat (<code>schema2.xsd</code>): <code>xs:import</code> powiązanego <code>schema1.xsd</code>.</p>
+<pre>  &lt;xs:complexType name=&quot;observation&quot;&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element name=&quot;timeStamp&quot; type=&quot;xs:string&quot;/&gt;
+      &lt;xs:element name=&quot;unit&quot; type=&quot;temperatureUnit&quot;/&gt;
+      &lt;xs:element name=&quot;value&quot; type=&quot;xs:double&quot;/&gt;
+      &lt;xs:element name=&quot;comment&quot; type=&quot;xs:string&quot; minOccurs=&quot;0&quot;/&gt;
+    &lt;/xs:sequence&gt;
+  &lt;/xs:complexType&gt;</pre><p class="e">Typ <code>observation</code>: sekwencja <code>timeStamp</code> (xs:string – bo adapter zamienia czas na tekst), <code>unit</code>, <code>value</code> (xs:double) i <code>comment</code> z <code>minOccurs=&quot;0&quot;</code> (opcjonalny).</p>
+<pre>  &lt;xs:complexType name=&quot;observationList&quot;&gt;
+    &lt;xs:sequence&gt;
+      &lt;xs:element name=&quot;observation&quot; type=&quot;observation&quot; minOccurs=&quot;0&quot; maxOccurs=&quot;unbounded&quot;/&gt;
+    &lt;/xs:sequence&gt;
+  &lt;/xs:complexType&gt;</pre><p class="e">Typ listy: powtarzalny element <code>observation</code> (0…∞).</p>
+<pre>  &lt;xs:simpleType name=&quot;temperatureUnit&quot;&gt;
+    &lt;xs:restriction base=&quot;xs:string&quot;&gt;
+      &lt;xs:enumeration value=&quot;Celsius&quot;/&gt;
+      &lt;xs:enumeration value=&quot;Fahrenheit&quot;/&gt;
+      &lt;xs:enumeration value=&quot;Kelvin&quot;/&gt;
+    &lt;/xs:restriction&gt;
+  &lt;/xs:simpleType&gt;
+&lt;/xs:schema&gt;</pre><p class="e">Enum jako ograniczenie typu string do trzech wartości.</p>
+<pre>&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot; standalone=&quot;yes&quot;?&gt;
+&lt;xs:schema version=&quot;1.0&quot; targetNamespace=&quot;http://example.org/weather-observation&quot; xmlns:xs=&quot;http://www.w3.org/2001/XMLSchema&quot;&gt;
+
+  &lt;xs:import schemaLocation=&quot;schema2.xsd&quot;/&gt;
+
+  &lt;xs:element name=&quot;weather-observation&quot; type=&quot;observation&quot;/&gt;
+
+  &lt;xs:element name=&quot;weather-observations&quot; type=&quot;observationList&quot;/&gt;
+
+
+&lt;/xs:schema&gt;</pre><p class="e"><code>schema1.xsd</code>: <code>targetNamespace</code>, import <code>schema2.xsd</code> oraz dwa elementy główne: <code>weather-observation</code> (typ observation) i <code>weather-observations</code> (typ observationList).</p>
+</details>
+<details><summary>3.2 · XmlValidator.java – walidacja XML względem XSD</summary>
+<pre>package org.example.service;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.Arrays;
+
+import javax.xml.XMLConstants;
+import javax.xml.transform.Source;
+import javax.xml.transform.stream.StreamSource;
+import javax.xml.validation.SchemaFactory;
+import javax.xml.validation.Validator;
+import javax.xml.validation.Schema;
+
+import org.xml.sax.SAXException;
+
+public class XmlValidator {</pre><p class="e">Importy standardowego API walidacji (<code>javax.xml.validation</code>, bez JAXB).</p>
+<pre>    public static boolean validate(String xmlFileName, String... xsdFileNames) {
+
+        File xmlFile = new File(xmlFileName);
+        Source[] schemaFiles = Arrays.stream(xsdFileNames)
+                .map(name -&gt; new StreamSource(new File(name).getAbsolutePath()))
+                .toArray(Source[]::new);</pre><p class="e">Przyjmuje nazwę pliku XML i dowolną liczbę XSD (varargs). Strumieniem zamienia nazwy plików na tablicę <code>Source[]</code> (<code>StreamSource</code>).</p>
+<pre>        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
+
+        try {
+            Schema schema = factory.newSchema(schemaFiles);
+            Validator validator = schema.newValidator();
+            validator.validate(new StreamSource(xmlFile.getAbsolutePath()));
+            return true;
+        } catch (SAXException ex) {
+            return false;
+        } catch (IOException ex) {
+            return false;
+        }
+    }
+}</pre><p class="e"><code>SchemaFactory</code> dla XML Schema (<code>W3C_XML_SCHEMA_NS_URI</code>) buduje <code>Schema</code> z kilku plików naraz (schema1 + schema2 wzajemnie się importują); <code>schema.newValidator()</code> tworzy walidator; <code>validate(źródło)</code> sprawdza dokument. <code>true</code> – zgodny; <code>SAXException</code> (niezgodny/uszkodzony) lub <code>IOException</code> → <code>false</code>.</p>
+</details>
+<details><summary>3.2 · XmlFileReader.java – odczyt (unmarshalling)</summary>
+<pre>package org.example.service;
+
+import jakarta.xml.bind.JAXBContext;
+import jakarta.xml.bind.JAXBException;
+import jakarta.xml.bind.Unmarshaller;
+import java.io.File;
+
+public class XmlFileReader {</pre><p class="e">Importy JAXB.</p>
+<pre>    public static &lt;T&gt; T readObservation(String xmlFileName, Class&lt;T&gt; clazz) {
+
+        File xmlFile = new File(xmlFileName);
+
+        try {
+            JAXBContext context = JAXBContext.newInstance(clazz);
+            Unmarshaller unmarshaller = context.createUnmarshaller();
+            return clazz.cast(unmarshaller.unmarshal(xmlFile));
+        } catch (JAXBException _ignored) { return null; }
+    }
+}</pre><p class="e">Metoda generyczna: <code>Class&lt;T&gt;</code> mówi, jaką klasę wczytać; <code>JAXBContext.newInstance(clazz)</code> → <code>createUnmarshaller()</code> → <code>unmarshal(plik)</code> → <code>clazz.cast(...)</code> (bezpieczne rzutowanie). Dla <code>Observation.class</code> zwraca <code>Observation</code>, dla <code>ObservationList.class</code> – <code>ObservationList</code>. Przy błędzie zwraca <code>null</code>.</p>
+</details>
+<details><summary>3.2 · App.java (Lab3.2) – walidacja, odczyt i filtrowanie strumieniem</summary>
+<pre>package org.example;
+
+import org.example.model.Observation;
+import org.example.model.ObservationList;
+import org.example.service.XmlFileReader;
+import org.example.service.XmlValidator;
+import java.util.List;
+import java.util.Comparator;
+
+public class App {</pre><p class="e">Importy.</p>
+<pre>    final static String [] schemaFiles = { &quot;schema1.xsd&quot;, &quot;schema2.xsd&quot; };
+    final static String dataObservationFile = &quot;observation.xml&quot;;
+    final static String dataObservationsFile = &quot;observations.xml&quot;;
+
+    public static void main(String[] args) {</pre><p class="e">Stałe: nazwy plików XSD (<code>schema1.xsd</code>, <code>schema2.xsd</code>) i plików danych (<code>observation.xml</code>, <code>observations.xml</code>) skopiowane z 3.1 do katalogu projektu.</p>
+<pre>        boolean reslut_1 = XmlValidator.validate(dataObservationFile, schemaFiles);
+        boolean reslut_list = XmlValidator.validate(dataObservationsFile, schemaFiles);
+        System.out.println(&quot;Validate: &quot; + dataObservationFile + &quot; -&gt; &quot; + reslut_1);
+        System.out.println(&quot;Validate: &quot; + dataObservationsFile + &quot; -&gt; &quot; + reslut_list);
+
+        System.out.println(&quot;---&quot;);</pre><p class="e">Walidacja obu plików; wypis <code>Validate: observation.xml -&gt; true</code>.</p>
+<pre>        Observation observation = XmlFileReader.readObservation(dataObservationFile, Observation.class);
+        System.out.println(observation);
+
+        System.out.println(&quot;---&quot;);</pre><p class="e">Odczyt pojedynczego pomiaru i wypis (używa <code>toString</code>).</p>
+<pre>        ObservationList observationList = XmlFileReader.readObservation(dataObservationsFile, ObservationList.class);
+
+        List&lt;Observation&gt; observationListFiltered = observationList.getObservations().stream()</pre><p class="e">Odczyt całej serii. Dalej strumień:</p>
+<pre>                .filter(o -&gt; o.getComment() != null)
+                .map(o -&gt; {
+                    double valueInCelsius = switch (o.getUnit()) {
+                        case Celsius -&gt; o.getValue();
+                        case Fahrenheit -&gt; (o.getValue() - 32) * 5.0 / 9.0;
+                        case Kelvin -&gt; o.getValue() - 273.15;
+                    };
+                    return new Observation( o.getTimeStamp(), Observation.TemperatureUnit.Celsius, valueInCelsius,o.getComment());})
+                .filter(o -&gt; o.getValue() &gt; -1 &amp;&amp; o.getValue() &lt; 1)
+                .sorted(Comparator.comparingDouble(Observation::getValue))
+                .toList();</pre><p class="e">1) odrzuca pomiary bez komentarza; 2) <code>map</code> przelicza każdy na °C: <code>switch</code> – Celsius bez zmian, Fahrenheit <code>(F − 32)·5/9</code>, Kelvin <code>K − 273,15</code>, i tworzy <strong>nowy</strong> <code>Observation</code> w Celsjuszach; 3) <code>filter</code> zostawia wartości w przedziale (−1, 1); 4) <code>sorted(Comparator.comparingDouble(Observation::getValue))</code> – rosnąco; 5) <code>toList()</code>. Przeliczenie musi być przed filtrem zakresu, bo dane są w różnych jednostkach.</p>
+<pre>        observationListFiltered.forEach(System.out::println);
+    }
+}</pre><p class="e">Wypisanie wyniku.</p>
+</details>
+<details><summary>3.3 · Przykładowe rozwiązanie – XML z URL i statystyki (brak kodu w repo)</summary>
+<pre>ObservationList list;
+try (InputStream in = URI.create(&quot;https://nowicki.house/java2/labs/observations.xml&quot;)
+                        .toURL().openStream()) {
+    list = (ObservationList) JAXBContext.newInstance(ObservationList.class)
+            .createUnmarshaller().unmarshal(in);
+}
+List&lt;Observation&gt; all = list.getObservations();
+
+all.stream().limit(5).forEach(System.out::println);          // pierwsze 5 rekordów
+System.out.println(&quot;Razem: &quot; + all.size());
+
+Map&lt;Boolean, Long&gt; byComment = all.stream()
+        .collect(Collectors.partitioningBy(o -&gt; o.getComment() != null, Collectors.counting()));
+Map&lt;Observation.TemperatureUnit, Long&gt; byUnit = all.stream()
+        .collect(Collectors.groupingBy(Observation::getUnit, Collectors.counting()));
+Map&lt;Observation.TemperatureUnit, Double&gt; avgByUnit = all.stream()
+        .collect(Collectors.groupingBy(Observation::getUnit,
+                 Collectors.averagingDouble(Observation::getValue)));</pre><p class="e"><strong>Uwaga:</strong> szkic zgodny z treścią zadania (kodu 3.3 nie ma w repo). <code>URI.create(...).toURL().openStream()</code> czyta XML prosto z sieci i <code>unmarshal(InputStream)</code> buduje obiekty (model identyczny jak w 3.1). <code>limit(5)</code> – pierwsze pięć; <code>partitioningBy</code> – dwie grupy (z komentarzem / bez); <code>groupingBy(jednostka, counting())</code> – liczba pomiarów na jednostkę; <code>groupingBy(jednostka, averagingDouble(...))</code> – średnia na jednostkę. Zadanie 3.4 (NBP) – ta sama technika: pobrać XML dla dni wstecz, wybrać pozycje <code>USD</code>/<code>EUR</code> i policzyć średnią <code>mid</code>.</p>
+</details><h2 id="l4">L4 · Sieć TCP/IP – gra „zgadnij liczbę” (4.1–4.2)</h2>
+<details open><summary>Treść zadań Lab 4 (z nowicki.house/java2/labs/04-lab)</summary>
+<p><strong>Zakres:</strong> komunikacja TCP/IP z przesyłaniem obiektów (literatura: Baeldung – wysyłanie i odbieranie serializowanych obiektów przez socket channel).
+
+<strong>4.1 Gra „zgadnij liczbę” klient–serwer (java.net).</strong> Uczestnik główny i pozostali uczestnicy. Główny losuje <code>number</code> z zakresu 0…N (zna tylko on), N przekazuje pozostałym przy dołączaniu. Pozostali wysyłają propozycje; główny odpowiada: <code>HIT</code> (zgodna), <code>OVERVALUED</code> (za duża), <code>UNDERVALUED</code> (za mała). Po <code>HIT</code> uczestnik kończy grę. Architektura klient–serwer: serwer = uczestnik główny, klienci = pozostali.
+<strong>Zadanie dodatkowe:</strong> uruchomić grę na kilku komputerach w laboratorium (serwer i klienci na różnych hostach) – dodać nowe klasy uruchomieniowe.
+
+<strong>✫ 4.2</strong> To samo z użyciem kanałów nieblokujących <code>java.nio</code> (niewielka modyfikacja serwera i klienta).</p>
+</details>
+<details><summary>Szkielet protokołu i przepływ gry</summary>
+<p><pre>Klient                                          Serwer
+  |  ---- ClientGameEnterRequest(nick, color) ---&gt;  |   „dołączam”
+  |  &lt;--- ServerGameEnterResponse(from..to) -------  |   zakres liczb (0..25)
+  |  ---- ClientGuessRequest(guess) -------------&gt;  |   propozycja
+  |  &lt;--- ServerEvaluationResponse(guess,result) -  |   HIT / OVERVALUED / UNDERVALUED
+  |  ... (pętla, aż HIT; klient zamyka gniazdo) ...  |   serwer: EOFException → koniec wątku</pre>
+Klasy: pakiet <code>dto</code> (4 komunikaty + enum <code>Evaluation</code>), <code>shared</code> (<code>GameColor</code>, <code>AppUtils</code>), <code>client</code> (<code>ClientGuessingGame</code>, <code>ClientUtils</code>), <code>server</code> (<code>ServerGuessingGame</code>, <code>ServerUtils</code>), uruchamiacze: <code>Server</code>, <code>RedGamer</code>, <code>GreenGamer</code>, <code>BlueGamer</code>. Konfiguracja: <code>server.properties</code>. Komunikaty to obiekty <code>Serializable</code> przesyłane przez <code>ObjectOutputStream</code>/<code>ObjectInputStream</code> na gnieździe TCP; serwer obsługuje każdego klienta w osobnym wątku wirtualnym.</p>
+</details>
+<details><summary>server.properties – konfiguracja</summary>
+<pre>server.port=43210
+server.dalayms=5000</pre><p class="e">Plik w <code>src/main/resources</code> trafia na classpath. <code>server.port=43210</code> – port TCP (dozwolone 1024–49151). <code>server.dalayms=5000</code> – maksymalne sztuczne opóźnienie odpowiedzi serwera w ms (klucz ma literówkę „dalay” – musi się zgadzać z <code>KEY_DELAY</code> w <code>AppUtils</code>).</p>
+</details>
+<details><summary>shared/GameColor.java – kolory ANSI</summary>
+<pre>package org.example.shared;
+
+public enum GameColor {
+
+    RESET_COLOR(&quot;\u001B[0m&quot;),
+
+    RED(&quot;\u001B[31m&quot;),
+    GREEN(&quot;\u001B[32m&quot;),
+    BLUE(&quot;\u001B[34m&quot;);
+
+    private final String code;
+
+    GameColor(String code) {
+        this.code = code;
+    }
+
+    public String getCode() {
+        return code;
+    }
+
+    @Override
+    public String toString() {
+        return code;
+    }
+}</pre><p class="e">Enum z kodami ANSI: <code>\u001B[31m</code> czerwony, <code>[32m</code> zielony, <code>[34m</code> niebieski, <code>[0m</code> – reset. Pole <code>code</code> ustawia konstruktor enuma. Nadpisane <code>toString()</code> zwraca kod – więc <code>color + &quot;tekst&quot; + RESET_COLOR</code> wypisze kolorowy napis. Enum jest serializowalny, więc można go przesłać w <code>ClientGameEnterRequest</code>.</p>
+</details>
+<details><summary>shared/AppUtils.java – odczyt konfiguracji</summary>
+<pre>package org.example.shared;
+
+import java.io.InputStream;
+import java.util.Properties;
+import java.io.IOException;
+
+public class AppUtils {
+
+    static final String SERVER_CONFIG_FILE = &quot;server.properties&quot;;
+    static final String KEY_PORT = &quot;server.port&quot;;
+    static final String KEY_DELAY = &quot;server.dalayms&quot;;</pre><p class="e">Stałe: nazwa pliku (<code>server.properties</code>) i klucze (<code>server.port</code>, <code>server.dalayms</code>).</p>
+<pre>    static Integer getIntegerFromProperties(String key){
+
+        try(InputStream input = AppUtils.class.getResourceAsStream(&quot;/&quot; + SERVER_CONFIG_FILE)){
+
+            if(input == null) return null; //Oznacza, że nie udało się utworzyć strumienia
+
+            Properties properties = new Properties();
+            properties.load(input); //Jeżeli się nie uda, to rzuci IOException
+
+            String value = properties.getProperty(key);
+            if(value == null) return null; //Nie ma takiego klucza w properties
+
+            return Integer.parseInt(value); //Ryzyko NumberFormatException
+
+        } catch(IOException ex){ return null; }
+        catch(NumberFormatException ex) { return null; }
+    }</pre><p class="e">Czyta liczbę z pliku: <code>getResourceAsStream(&quot;/&quot; + plik)</code> – ładuje zasób z classpath (null, gdy brak pliku); <code>Properties.load(input)</code> – parsuje <code>klucz=wartość</code> (<code>IOException</code>); <code>getProperty(key)</code> – null gdy brak klucza; <code>Integer.parseInt</code> – <code>NumberFormatException</code> gdy to nie liczba. W każdej awarii metoda zwraca <code>null</code>. try-with-resources zamyka strumień.</p>
+<pre>    public static Integer getServerPortNumberFromProperties(){
+
+        Integer port = getIntegerFromProperties(KEY_PORT);
+        if(port == null || port &lt; 1024 || port &gt; 49151) return null;
+        return port;
+    }</pre><p class="e">Port: akceptuje tylko 1024…49151 (porty zarejestrowane), inaczej <code>null</code>.</p>
+<pre>    public static Integer getServerDalayFromProperties(){
+
+        Integer delayMs = getIntegerFromProperties(KEY_DELAY);
+        if(delayMs == null || delayMs &lt; 0 || delayMs &gt; 5000) return null;
+        return delayMs;
+    }
+}</pre><p class="e">Opóźnienie: akceptuje 0…5000 ms, inaczej <code>null</code>.</p>
+</details>
+<details><summary>dto/Evaluation.java – wynik oceny</summary>
+<pre>package org.example.dto;
+
+public enum Evaluation {
+
+    HIT(&quot;HIT! :-)&quot;),
+    OVERVALUED(&quot;TOO HIGH :-(&quot;),
+    UNDERVALUED(&quot;TOO LOW :-(&quot;);
+
+    private final String message;
+
+    Evaluation(String message) {
+        this.message = message;
+    }
+
+    @Override
+    public String toString() {
+        return message;
+    }
+}</pre><p class="e">Enum trzech odpowiedzi serwera: <code>HIT</code> (trafiona), <code>OVERVALUED</code> (propozycja za duża), <code>UNDERVALUED</code> (za mała). Każda stała ma tekst wyświetlany klientowi (pole <code>message</code>, konstruktor enuma); <code>toString()</code> zwraca ten tekst, np. „TOO HIGH :-(”. Enum jest serializowany po nazwie, a po odebraniu to ta sama stała – można porównywać <code>==</code>.</p>
+</details>
+<details><summary>dto/* – komunikaty (4 klasy Serializable)</summary>
+<pre>package org.example.dto;
+
+import java.io.Serializable;
+import org.example.shared.GameColor;
+
+public class ClientGameEnterRequest implements Serializable{
+
+    private static final long serialVersionUID = 1L;
+
+    public final String nick;
+    public final GameColor color;
+
+    public ClientGameEnterRequest(String nick, GameColor color) {
+
+        this.nick = nick;
+        this.color = color;
+    }
+}</pre><p class="e"><strong>Klient → serwer, „dołączam do gry”.</strong> <code>implements Serializable</code> – warunek przesłania obiektu strumieniem. <code>serialVersionUID</code> – wersja klasy (niezgodność po obu stronach → <code>InvalidClassException</code>). Pola <code>final public</code> (nick i kolor) ustawiane tylko w konstruktorze – komunikat niezmienny.</p>
+<pre>package org.example.dto;
+
+import java.io.Serializable;
+
+public class ServerGameEnterResponse implements Serializable{
+
+    private static final long serialVersionUID = 2L;
+
+    final public int from, to;
+    final public boolean fromIncluded, toIncluded;</pre><p class="e"><strong>Serwer → klient, zasady gry (zakres).</strong> Pola: <code>from</code>, <code>to</code> oraz flagi <code>fromIncluded</code>/<code>toIncluded</code> – czy koniec przedziału należy do zakresu.</p>
+<pre>    public ServerGameEnterResponse(int from, boolean fromIncluded, int to, boolean toIncluded){
+
+        if(from &gt;= to) throw new IllegalArgumentException();
+        this.from = from;
+        this.fromIncluded = fromIncluded;
+        this.to = to;
+        this.toIncluded = toIncluded;
+    }</pre><p class="e">Główny konstruktor waliduje: <code>from &gt;= to</code> → <code>IllegalArgumentException</code>.</p>
+<pre>    public ServerGameEnterResponse(int max) {
+
+        this(0, true, max, true);
+    }
+
+}</pre><p class="e">Skrócony konstruktor: <code>this(0, true, max, true)</code> – zakres 0…max z obydwoma końcami. W <code>Server</code>: <code>new ServerGameEnterResponse(25)</code>.</p>
+<pre>package org.example.dto;
+
+import java.io.Serializable;
+
+public class ClientGuessRequest implements Serializable{
+
+    private static final long serialVersionUID = 10L;
+
+    final public int guess;
+
+    public ClientGuessRequest(int guess) {
+
+        this.guess = guess;
+    }
+}</pre><p class="e"><strong>Klient → serwer, propozycja.</strong> Jedno pole <code>guess</code> (int).</p>
+<pre>package org.example.dto;
+
+import java.io.Serializable;
+
+public class ServerEvaluationResponse implements Serializable {
+
+    private static final long serialVersionUID = 11L;
+
+    final public int guess;
+    final public Evaluation result;
+
+    public ServerEvaluationResponse(int guess, Evaluation evaluation) {
+        this.guess = guess;
+        this.result = evaluation;
+    }
+}</pre><p class="e"><strong>Serwer → klient, ocena.</strong> Zawiera propozycję (<code>guess</code>) i wynik (<code>result</code>, enum <code>Evaluation</code>).</p>
+</details>
+<details><summary>server/ServerUtils.java – losowanie i ocena</summary>
+<pre>package org.example.server;
+
+import java.util.Random;
+import org.example.dto.*;
+
+class ServerUtils {</pre><p class="e">Klasa pomocnicza serwera (widoczność pakietowa).</p>
+<pre>    static int generateSecretNumber(int fromIncluded, int toIncluded){
+
+        Random rand = new Random();
+        return rand.nextInt((toIncluded - fromIncluded) + 1) + fromIncluded;
+    }</pre><p class="e"><code>new Random().nextInt((toIncluded - fromIncluded) + 1) + fromIncluded</code> – <code>nextInt(n)</code> daje 0…n−1; dodanie 1 do rozpiętości i przesunięcie o dolną granicę daje liczbę z przedziału domkniętego [from, to].</p>
+<pre>    static ServerEvaluationResponse evaluate(ClientGuessRequest clientGuess, int secretNumber){
+
+        Evaluation evaluation =
+            clientGuess.guess &gt; secretNumber ? Evaluation.OVERVALUED :
+            clientGuess.guess &lt; secretNumber ? Evaluation.UNDERVALUED :
+            Evaluation.HIT;
+
+        return new ServerEvaluationResponse(clientGuess.guess, evaluation);
+    }
+
+}</pre><p class="e">Ocena zagnieżdżonym operatorem <code>?:</code>: propozycja większa od sekretu → <code>OVERVALUED</code>, mniejsza → <code>UNDERVALUED</code>, równa → <code>HIT</code>. Zwraca <code>ServerEvaluationResponse(guess, evaluation)</code>.</p>
+</details>
+<details><summary>server/ServerGuessingGame.java – serwer (uczestnik główny)</summary>
+<pre>package org.example.server;
+
+import java.net.Socket;
+import java.util.concurrent.ThreadLocalRandom;
+import java.net.ServerSocket;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.EOFException;
+import java.io.IOException;
+
+import org.example.dto.*;
+import org.example.shared.*;
+import static org.example.shared.GameColor.*;
+
+public class ServerGuessingGame {</pre><p class="e">Importy: gniazda (<code>ServerSocket</code>, <code>Socket</code>), strumienie obiektowe, wyjątki, <code>ThreadLocalRandom</code> i klasy gry.</p>
+<pre>    private final ServerGameEnterResponse gameRange;
+    private final Integer port, delayMs, secretNumber;</pre><p class="e">Pola: zakres gry (do wysłania klientom), port, maksymalne opóźnienie i tajna liczba.</p>
+<pre>    public ServerGuessingGame(ServerGameEnterResponse gameRange){
+
+        this.gameRange = gameRange;
+
+        this.port = AppUtils.getServerPortNumberFromProperties();
+        if(this.port == null ) throw new IllegalArgumentException(&quot;!Failed to read the server port&quot;);
+
+        this.delayMs = AppUtils.getServerDalayFromProperties();
+        if(this.delayMs == null) throw new IllegalArgumentException(&quot;!Failed to read the server delay&quot;);
+
+        this.secretNumber = ServerUtils.generateSecretNumber(
+            gameRange.fromIncluded ? gameRange.from : gameRange.from + 1,
+            gameRange.toIncluded ? gameRange.to : gameRange.to - 1
+        );
+    }</pre><p class="e">Konstruktor: odczytuje port i opóźnienie z <code>server.properties</code> (<code>null</code> → <code>IllegalArgumentException</code>) i <strong>losuje tajną liczbę</strong> z realnego zakresu (uwzględnia flagi <code>…Included</code>: <code>from</code> lub <code>from+1</code>, <code>to</code> lub <code>to−1</code>).</p>
+<pre>    public void start() {
+
+        try(ServerSocket serverSocket = new ServerSocket(port)) {
+
+            System.out.println(&quot;The game server started at port &quot; + port);
+            System.out.println(&quot;The secrete number is: &quot; + secretNumber + &quot; (Do not tell the Gamers!)&quot;);
+
+            while (true) {
+                //Akceptacja połączenia z klientem</pre><p class="e"><code>try (ServerSocket serverSocket = new ServerSocket(port))</code> – nasłuch na porcie (zamknięcie automatyczne). Wypis informacji (włącznie z tajną liczbą – do testów).</p>
+<pre>                Socket socketForClient = serverSocket.accept();
+                //i przerzucenie obsługi do odrębnego wątku
+                Thread.startVirtualThread(() -&gt; handleClient(socketForClient));
+            }
+
+        } catch (IOException e) {
+            System.err.println(&quot;!Failed to start the game server&quot;);
+        }
+
+        System.out.println(&quot;The game server is colosed&quot;);
+        //try-with-resource automatyznie zamyka serverSocket
+    }</pre><p class="e">Pętla nieskończona: <code>accept()</code> <strong>blokuje</strong> do połączenia klienta i zwraca jego gniazdo; obsługa idzie do <strong>wątku wirtualnego</strong> (<code>Thread.startVirtualThread</code>, Java 21) – serwer od razu wraca do <code>accept()</code> i może przyjąć kolejnych graczy równolegle.</p>
+<pre>    private void handleClient(Socket socket) {
+
+        GameColor clientColor = RESET_COLOR;
+        String clientNick = &quot;&quot;;</pre><p class="e">Obsługa jednego klienta. Zmienne na kolor i nick klienta (do kolorowych wypisów).</p>
+<pre>        try( ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+             ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream())) {
+
+            while(true){</pre><p class="e">Strumienie: najpierw <code>ObjectInputStream</code>, potem <code>ObjectOutputStream</code> – odwrotnie niż u klienta (klient zaczyna od <code>out</code>). Konstruktor <code>ObjectInputStream</code> czeka na nagłówek strumienia od drugiej strony; gdyby obie strony tworzyły najpierw <code>in</code>, powstałoby zakleszczenie.</p>
+<pre>                Object request = in.readObject(); //ClassNotFoundException</pre><p class="e">Pętla odczytu: <code>readObject()</code> blokuje do nadejścia obiektu (może rzucić <code>ClassNotFoundException</code>).</p>
+<pre>                if(request instanceof ClientGameEnterRequest enterRequest) {
+                    //Jeżeli odebrany obiekt jest klasy ClientGameEnterRequest
+                    out.writeObject(gameRange); //Wówczas odsyła zasady gry,
+                    out.flush();                //czyli tutaj zakres liczbowy
+                    clientColor = enterRequest.color; //Zapisuje też kolor
+                    clientNick = enterRequest.nick;   //i nazwę klienta
+
+                    System.out.println(clientColor + clientNick + &quot; entered the game&quot; + RESET_COLOR);</pre><p class="e"><code>instanceof</code> z dopasowaniem wzorca. <strong>Dołączenie:</strong> odsyła <code>gameRange</code> (<code>writeObject</code> + <code>flush</code> – wymusza wysłanie buforu), zapamiętuje kolor i nick, wypisuje „entered the game”.</p>
+<pre>                } else if(request instanceof ClientGuessRequest guessRequest) {
+                    //Jeżeli odebrany obiekt jest klasy ClientGuessRequest, to odsyła ewaluację wartości klienta
+                    //Wprowadza sztuczne opóźnienie o losowej długości
+                    try { Thread.sleep(ThreadLocalRandom.current().nextInt(delayMs));
+                    } catch (InterruptedException _ignored) {}
+                    ServerEvaluationResponse evaluationResponse = ServerUtils.evaluate(guessRequest, secretNumber);
+                    out.writeObject(evaluationResponse);
+                    out.flush();
+
+                    System.out.println(clientColor + clientNick + &quot; guessing &quot;
+                        + guessRequest.guess + &quot; &quot; + evaluationResponse.result + RESET_COLOR);
+                }
+            }</pre><p class="e"><strong>Propozycja:</strong> <code>Thread.sleep(random(delayMs))</code> – sztuczne opóźnienie (gracze odpowiadają w różnych momentach), <code>ServerUtils.evaluate</code> ocenia, odsyła <code>ServerEvaluationResponse</code>, wypisuje kolorowy log.</p>
+<pre>        }catch(EOFException ex) {
+            System.err.println(&quot;Connection closed: &quot; + socket.getRemoteSocketAddress());
+        }catch(IOException ex){ //Strumienie
+            System.err.println(&quot;!Failed to connect to: &quot; + socket.getRemoteSocketAddress());
+        } catch(ClassNotFoundException ex){
+            System.err.println(&quot;!Failed to read data from: &quot; + socket.getRemoteSocketAddress());
+        } finally{ try { socket.close(); } catch (IOException ignored) {} }
+
+    }
+}</pre><p class="e">Zakończenie pętli następuje wyjątkiem: <code>EOFException</code> – klient zamknął połączenie (normalne po <code>HIT</code>); <code>IOException</code> – błąd sieci; <code>ClassNotFoundException</code> – nieznana klasa obiektu. <code>finally</code> zawsze zamyka gniazdo.</p>
+</details>
+<details><summary>client/ClientUtils.java – losowa propozycja</summary>
+<pre>package org.example.client;
+
+import java.util.Random;
+import org.example.dto.*;
+
+class ClientUtils {
+
+    static ClientGuessRequest generateRandomGuess(ServerGameEnterResponse gameRange){
+
+        int fromIncluded = gameRange.fromIncluded ? gameRange.from : gameRange.from + 1;
+        int toIncluded = gameRange.toIncluded ? gameRange.to : gameRange.to - 1;
+
+        int randomFromGameRange = new Random().nextInt((toIncluded - fromIncluded) + 1) + fromIncluded;
+
+        return new ClientGuessRequest(randomFromGameRange);
+    }
+}</pre><p class="e"><code>generateRandomGuess</code> – przelicza realny zakres z flag <code>fromIncluded</code>/<code>toIncluded</code> i losuje liczbę wzorem <code>nextInt(to − from + 1) + from</code>. Klient zgaduje losowo, bez wykorzystania odpowiedzi „za duża/za mała” (nie ma wyszukiwania binarnego).</p>
+</details>
+<details><summary>client/ClientGuessingGame.java – klient (gracz)</summary>
+<pre>package org.example.client;
+
+import java.net.Socket;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.IOException;
+import java.net.UnknownHostException;
+import org.example.dto.*;
+import static org.example.dto.Evaluation.*;
+import org.example.shared.*;
+
+public class ClientGuessingGame {</pre><p class="e">Importy.</p>
+<pre>    private final ClientGameEnterRequest myGameEnterRequest;
+    private ServerGameEnterResponse gameRange;</pre><p class="e">Pola: komunikat dołączenia (nick + kolor) i zakres gry odebrany od serwera.</p>
+<pre>    public ClientGuessingGame(String nick, GameColor color){
+        myGameEnterRequest = new ClientGameEnterRequest(nick, color);
+    }
+
+    private void  printInColor(String msg) {
+        System.out.print(myGameEnterRequest.color
+            + msg + GameColor.RESET_COLOR);
+    }</pre><p class="e">Konstruktor tworzy <code>ClientGameEnterRequest</code>. <code>printInColor</code> wypisuje komunikat w kolorze gracza (kod koloru + tekst + reset).</p>
+<pre>    public void start(String serverAddress, int serverPort) {
+        try(
+            Socket socket = new Socket(serverAddress, serverPort);
+            ObjectOutputStream out = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream in = new ObjectInputStream(socket.getInputStream()) ){
+                //0. Informacje o połączeniu z serwerem
+                printInColor(&quot;I am &quot; + myGameEnterRequest.nick +&quot;\n&quot;);
+                printInColor(&quot;I have connedted to: &quot; + socket.getRemoteSocketAddress() + &quot;\n&quot;);</pre><p class="e"><code>try(Socket socket = new Socket(adres, port); ObjectOutputStream out…; ObjectInputStream in…)</code> – połączenie i strumienie (kolejność: najpierw <code>out</code>, potem <code>in</code>); wszystko zamykane automatycznie.</p>
+<pre>                //1. Pobranie zasad gry, tylko raz
+                out.writeObject(myGameEnterRequest);
+                out.flush();
+                gameRange = (ServerGameEnterResponse)in.readObject();</pre><p class="e">Krok 1: wysyła <code>ClientGameEnterRequest</code>, <code>flush</code>, odczytuje <code>ServerGameEnterResponse</code> (zakres) – <strong>tylko raz</strong>.</p>
+<pre>                //2. Udział w grze w pętli
+                ClientGuessRequest myGuess = ClientUtils.generateRandomGuess(gameRange);
+                while (true) {
+                    printInColor(&quot;Trying &quot; + myGuess.guess + &quot;... &quot;);
+                    out.writeObject(myGuess);
+                    out.flush();
+                    ServerEvaluationResponse serverEvaluation = (ServerEvaluationResponse) in.readObject();
+                    printInColor(serverEvaluation.result + &quot;\n&quot;);
+                    if(serverEvaluation.result == HIT) break;
+                    myGuess = ClientUtils.generateRandomGuess(gameRange);
+                }</pre><p class="e">Krok 2: pętla – losowa propozycja → <code>writeObject</code> + <code>flush</code> → <code>readObject</code> (rzutowanie na <code>ServerEvaluationResponse</code>) → wypis → jeśli <code>result == HIT</code>, <code>break</code> (wyjście z try zamyka gniazdo, serwer dostaje EOF) → inaczej kolejna propozycja.</p>
+<pre>        }catch(UnknownHostException ex){ printInColor(&quot;!Failed to connect to: &quot; + serverAddress + &quot;\n&quot;); }
+        catch(IOException ex){ printInColor(&quot;!Failed to connect or transfer data to: &quot; + serverAddress + &quot;\n&quot;); }
+        catch(ClassNotFoundException ex){ printInColor(&quot;Failed to communicate with: &quot; + serverAddress + &quot;\n&quot;);}
+    }
+}</pre><p class="e">Obsługa błędów: <code>UnknownHostException</code> (nieznany host) jest podklasą <code>IOException</code>, dlatego musi być <strong>przed</strong> <code>IOException</code>; <code>ClassNotFoundException</code> – nieznana klasa odebranego obiektu.</p>
+</details>
+<details><summary>Server.java i uruchamiacze graczy (RedGamer, GreenGamer, BlueGamer)</summary>
+<pre>package org.example;
+
+import org.example.dto.ServerGameEnterResponse;
+import org.example.server.ServerGuessingGame;
+
+public class Server {
+
+    final static int N = 25; //Zakres liczb będzie od 0 do 25
+
+    public static void main(String[] args) {
+
+        System.out.println(&quot;--- SERVER ---&quot;);
+        ServerGameEnterResponse gameRange = new ServerGameEnterResponse(N);
+        new ServerGuessingGame(gameRange).start();
+    }
+}</pre><p class="e">Klasa startowa serwera: <code>N = 25</code> → zakres 0…25 włącznie (<code>new ServerGameEnterResponse(N)</code>), potem <code>new ServerGuessingGame(gameRange).start()</code>.</p>
+<pre>package org.example;
+
+import org.example.client.ClientGuessingGame;
+import org.example.shared.AppUtils;
+import static org.example.shared.GameColor.RED;
+
+public class RedGamer {
+
+    final static String HOST = &quot;localhost&quot;;
+    final static Integer PORT = AppUtils.getServerPortNumberFromProperties();
+
+    public static void main(String[] args) {
+
+        System.out.println(&quot;--- RED GAMER ---&quot;);
+        new ClientGuessingGame(&quot;Red Fox&quot;, RED).start(HOST, PORT);
+    }
+}</pre><p class="e">Klasa startowa gracza. <code>HOST = &quot;localhost&quot;</code> – serwer na tym samym komputerze (w zadaniu dodatkowym wpisz adres komputera z serwerem). Port pochodzi z <code>AppUtils</code> (ten sam plik konfiguracji co serwer). <code>new ClientGuessingGame(&quot;Red Fox&quot;, RED).start(HOST, PORT)</code>. <code>GreenGamer</code> („Green Snake”, GREEN) i <code>BlueGamer</code> („Blue Dolphin”, BLUE) są identyczne poza nickiem i kolorem. Kolejność uruchomienia: najpierw <code>Server</code>, potem gracze (każdy w osobnym procesie).</p>
+</details><h2 id="l5">L5 · Hibernate/JPA, Lombok, Thymeleaf (5.1–5.2)</h2>
+<details open><summary>Treść zadań Lab 5 (z nowicki.house/java2/labs/05-lab i slajdów)</summary>
+<p><strong>Uwaga:</strong> kodu Lab 5 nie ma w repozytorium, a na slajdach zad-5.1 / 5.2 jest on w obrazkach. Poniższy kod jest <strong>odtworzony</strong> na podstawie opisu zadania i tekstów slajdów (struktura, nazwy klas, zależności, opisy pól i programów App_1…App_6). Nie był kompilowany – służy do nauki schematu rozwiązania; jeśli masz własne pliki z labu, porównaj je z tym szkicem.
+
+
+<strong>Zakres:</strong> Lombok, Hibernate (model danych, tworzenie bazy, zapis i odczyt), Thymeleaf w trybie standalone. Projekt kontynuowany w kolejnych labach.
+
+<strong>Baza aplikacji „Let&#x27;s brainstorm⚡”</strong> – trzy tabele: <strong>Users</strong> (zarejestrowani użytkownicy), <strong>Problems</strong> (problemy zgłaszane przez użytkowników), <strong>Ideas</strong> (propozycje rozwiązań konkretnego problemu). Użytkownicy tworzą Problems i Ideas, które mają autorów.
+Pola wspólne: <strong>Id</strong> (automatyczny klucz główny) oraz automatyczny znacznik czasu – <strong>Registration</strong> (Users) lub <strong>Publication</strong> (Problems, Ideas).
+Users: <strong>Nick</strong>, <strong>Info</strong> (tekst). Problems: <strong>Questioner</strong> (FK do użytkownika), <strong>Title</strong>, <strong>Question</strong> (tekst). Ideas: <strong>Originator</strong> (FK do użytkownika), <strong>Problem</strong> (FK do problemu), <strong>Answer</strong> (tekst).
+
+<strong>5.1 Baza danych.</strong> Zdefiniować model według API Hibernate, utworzyć bazę SQLite, zapisać przykładowe dane, odczytać dane.
+<strong>5.2 Prezentacja danych.</strong> Szablony Thymeleaf: lista wszystkich użytkowników; lista wszystkich problemów wraz z nadesłanymi pomysłami i ich autorami; wspólny styl; szablony generują pliki HTML.
+
+<strong>Slajdy 5.1 – kroki:</strong> projekt Gradle (Kotlin DSL); w Gradle 9 źródła są w <code>app/src</code>, główny pakiet <code>org.example</code>, podpakiety <code>model</code> i <code>persistence</code>; klasy <code>App_1</code>…<code>App_6</code> z <code>main</code>. Zależności: <code>jakarta.persistence-api 3.2.0</code>, <code>hibernate-core 7.1.6.Final</code>, <code>slf4j-api 2.0.17</code>, <code>sqlite-jdbc 3.50.3.0</code>, <code>hibernate-community-dialects 6.6.26.Final</code>, Lombok 1.18.42 (<code>compileOnly</code> + <code>annotationProcessor</code>). W IDE: wtyczka Lombok (obowiązkowa) i SQLite Viewer (zalecany). <code>hibernate.properties</code>: sterownik i URL <code>jdbc:sqlite:BrainStormDataBase.sqlite</code>, dialekt SQLite, <code>hbm2ddl.auto=update</code>, <code>show_sql</code> / <code>format_sql</code> (true na początku, od App_2 false). Uwaga: drugie uruchomienie App_1 kończy się błędem (unikalny nick) – usuń plik <code>BrainStormDataBase.sqlite</code>.
+<strong>Slajdy 5.2:</strong> kopia projektu 5.1; nowe pliki <code>users.html</code>, <code>problems.html</code>, <code>style.css</code>; zależność <code>org.thymeleaf:thymeleaf:3.1.2.RELEASE</code>; <code>App_5</code> (użytkownicy → HTML) i <code>App_6</code> (problemy z pomysłami i autorami → HTML); jeśli strona wygląda inaczej – zła ścieżka do CSS.</p>
+</details>
+<details><summary>5.1 · build.gradle.kts – zależności (odtworzone)</summary>
+<pre>dependencies {
+    // Hibernate / JPA
+    implementation(&quot;jakarta.persistence:jakarta.persistence-api:3.2.0&quot;)
+    implementation(&quot;org.hibernate.orm:hibernate-core:7.1.6.Final&quot;)
+    implementation(&quot;org.slf4j:slf4j-api:2.0.17&quot;)
+
+    // SQLite
+    implementation(&quot;org.xerial:sqlite-jdbc:3.50.3.0&quot;)
+    implementation(&quot;org.hibernate.orm:hibernate-community-dialects:6.6.26.Final&quot;)
+
+    // Lombok
+    compileOnly(&quot;org.projectlombok:lombok:1.18.42&quot;)
+    annotationProcessor(&quot;org.projectlombok:lombok:1.18.42&quot;)
+
+    // 5.2: Thymeleaf standalone
+    implementation(&quot;org.thymeleaf:thymeleaf:3.1.2.RELEASE&quot;)
+}</pre><p class="e"><strong>Uwaga:</strong> kodu Lab 5 nie ma w repozytorium, a na slajdach zad-5.1 / 5.2 jest on w obrazkach. Poniższy kod jest <strong>odtworzony</strong> na podstawie opisu zadania i tekstów slajdów (struktura, nazwy klas, zależności, opisy pól i programów App_1…App_6). Nie był kompilowany – służy do nauki schematu rozwiązania; jeśli masz własne pliki z labu, porównaj je z tym szkicem.
+
+<code>jakarta.persistence-api</code> – adnotacje i interfejsy JPA (specyfikacja); <code>hibernate-core</code> – jej implementacja (ORM); <code>slf4j-api</code> – logowanie; <code>sqlite-jdbc</code> – sterownik JDBC do pliku bazy SQLite; <code>hibernate-community-dialects</code> – dialekt SQLite (nie ma go w rdzeniu Hibernate); Lombok – generowanie getterów, konstruktorów, buildera w czasie kompilacji (<code>compileOnly</code> + <code>annotationProcessor</code>); Thymeleaf – silnik szablonów HTML (dopiero w 5.2).</p>
+</details>
+<details><summary>5.1 · resources/hibernate.properties – konfiguracja (odtworzone)</summary>
+<pre>hibernate.connection.driver_class=org.sqlite.JDBC
+hibernate.connection.url=jdbc:sqlite:BrainStormDataBase.sqlite
+hibernate.dialect=org.hibernate.community.dialect.SQLiteDialect
+hibernate.hbm2ddl.auto=update
+hibernate.show_sql=true
+hibernate.format_sql=true</pre><p class="e">Hibernate sam wczytuje <code>hibernate.properties</code> z classpath. Sterownik i URL: baza to plik <code>BrainStormDataBase.sqlite</code> tworzony w katalogu projektu. Dialekt SQLite generuje poprawny dla SQLite SQL. <code>hbm2ddl.auto=update</code> – przy starcie tworzy brakujące tabele / dodaje kolumny według encji (bez kasowania danych). <code>show_sql</code> + <code>format_sql</code> – wypisują wykonywane zapytania (po App_1 zmienione na <code>false</code>, żeby nie zaśmiecać konsoli).</p>
+</details>
+<details><summary>5.1 · model/User.java – encja (odtworzone)</summary>
+<pre>package org.example.model;
+
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import java.time.LocalDateTime;
+
+@Entity
+@Table(name = &quot;users&quot;)
+@Getter @Setter
+@NoArgsConstructor @AllArgsConstructor
+@Builder
+@ToString @EqualsAndHashCode
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @CreationTimestamp
+    @Column(updatable = false)
+    private LocalDateTime registration;
+
+    @Column(nullable = false, unique = true, updatable = false)
+    private String nick;
+
+    @Column(columnDefinition = &quot;TEXT&quot;)
+    private String info;
+}</pre><p class="e"><code>@Entity</code> – klasa jest encją JPA; <code>@Table(name=&quot;users&quot;)</code> – nazwa tabeli. <code>@Id</code> + <code>@GeneratedValue</code> – automatyczny klucz główny. <code>@CreationTimestamp</code> (Hibernate) – czas ustawiany automatycznie przy pierwszym zapisie (<code>registration</code>); <code>updatable=false</code> – późniejsze zmiany go nie dotykają. <code>nick</code>: wymagany (<code>nullable=false</code>), unikalny (<code>unique=true</code>), niezmienialny (<code>updatable=false</code>) – dlatego drugi uruchomiony App_1 zakończy się błędem. <code>info</code> – długi tekst. Lombok: <code>@Getter/@Setter</code>, <code>@NoArgsConstructor</code> (JPA wymaga konstruktora bezargumentowego), <code>@AllArgsConstructor</code>, <code>@Builder</code> (<code>User.builder().nick(&quot;x&quot;).info(&quot;y&quot;).build()</code>), <code>@ToString</code>, <code>@EqualsAndHashCode</code>.</p>
+</details>
+<details><summary>5.1 · model/Problem.java – relacje (odtworzone)</summary>
+<pre>@Entity
+@Table(name = &quot;problems&quot;)
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@ToString @EqualsAndHashCode
+public class Problem {
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @CreationTimestamp @Column(updatable = false)
+    private LocalDateTime publication;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = &quot;questioner_id&quot;)
+    private User questioner;
+
+    @Column(nullable = false, length = 200)
+    private String title;
+
+    @Column(nullable = false, columnDefinition = &quot;TEXT&quot;)
+    private String question;
+
+    @OneToMany(mappedBy = &quot;problem&quot;)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    @Builder.Default
+    private List&lt;Idea&gt; ideas = new ArrayList&lt;&gt;();
+}</pre><p class="e"><code>@ManyToOne</code> + <code>@JoinColumn</code> – wiele problemów ma jednego autora; klucz obcy <code>questioner_id</code> jest w tabeli <code>problems</code>. <code>title</code> – wymagany, o ograniczonej długości; <code>question</code> – wymagany tekst. <code>ideas</code> – <strong>odwrotna strona</strong> relacji dwukierunkowej: <code>@OneToMany(mappedBy = &quot;problem&quot;)</code> (kolumny nie tworzy – klucz obcy jest w <code>ideas</code>). Pole wykluczone z <code>toString</code> i <code>equals/hashCode</code>, bo Problem ↔ Idea tworzy cykl i groziłby <code>StackOverflowError</code>. <code>@Builder.Default</code> – żeby builder nie ustawiał listy na <code>null</code> (zgodnie z opisem na slajdach). Kolekcje są domyślnie ładowane <strong>leniwie</strong> (lazy).</p>
+</details>
+<details><summary>5.1 · model/Idea.java (odtworzone)</summary>
+<pre>@Entity
+@Table(name = &quot;ideas&quot;)
+@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
+@ToString @EqualsAndHashCode
+public class Idea {
+
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @CreationTimestamp @Column(updatable = false)
+    private LocalDateTime publication;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = &quot;originator_id&quot;)
+    private User originator;
+
+    @ManyToOne(optional = false)
+    @JoinColumn(name = &quot;problem_id&quot;)
+    @ToString.Exclude
+    @EqualsAndHashCode.Exclude
+    private Problem problem;
+
+    @Column(nullable = false, columnDefinition = &quot;TEXT&quot;)
+    private String answer;
+}</pre><p class="e">Idea ma dwa klucze obce: do autora (<code>originator</code>) i do problemu (<code>problem</code>). Po stronie „wiele” relacji znajduje się kolumna klucza obcego. <code>problem</code> wykluczone z <code>toString</code>/<code>equals</code> (przerywa cykl z <code>Problem.ideas</code>) – przy takim podejściu wystarczy wykluczenie po jednej stronie, a opis slajdów mówi o <code>ideas</code> w Problem.</p>
+</details>
+<details><summary>5.1 · persistence/HibernateSessionFactory.java (odtworzone)</summary>
+<pre>package org.example.persistence;
+
+import org.example.model.*;
+import org.hibernate.Session;
+import org.hibernate.SessionFactory;
+import org.hibernate.cfg.Configuration;
+
+public class HibernateSessionFactory {
+
+    private static final SessionFactory sessionFactory;
+
+    static {
+        sessionFactory = new Configuration()
+                .addAnnotatedClass(User.class)
+                .addAnnotatedClass(Problem.class)
+                .addAnnotatedClass(Idea.class)
+                .buildSessionFactory();
+
+        Runtime.getRuntime().addShutdownHook(new Thread(sessionFactory::close));
+    }
+
+    public static Session getNewSession() {
+        return sessionFactory.openSession();
+    }
+}</pre><p class="e">Klasa statyczna. Blok <code>static</code> wykonuje się raz, przy pierwszym użyciu klasy: <code>Configuration</code> (czyta <code>hibernate.properties</code>) + zarejestrowane encje → <code>buildSessionFactory()</code> (kosztowne, więc raz na aplikację). <strong>Shutdown hook</strong> – osobny wątek uruchamiany przy kończeniu JVM zamyka <code>SessionFactory</code> i połączenie z bazą. <code>getNewSession()</code> zwraca świeżą <code>Session</code> (jednostkę pracy) w każdym miejscu użycia.</p>
+</details>
+<details><summary>5.1 · App_1 – zapis danych (odtworzone)</summary>
+<pre>public class App_1 {
+    public static void main(String[] args) {
+
+        User u1 = User.builder().nick(&quot;anna&quot;).info(&quot;Lubi algorytmy&quot;).build();
+        User u2 = User.builder().nick(&quot;bartek&quot;).info(&quot;Backend&quot;).build();
+        User u3 = User.builder().nick(&quot;celina&quot;).info(&quot;Testy&quot;).build();
+
+        Problem p1 = Problem.builder().questioner(u1)
+                .title(&quot;Jak szybko sortować?&quot;).question(&quot;Jaki algorytm dla 1 mln liczb?&quot;).build();
+        Problem p2 = Problem.builder().questioner(u2)
+                .title(&quot;Jak uczyć się Springa?&quot;).question(&quot;Od czego zacząć?&quot;).build();
+
+        Idea i1 = Idea.builder().originator(u2).problem(p1).answer(&quot;Quicksort / sort() z biblioteki&quot;).build();
+        Idea i2 = Idea.builder().originator(u3).problem(p1).answer(&quot;Merge sort – stabilny&quot;).build();
+        Idea i3 = Idea.builder().originator(u1).problem(p2).answer(&quot;Zacząć od Spring Boot&quot;).build();
+
+        System.out.println(u1);   // toString z Lomboka
+
+        try (Session session = HibernateSessionFactory.getNewSession()) {
+            Transaction tx = session.beginTransaction();
+            session.persist(u1); session.persist(u2); session.persist(u3);
+            session.persist(p1); session.persist(p2);
+            session.persist(i1); session.persist(i2); session.persist(i3);
+            tx.commit();
+        }
+    }
+}</pre><p class="e">Obiekty budowane <strong>builderami</strong> (Lombok), wypisywane przez <code>toString</code>, zapisywane w sesji. <strong>try-with-resources</strong> zamyka <code>Session</code> automatycznie. Zapis wymaga transakcji: <code>beginTransaction()</code> → <code>persist(...)</code> → <code>commit()</code>. Kolejność: najpierw użytkownicy, potem problemy, na końcu pomysły (klucze obce muszą wskazywać na zapisane rekordy). Po pierwszym uruchomieniu powstaje plik <code>BrainStormDataBase.sqlite</code>; drugie uruchomienie → błąd unikalności <code>nick</code> (usuń plik bazy).</p>
+</details>
+<details><summary>5.1 · App_2, App_3, App_4 – odczyt (odtworzone)</summary>
+<pre>// App_2 – wszyscy użytkownicy
+try (Session session = HibernateSessionFactory.getNewSession()) {
+    List&lt;User&gt; users = session
+            .createSelectionQuery(&quot;from User&quot;, User.class)
+            .getResultList();
+    users.forEach(System.out::println);
+}</pre><p class="e">HQL <code>from User</code> – zapytanie na <strong>encjach</strong>, nie na tabelach SQL. <code>getResultList()</code> zwraca listę obiektów <code>User</code>.</p>
+<pre>// App_3 – problemy z pomysłami i autorami, wszystko w jednej sesji
+try (Session session = HibernateSessionFactory.getNewSession()) {
+    List&lt;Problem&gt; problems = session
+            .createSelectionQuery(&quot;from Problem&quot;, Problem.class)
+            .getResultList();
+    for (Problem p : problems) {
+        System.out.println(p.getTitle() + &quot; – &quot; + p.getQuestioner().getNick());
+        for (Idea i : p.getIdeas())                       // leniwe ładowanie – sesja jeszcze otwarta
+            System.out.println(&quot;  • &quot; + i.getAnswer() + &quot; – &quot; + i.getOriginator().getNick());
+    }
+}</pre><p class="e">Relacje (<code>questioner</code>, <code>ideas</code>, <code>originator</code>) są ładowane leniwie – Hibernate dociąga je dopiero przy dostępie. W App_3 działa, bo odczyt odbywa się <strong>wewnątrz otwartej sesji</strong>.</p>
+<pre>// App_4 – dane dostępne PO zamknięciu sesji
+List&lt;Problem&gt; problems;
+try (Session session = HibernateSessionFactory.getNewSession()) {
+    problems = session.createSelectionQuery(
+            &quot;select distinct p from Problem p &quot; +
+            &quot;join fetch p.questioner &quot; +
+            &quot;left join fetch p.ideas i &quot; +
+            &quot;left join fetch i.originator&quot;, Problem.class).getResultList();
+}
+// sesja zamknięta – ale dane są już w pamięci
+problems.forEach(p -&gt; { /* wypis jak w App_3 */ });</pre><p class="e"><code>join fetch</code> każe Hibernate pobrać relacje <strong>od razu</strong> jednym zapytaniem, więc po zamknięciu sesji nie będzie <code>LazyInitializationException</code>. <code>left join fetch</code> – problem bez pomysłów też zostanie zwrócony; <code>distinct</code> – bez powielania problemu dla każdego pomysłu. To potrzebne dla 5.2 – HTML generujemy już po zamknięciu sesji.</p>
+</details>
+<details><summary>5.2 · Thymeleaf: App_5 – użytkownicy do HTML (odtworzone)</summary>
+<pre>&lt;!-- src/main/resources/users.html --&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html xmlns:th=&quot;http://www.thymeleaf.org&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot;&gt;
+  &lt;title&gt;Users List&lt;/title&gt;
+  &lt;link rel=&quot;stylesheet&quot; href=&quot;app/src/main/resources/static/style.css&quot;&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;Users&lt;/h1&gt;
+  &lt;ul&gt;
+    &lt;li th:each=&quot;user : ${users}&quot;&gt;
+      &lt;b th:text=&quot;${user.nick}&quot;&gt;nick&lt;/b&gt;
+      &lt;span th:text=&quot;${user.info}&quot;&gt;info&lt;/span&gt;
+      &lt;small th:text=&quot;${user.registration}&quot;&gt;date&lt;/small&gt;
+    &lt;/li&gt;
+  &lt;/ul&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre><p class="e">Szablon HTML z atrybutami Thymeleaf: <code>th:each=&quot;user : ${users}&quot;</code> powtarza element dla każdego użytkownika z kolekcji <code>users</code> (podanej w kontekście); <code>th:text=&quot;${user.nick}&quot;</code> podstawia wartość pola (przez getter). Tekst „nick” w tagu to tylko makieta widoczna przy otwarciu szablonu bez silnika. Ścieżka w <code>href</code> jest względna do <strong>miejsca zapisu wygenerowanego HTML</strong> – zła ścieżka = strona bez stylów.</p>
+<pre>public class App_5 {
+    public static void main(String[] args) throws IOException {
+        List&lt;User&gt; users;
+        try (Session session = HibernateSessionFactory.getNewSession()) {
+            users = session.createSelectionQuery(&quot;from User&quot;, User.class).getResultList();
+        }
+
+        ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();
+        resolver.setTemplateMode(TemplateMode.HTML);
+        resolver.setPrefix(&quot;/&quot;);
+        resolver.setSuffix(&quot;.html&quot;);
+
+        TemplateEngine engine = new TemplateEngine();
+        engine.setTemplateResolver(resolver);
+
+        Context context = new Context();
+        context.setVariable(&quot;users&quot;, users);
+
+        String html = engine.process(&quot;users&quot;, context);
+        Files.writeString(Path.of(&quot;users-output.html&quot;), html);
+    }
+}</pre><p class="e">Kroki: 1) odczyt użytkowników z bazy; 2) <code>ClassLoaderTemplateResolver</code> – gdzie szukać szablonów (classpath, prefiks <code>/</code>, sufiks <code>.html</code>, tryb HTML); 3) <code>TemplateEngine</code> – silnik (<strong>standalone</strong>, bez Springa i serwera WWW); 4) <code>Context</code> – zmienne dostępne w szablonie (<code>users</code>); 5) <code>engine.process(&quot;users&quot;, context)</code> zwraca gotowy HTML jako <code>String</code>; 6) zapis do pliku. Zależność: <code>org.thymeleaf:thymeleaf:3.1.2.RELEASE</code>.</p>
+</details>
+<details><summary>5.2 · problems.html i App_6 – problemy z pomysłami (odtworzone)</summary>
+<pre>&lt;!-- src/main/resources/problems.html --&gt;
+&lt;!DOCTYPE html&gt;
+&lt;html xmlns:th=&quot;http://www.thymeleaf.org&quot;&gt;
+&lt;head&gt;
+  &lt;meta charset=&quot;UTF-8&quot;&gt;
+  &lt;title&gt;Problems List&lt;/title&gt;
+  &lt;link rel=&quot;stylesheet&quot; href=&quot;app/src/main/resources/static/style.css&quot;&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;h1&gt;Problems&lt;/h1&gt;
+  &lt;p th:if=&quot;${#lists.isEmpty(problems)}&quot;&gt;No problems found.&lt;/p&gt;
+
+  &lt;div class=&quot;problem&quot; th:each=&quot;p : ${problems}&quot;&gt;
+    &lt;h2 th:text=&quot;${p.title}&quot;&gt;Title&lt;/h2&gt;
+    &lt;p th:text=&quot;${p.question}&quot;&gt;Question&lt;/p&gt;
+    &lt;small&gt;by &lt;b th:text=&quot;${p.questioner.nick}&quot;&gt;nick&lt;/b&gt;, &lt;span th:text=&quot;${p.publication}&quot;&gt;date&lt;/span&gt;&lt;/small&gt;
+
+    &lt;ul th:if=&quot;${!#lists.isEmpty(p.ideas)}&quot;&gt;
+      &lt;li th:each=&quot;i : ${p.ideas}&quot;&gt;
+        &lt;span th:text=&quot;${i.answer}&quot;&gt;answer&lt;/span&gt; –
+        &lt;b th:text=&quot;${i.originator.nick}&quot;&gt;author&lt;/b&gt;
+      &lt;/li&gt;
+    &lt;/ul&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;</pre><p class="e">Zgodny z opisem slajdu: tytuł „Problems List”, link do <code>style.css</code>, „No problems found.” gdy lista pusta (<code>th:if</code> – renderuje element tylko przy prawdziwym warunku), a dla każdego problemu: tytuł, pytanie, nick autora, data publikacji i – jeśli są – lista pomysłów (odpowiedź + nick autora). Pętle zagnieżdżone: <code>th:each</code> po problemach, a w środku po <code>p.ideas</code>.</p>
+<pre>public class App_6 {
+    public static void main(String[] args) throws IOException {
+        List&lt;Problem&gt; problems;
+        try (Session session = HibernateSessionFactory.getNewSession()) {
+            problems = session.createSelectionQuery(
+                    &quot;select distinct p from Problem p join fetch p.questioner &quot; +
+                    &quot;left join fetch p.ideas i left join fetch i.originator&quot;, Problem.class)
+                    .getResultList();
+        }
+        // ... ten sam TemplateEngine co w App_5 ...
+        Context context = new Context();
+        context.setVariable(&quot;problems&quot;, problems);
+        Files.writeString(Path.of(&quot;problems-output.html&quot;), engine.process(&quot;problems&quot;, context));
+    }
+}</pre><p class="e">Dane pobrane z <code>join fetch</code>, żeby po zamknięciu sesji szablon mógł swobodnie czytać <code>p.ideas</code>, <code>p.questioner</code> i <code>i.originator</code> (bez <code>LazyInitializationException</code>). Reszta jak w App_5, tylko inny szablon i zmienna <code>problems</code>.</p>
+</details><h2 id="l6">L6 · Wzorzec Request Processor: klasycznie, Spring, Spring Boot (6.1–6.3)</h2>
+<details open><summary>Treść zadań Lab 6 (z nowicki.house/java2/labs/06-lab i slajdów zad-6.x)</summary>
+<p><strong>Zakres:</strong> zbudować aplikację (1) klasycznie, (2) ze Spring Framework (bez Boot), (3) ze Spring Boot.
+
+<strong>Problem – wzorzec Request Processor:</strong> *RequestProcessor* – zewnętrzny kontener; *Dispatcher* – przyjmuje żądanie i przekazuje do właściwego handlera; *Handler* – jeden rodzaj przetwarzania danych; *Request* = <code>data</code> (tekst do przetworzenia) + <code>type</code> (tekst wybierający handler); *Response* = <code>message</code> („OK” albo opis problemu) + <code>data</code> (wynik). Trzy rodzaje przetwarzania: <code>lower</code> (małe litery), <code>upper</code> (wielkie litery), <code>reverse</code> (odwrócenie tekstu). Funkcje przetwarzania są <strong>obiektami funkcyjnymi</strong> („ruchomymi częściami”), które później staną się komponentami.
+
+<strong>6.1 (klasycznie):</strong> zaprojektować model, napisać klasy POJO, agregować obiekty klasycznie, uruchomić. Slajdy: projekt Gradle (Kotlin); pakiety <code>model</code> (Request, Response) i <code>requestprocessorlibrary</code> (StringProcessing, Handler, RequestProcessor, Dispatcher); <code>App0Generator</code> buduje procesor z komponentów, <code>App0</code> go używa; Lombok <code>1.18.42</code> (<code>compileOnly</code> + <code>annotationProcessor</code>). <code>Dispatcher</code> jest bezstanowy: <code>processRequest(request, handlers)</code> – bez handlerów lub bez dopasowania zwraca pustą odpowiedź z komunikatem, w przeciwnym razie wykonuje pierwszy pasujący handler.
+
+<strong>6.2 (Spring Framework):</strong> te same POJO, agregacja przez konfigurację w Javie. Zależność <code>org.springframework:spring-context:6.2.12</code>. Zmieniają się tylko <code>App1Config</code> (odpowiednik generatora; beany dla funkcji, handlerów, dispatchera, procesora) i <code>App1</code> (pobiera procesor z kontekstu Springa i zamyka kontekst).
+
+<strong>6.3 (Spring Boot):</strong> projekt z https://start.spring.io/ (Gradle Kotlin); w <code>build.gradle.kts</code> zamienić <code>spring-boot-starter-web</code> na <code>spring-boot-starter</code>; <code>./gradlew bootRun</code>. Pakiety: <code>model</code>, <code>requestprocessorlibrary</code> (z 6.1), <code>implementations</code> (<code>processing</code> + <code>handlers</code>), <code>Application</code>. <code>Dispatcher</code> i <code>RequestProcessor</code> stają się komponentami (adnotacja); <code>StringProcessing</code> jest interfejsem – osobna klasa na każdą funkcję (<code>LowerCaseProcessing</code>, <code>ReverseProcessing</code>, <code>UpperCaseProcessing</code>); <code>Handler</code> nie może być jednym komponentem – osobna klasa na każdy handler (<code>LowerCaseHandler</code>, <code>ReverseHandler</code>, <code>UpperCaseHandler</code>); <code>Application</code> wywołuje <code>SpringApplication.run</code> (skanuje pakiety i buduje aplikację), pobiera procesor z kontekstu i wypisuje odpowiedzi.</p>
+</details>
+<details><summary>Oczekiwane wyjście programów</summary>
+<p>We wszystkich trzech wersjach te same trzy żądania (typy <code>reverse</code>, <code>upper</code>, <code>unknown</code>, dla <code>unknown</code> dane „Some data”) dają:
+<pre>Request(type=reverse, data=Ala ma kota Filemona) -&gt; Response(message=OK, data=anomeliF atok am alA)
+Request(type=upper, data=Ala ma kota Filemona) -&gt; Response(message=OK, data=ALA MA KOTA FILEMONA)
+Request(type=unknown, data=Some data) -&gt; Response(message=No matching handler registered, data=null)</pre>
+<code>App0</code> wypisuje dodatkowo „Klasycznie.”, <code>App1</code> – „Spring Framework, ale bez Boot.”; <code>Application</code> (Boot) pokazuje też logi startu Springa. Format <code>Request(type=…, data=…)</code> pochodzi z <code>@ToString</code> Lomboka.</p>
+</details>
+<details><summary>6.1 · build.gradle.kts (6.1–6.2)</summary>
+<pre>plugins {
+    id(&quot;java&quot;)
+}
+
+group = &quot;org.example&quot;
+version = &quot;1.0-SNAPSHOT&quot;
+
+repositories {
+    mavenCentral()
+}</pre><p class="e">Plugin <code>java</code>, repozytorium Maven Central.</p>
+<pre>dependencies {
+    testImplementation(platform(&quot;org.junit:junit-bom:6.0.0&quot;))
+    testImplementation(&quot;org.junit.jupiter:junit-jupiter&quot;)
+    testRuntimeOnly(&quot;org.junit.platform:junit-platform-launcher&quot;)
+
+    compileOnly(&quot;org.projectlombok:lombok:1.18.42&quot;)
+    annotationProcessor(&quot;org.projectlombok:lombok:1.18.42&quot;)
+
+    implementation(&quot;org.springframework:spring-context:6.2.12&quot;)
+}
+
+tasks.test {
+    useJUnitPlatform()
+}</pre><p class="e"><code>compileOnly</code> + <code>annotationProcessor</code> dla Lomboka (generuje kod w czasie kompilacji); <code>implementation(&quot;org.springframework:spring-context:6.2.12&quot;)</code> – kontener IoC Springa (potrzebny od 6.2; w 6.1 niewykorzystany). Reszta: JUnit.</p>
+</details>
+<details><summary>6.1 · model/Request.java i model/Response.java</summary>
+<pre>package org.example.model;
+
+import lombok.*;
+
+@Getter
+@AllArgsConstructor
+@Builder
+@ToString
+public class Request {
+
+    final private String type;
+    final private String data;
+}</pre><p class="e">Klasa danych (POJO) z adnotacjami Lomboka: <code>@Getter</code> (gettery <code>getType()</code>, <code>getData()</code>), <code>@AllArgsConstructor</code> (konstruktor ze wszystkimi polami), <code>@Builder</code> (<code>Request.builder().type(&quot;reverse&quot;).data(&quot;…&quot;).build()</code>), <code>@ToString</code> (<code>Request(type=…, data=…)</code>). Pola <code>final</code> – obiekt niezmienny. <code>type</code> wybiera handler, <code>data</code> to tekst do przetworzenia.</p>
+<pre>package org.example.model;
+
+import lombok.*;
+
+@Getter
+@AllArgsConstructor
+@Builder
+@ToString
+public class Response {
+
+    final private String message;
+    final private String data;
+}</pre><p class="e">Analogiczna klasa odpowiedzi: <code>message</code> („OK” albo opis problemu, np. „No matching handler registered”) i <code>data</code> (przetworzony wynik lub <code>null</code>).</p>
+</details>
+<details><summary>6.1 · requestprocessorlibrary/StringProcessing.java</summary>
+<pre>package org.example.requestprocessorlibrary;
+
+@FunctionalInterface
+public interface StringProcessing {
+
+    String processString(String data);
+
+}</pre><p class="e">Interfejs funkcyjny: <code>String → String</code>. Jedna metoda abstrakcyjna <code>processString</code>, więc funkcję można zapisać lambdą (<code>s -&gt; s.toUpperCase()</code>) i traktować jako obiekt – „ruchoma część” systemu.</p>
+</details>
+<details><summary>6.1 · requestprocessorlibrary/Handler.java</summary>
+<pre>package org.example.requestprocessorlibrary;
+
+import lombok.AllArgsConstructor;
+
+@AllArgsConstructor
+public class Handler{</pre><p class="e"><code>@AllArgsConstructor</code> (Lombok) – konstruktor <code>Handler(String requestType, StringProcessing stringProcessing)</code>.</p>
+<pre>    private String requestType;
+    private StringProcessing stringProcessing;</pre><p class="e">Dwa pola: jaki typ żądania obsługuje handler (<code>&quot;upper&quot;</code>, <code>&quot;lower&quot;</code>, <code>&quot;reverse&quot;</code>) oraz funkcja przetwarzająca.</p>
+<pre>    public boolean isYourJob(String requestType) {
+        return this.requestType.equals(requestType);
+    }</pre><p class="e"><code>isYourJob</code> – czy ten handler obsługuje dany typ (porównanie <code>equals</code>).</p>
+<pre>    public String processData(String data) {
+        return stringProcessing.processString(data);
+    }
+}</pre><p class="e"><code>processData</code> – wykonuje przetwarzanie, delegując do funkcji <code>stringProcessing.processString(data)</code>.</p>
+</details>
+<details><summary>6.1 · requestprocessorlibrary/Dispatcher.java</summary>
+<pre>package org.example.requestprocessorlibrary;
+
+import org.example.model.*;
+import lombok.NoArgsConstructor;
+import java.util.List;
+
+@NoArgsConstructor
+public class Dispatcher {</pre><p class="e"><code>@NoArgsConstructor</code> – dispatcher jest <strong>bezstanowy</strong> (brak pól); lista handlerów przychodzi w parametrze.</p>
+<pre>    public Response processRequest(Request request, List&lt;Handler&gt; handlers ) {
+
+        if(handlers == null || handlers.isEmpty())
+            return Response.builder().message(&quot;No handlers registered&quot;)
+                    .data(null).build();</pre><p class="e">Brak handlerów (null lub pusta lista) → <code>Response</code> z komunikatem „No handlers registered” i <code>data = null</code>.</p>
+<pre>        for(Handler handler : handlers) {
+            if(handler.isYourJob(request.getType())) {
+                String result = handler.processData(request.getData());
+                return Response.builder().message( result != null ? &quot;OK&quot; : &quot;Processing failed.&quot;)
+                        .data(result).build();
+            }
+        }</pre><p class="e">Przegląda handlery; pierwszy, dla którego <code>isYourJob(typ)</code> jest prawdą, przetwarza dane. Jeśli wynik ≠ null → message „OK”, inaczej „Processing failed.”; wynik w <code>data</code>.</p>
+<pre>        return Response.builder().message(&quot;No matching handler registered&quot;)
+                .data(null).build();
+    }
+}</pre><p class="e">Żaden handler nie pasuje (np. typ „unknown”) → „No matching handler registered” z <code>data = null</code>.</p>
+</details>
+<details><summary>6.1 · requestprocessorlibrary/RequestProcessor.java</summary>
+<pre>package org.example.requestprocessorlibrary;
+
+import java.util.List;
+
+import org.example.model.*;
+import lombok.AllArgsConstructor;
+
+
+@AllArgsConstructor
+public class RequestProcessor {
+
+    private Dispatcher dispatcher;
+
+    private List&lt;Handler&gt; handlers;
+
+    public Response processRequest(Request request) {
+
+        return dispatcher.processRequest(request, handlers);
+    }
+}</pre><p class="e">Zewnętrzny kontener (fasada). Ma dwie zależności – <code>Dispatcher</code> i <code>List&lt;Handler&gt;</code> – podawane przez konstruktor (<code>@AllArgsConstructor</code>), czyli <strong>wstrzykiwanie przez konstruktor</strong>. <code>processRequest(request)</code> deleguje do <code>dispatcher.processRequest(request, handlers)</code>.</p>
+</details>
+<details><summary>6.1 · App0Generator.java – klasyczne łączenie obiektów</summary>
+<pre>package org.example;
+
+import org.example.requestprocessorlibrary.*;
+import java.util.List;
+
+public class App0Generator {
+
+    public static RequestProcessor getRequestProcessor() {</pre><p class="e">Importy: biblioteka procesora i <code>List</code>.</p>
+<pre>        String upper = &quot;upper&quot;, lower = &quot;lower&quot;, revese = &quot;reverse&quot;;</pre><p class="e">Stałe: nazwy typów żądań, które muszą się zgadzać z <code>Request.type</code>.</p>
+<pre>        StringProcessing upperCaseProcessing = s -&gt; s.toUpperCase();
+        StringProcessing lowerCaseProcessing = s -&gt; s.toLowerCase();
+        StringProcessing reverseProcessing =  s -&gt; new StringBuilder(s).reverse().toString();</pre><p class="e">Trzy funkcje przetwarzania jako lambdy: wielkie litery, małe litery, odwrócenie (<code>new StringBuilder(s).reverse().toString()</code>).</p>
+<pre>        Handler upperCaseHandler = new Handler(upper, upperCaseProcessing);
+        Handler lowerCaseHandler = new Handler(lower, lowerCaseProcessing);
+        Handler reverseHandler = new Handler(revese, reverseProcessing);</pre><p class="e">Trzy handlery: para (typ żądania, funkcja).</p>
+<pre>        Dispatcher dispatcher = new Dispatcher();
+
+        RequestProcessor requestProcessor = new RequestProcessor( dispatcher,
+                List.of(upperCaseHandler, lowerCaseHandler, reverseHandler)
+        );
+
+        return requestProcessor;
+    }
+}</pre><p class="e"><code>Dispatcher</code> i <code>RequestProcessor</code> z listą handlerów <code>List.of(...)</code>. <strong>To my ręcznie tworzymy (<code>new</code>) każdy obiekt i łączymy zależności</strong> – „klasycznie”, bez frameworka. Metoda zwraca gotowy procesor.</p>
+</details>
+<details><summary>6.1 · App0.java – uruchomienie klasyczne</summary>
+<pre>package org.example;
+
+import org.example.model.*;
+import org.example.requestprocessorlibrary.RequestProcessor;
+
+public class App0 {
+
+    public static void main(String[] args) {</pre><p class="e">Importy modelu i <code>RequestProcessor</code>.</p>
+<pre>        System.out.println(&quot;Klasycznie.&quot;);
+
+        RequestProcessor requestProcessor = App0Generator.getRequestProcessor();</pre><p class="e">Pobranie procesora z generatora.</p>
+<pre>        Request request1 = Request.builder()
+                .type(&quot;reverse&quot;)
+                .data(&quot;Ala ma kota Filemona&quot;)
+                .build();
+
+        Request request2 = Request.builder()
+                .type(&quot;upper&quot;)
+                .data(&quot;Ala ma kota Filemona&quot;)
+                .build();
+
+        Request request3 = Request.builder()
+                .type(&quot;unknown&quot;)
+                .data(&quot;Some data&quot;)
+                .build();</pre><p class="e">Trzy żądania zbudowane builderem: <code>reverse</code>, <code>upper</code> i <code>unknown</code> (nie ma takiego handlera).</p>
+<pre>        Response response1 = requestProcessor.processRequest(request1);
+        Response response2 = requestProcessor.processRequest(request2);
+        Response response3 = requestProcessor.processRequest(request3);
+
+        System.out.println(request1 + &quot; -&gt; &quot; + response1);
+        System.out.println(request2 + &quot; -&gt; &quot; + response2);
+        System.out.println(request3 + &quot; -&gt; &quot; + response3);
+
+    }
+}</pre><p class="e">Wywołanie procesora i wypis par żądanie → odpowiedź (toString z Lomboka).</p>
+</details>
+<details><summary>6.2 · App1Config.java – konfiguracja Spring w Javie</summary>
+<pre>package org.example;
+
+import org.example.requestprocessorlibrary.*;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import java.util.List;</pre><p class="e">Importy Springa: <code>@Bean</code>, <code>@Configuration</code>, <code>@Qualifier</code>.</p>
+<pre>@Configuration
+public class App1Config {
+
+    String upper = &quot;upper&quot;, lower = &quot;lower&quot;, revese = &quot;reverse&quot;;
+
+    @Bean</pre><p class="e"><code>@Configuration</code> – klasa jest źródłem definicji beanów (kontener IoC wywoła jej metody i zapamięta wyniki). Pola <code>upper</code>, <code>lower</code>, <code>revese</code> – stałe z nazwami typów żądań.</p>
+<pre>    public StringProcessing upperCaseProcessing() {
+        return s -&gt; s.toUpperCase();
+    }
+
+    @Bean
+    public StringProcessing lowerCaseProcessing() {
+        return s -&gt; s.toLowerCase();
+    }
+
+    @Bean
+    public StringProcessing reverseProcessing() {
+        return s -&gt; new StringBuilder(s).reverse().toString();
+    }
+
+    @Bean</pre><p class="e"><strong>Beany funkcji</strong> – metoda <code>@Bean</code> zwraca obiekt, który Spring rejestruje w kontenerze pod nazwą metody (<code>upperCaseProcessing</code>, <code>lowerCaseProcessing</code>, <code>reverseProcessing</code>). Zwracane są lambdy – to ten sam kod co w <code>App0Generator</code>, ale tworzony przez kontener (domyślnie singleton).</p>
+<pre>    public Handler upperCaseHandler(@Qualifier(&quot;upperCaseProcessing&quot;) StringProcessing sp) {
+        return new Handler(upper, sp);
+    }
+
+    @Bean
+    public Handler lowerCaseHandler(@Qualifier(&quot;lowerCaseProcessing&quot;) StringProcessing sp) {
+        return new Handler(&quot;lower&quot;, sp);
+    }
+
+
+    @Bean
+    public Handler reverseHandler(@Qualifier(&quot;reverseProcessing&quot;) StringProcessing sp) {
+        return new Handler(revese, sp);
+    }
+
+    @Bean</pre><p class="e"><strong>Beany handlerów.</strong> Parametr metody <code>@Bean</code> jest <strong>wstrzykiwany</strong> przez Springa. Ponieważ istnieją trzy beany typu <code>StringProcessing</code>, <code>@Qualifier(&quot;upperCaseProcessing&quot;)</code> wskazuje po nazwie, który wstrzyknąć (inaczej <code>NoUniqueBeanDefinitionException</code>). Typ handlera: <code>upper</code>, w <code>lowerCaseHandler</code> wpisany literał <code>&quot;lower&quot;</code>, w <code>reverseHandler</code> – <code>revese</code> (= &quot;reverse&quot;).</p>
+<pre>    public Dispatcher dispatcher() {
+        return new Dispatcher();
+    }
+
+    @Bean</pre><p class="e"><strong>Bean dispatchera</strong> – zwykły <code>new Dispatcher()</code>.</p>
+<pre>    public RequestProcessor requestProcessor(Dispatcher dispatcher,  List&lt;Handler&gt; handlers) {
+        return new RequestProcessor(dispatcher, handlers);
+    }
+
+}</pre><p class="e"><strong>Bean procesora.</strong> Parametry: <code>Dispatcher</code> (bean) i <code>List&lt;Handler&gt;</code> – Spring wstrzykuje <strong>listę wszystkich beanów typu <code>Handler</code></strong> (trzy handlery). Nie trzeba ręcznie wypisywać <code>List.of(...)</code> jak w 6.1 – dodanie kolejnego beana <code>Handler</code> automatycznie trafi do listy.</p>
+</details>
+<details><summary>6.2 · App1.java – uruchomienie ze Spring (bez Boot)</summary>
+<pre>package org.example;
+
+import org.example.model.*;
+import org.example.requestprocessorlibrary.RequestProcessor;
+import org.springframework.context.annotation.AnnotationConfigApplicationContext;
+
+public class App1 {
+
+    public static void main(String[] args) throws Exception {</pre><p class="e">Importy, m.in. <code>AnnotationConfigApplicationContext</code>.</p>
+<pre>        System.out.println(&quot;Spring Framework, ale bez Boot.&quot;);
+
+        AnnotationConfigApplicationContext context
+                = new AnnotationConfigApplicationContext(App1Config.class);
+
+        RequestProcessor requestProcessor = context.getBean(RequestProcessor.class);</pre><p class="e"><code>new AnnotationConfigApplicationContext(App1Config.class)</code> – tworzy kontener IoC z klasy konfiguracyjnej (Spring tworzy beany i je łączy). <code>context.getBean(RequestProcessor.class)</code> – pobiera gotowy procesor po typie.</p>
+<pre>        Request request1 = Request.builder()
+                .type(&quot;reverse&quot;)
+                .data(&quot;Ala ma kota Filemona&quot;)
+                .build();
+
+        Request request2 = Request.builder()
+                .type(&quot;upper&quot;)
+                .data(&quot;Ala ma kota Filemona&quot;)
+                .build();
+
+        Request request3 = Request.builder()
+                .type(&quot;unknown&quot;)
+                .data(&quot;Some data&quot;)
+                .build();</pre><p class="e">Te same trzy żądania co w <code>App0</code>.</p>
+<pre>        Response response1 = requestProcessor.processRequest(request1);
+        Response response2 = requestProcessor.processRequest(request2);
+        Response response3 = requestProcessor.processRequest(request3);
+
+        System.out.println(request1 + &quot; -&gt; &quot; + response1);
+        System.out.println(request2 + &quot; -&gt; &quot; + response2);
+        System.out.println(request3 + &quot; -&gt; &quot; + response3);
+
+        context.close();
+    }
+}</pre><p class="e">Wywołania i wypis. Na końcu <code>context.close()</code> – zamyka kontener i zwalnia zasoby (kontener jest <code>AutoCloseable</code>).</p>
+</details>
+<details><summary>6.3 · build.gradle.kts (Spring Boot)</summary>
+<pre>plugins {
+	java
+	id(&quot;org.springframework.boot&quot;) version &quot;4.0.9&quot;
+	id(&quot;io.spring.dependency-management&quot;) version &quot;1.1.7&quot;
+}
+
+group = &quot;org.example&quot;
+version = &quot;0.0.1-SNAPSHOT&quot;</pre><p class="e">Wtyczki: <code>java</code>, <code>org.springframework.boot</code> (4.0.9; plik wykonywalny, zadanie <code>bootRun</code>) i <code>io.spring.dependency-management</code> (zarządzanie wersjami – dlatego zależności Boota i Lomboka bez numerów wersji).</p>
+<pre>java {
+	toolchain {
+		languageVersion = JavaLanguageVersion.of(21)
+	}
+}
+
+repositories {
+	mavenCentral()
+}</pre><p class="e">Toolchain Java 21.</p>
+<pre>dependencies {
+	implementation(&quot;org.springframework.boot:spring-boot-starter&quot;)
+	compileOnly(&quot;org.projectlombok:lombok&quot;)
+	annotationProcessor(&quot;org.projectlombok:lombok&quot;)
+	testImplementation(&quot;org.springframework.boot:spring-boot-starter-test&quot;)
+	testCompileOnly(&quot;org.projectlombok:lombok&quot;)
+	testRuntimeOnly(&quot;org.junit.platform:junit-platform-launcher&quot;)
+	testAnnotationProcessor(&quot;org.projectlombok:lombok&quot;)
+}
+
+tasks.withType&lt;Test&gt; {
+	useJUnitPlatform()
+}</pre><p class="e"><code>spring-boot-starter</code> (zamiast <code>-web</code> – nie potrzeba serwera HTTP); Lombok (<code>compileOnly</code> + <code>annotationProcessor</code>, także dla testów); <code>spring-boot-starter-test</code> (JUnit + narzędzia testowe Springa).</p>
+</details>
+<details><summary>6.3 · Application.java – start Spring Boot</summary>
+<pre>package org.example;
+
+import org.example.model.*;
+import org.example.requestprocessorlibrary.RequestProcessor;
+import org.springframework.boot.SpringApplication;
+import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.context.ApplicationContext;</pre><p class="e">Importy: <code>SpringApplication</code>, <code>SpringBootApplication</code>, <code>ApplicationContext</code>.</p>
+<pre>@SpringBootApplication
+public class Application {
+
+    public static void main(String[] args) {</pre><p class="e"><code>@SpringBootApplication</code> = <code>@Configuration</code> + <code>@EnableAutoConfiguration</code> + <code>@ComponentScan</code> – włącza autokonfigurację i <strong>skanowanie komponentów</strong> w pakiecie klasy (<code>org.example</code>) i podpakietach. Nie ma już klasy <code>App1Config</code>.</p>
+<pre>        ApplicationContext context = SpringApplication.run(Application.class, args);
+
+        RequestProcessor requestProcessor = context.getBean(RequestProcessor.class);</pre><p class="e"><code>SpringApplication.run(Application.class, args)</code> uruchamia aplikację: tworzy kontener, znajduje klasy z <code>@Component</code>, tworzy beany i wstrzykuje zależności; zwraca kontekst. Z niego <code>getBean(RequestProcessor.class)</code>.</p>
+<pre>        Request request1 = Request.builder()
+                .type(&quot;reverse&quot;)
+                .data(&quot;Ala ma kota Filemona&quot;)
+                .build();
+
+        Request request2 = Request.builder()
+                .type(&quot;upper&quot;)
+                .data(&quot;Ala ma kota Filemona&quot;)
+                .build();
+
+        Request request3 = Request.builder()
+                .type(&quot;unknown&quot;)
+                .data(&quot;Some data&quot;)
+                .build();
+
+        Response response1 = requestProcessor.processRequest(request1);
+        Response response2 = requestProcessor.processRequest(request2);
+        Response response3 = requestProcessor.processRequest(request3);
+
+        System.out.println(request1 + &quot; -&gt; &quot; + response1);
+        System.out.println(request2 + &quot; -&gt; &quot; + response2);
+        System.out.println(request3 + &quot; -&gt; &quot; + response3);
+
+    }
+
+}</pre><p class="e">Te same trzy żądania i wypis odpowiedzi (do konsoli trafiają też logi startu Springa).</p>
+</details>
+<details><summary>6.3 · Dispatcher i RequestProcessor jako @Component</summary>
+<pre>package org.example.requestprocessorlibrary;
+
+import org.example.model.*;
+import lombok.NoArgsConstructor;
+import java.util.List;
+import org.springframework.stereotype.Component;</pre><p class="e">Importy, m.in. <code>@Component</code> ze Springa.</p>
+<pre>@Component
+@NoArgsConstructor
+public class Dispatcher {
+
+    public Response processRequest(Request request, List&lt;Handler&gt; handlers ) {
+
+        if(handlers == null || handlers.isEmpty())
+            return Response.builder().message(&quot;No handlers registered&quot;)
+                    .data(null).build();
+
+        for(Handler handler : handlers) {
+            if(handler.isYourJob(request.getType())) {
+                String result = handler.processData(request.getData());
+                return Response.builder().message( result != null ? &quot;OK&quot; : &quot;Processing failed.&quot;)
+                        .data(result).build();
+            }
+        }
+
+        return Response.builder().message(&quot;No matching handler registered&quot;)
+                .data(null).build();
+    }
+}</pre><p class="e">To samo <code>Dispatcher</code> co w 6.1 – dodano tylko <code>@Component</code> (Spring utworzy singleton). Logika <code>processRequest</code> bez zmian.</p>
+<pre>package org.example.requestprocessorlibrary;
+
+import java.util.List;
+
+import org.example.model.*;
+import lombok.AllArgsConstructor;
+import org.springframework.stereotype.Component;</pre><p class="e">Importy.</p>
+<pre>@Component
+@AllArgsConstructor
+public class RequestProcessor {
+
+    private Dispatcher dispatcher;
+
+    private List&lt;Handler&gt; handlers;
+
+    public Response processRequest(Request request) {
+
+        return dispatcher.processRequest(request, handlers);
+    }
+}</pre><p class="e"><code>@Component</code> + <code>@AllArgsConstructor</code> – Lombok generuje konstruktor <code>(Dispatcher, List&lt;Handler&gt;)</code>; ponieważ to jedyny konstruktor, Spring użyje go do wstrzyknięcia: beana <code>Dispatcher</code> i listy wszystkich komponentów typu <code>Handler</code> (tu: trzy podklasy).</p>
+</details>
+<details><summary>6.3 · implementations/processing – trzy klasy funkcji</summary>
+<pre>package org.example.implementations.processing;
+
+import org.example.requestprocessorlibrary.StringProcessing;
+import org.springframework.stereotype.Component;
+
+@Component(&quot;upperCaseProcessing&quot;)
+public class UpperCaseProcessing implements StringProcessing {
+    @Override
+    public String processString(String s) {
+        return s.toUpperCase();
+    }
+}</pre><p class="e"><code>StringProcessing</code> jest interfejsem (nie ma instancji), więc dla każdej funkcji powstaje klasa implementująca. <code>@Component(&quot;upperCaseProcessing&quot;)</code> – bean o jawnej nazwie, używanej później w <code>@Qualifier</code>. Metoda: <code>s.toUpperCase()</code>.</p>
+<pre>package org.example.implementations.processing;
+
+import org.example.requestprocessorlibrary.StringProcessing;
+import org.springframework.stereotype.Component;
+
+@Component(&quot;lowerCaseProcessing&quot;)
+public class LowerCaseProcessing implements StringProcessing {
+    @Override
+    public String processString(String s) {
+        return s.toLowerCase();
+    }
+}</pre><p class="e"><code>@Component(&quot;lowerCaseProcessing&quot;)</code>; <code>s.toLowerCase()</code>.</p>
+<pre>package org.example.implementations.processing;
+
+import org.example.requestprocessorlibrary.StringProcessing;
+import org.springframework.stereotype.Component;
+
+@Component(&quot;reverseProcessing&quot;)
+public class ReverseProcessing implements StringProcessing {
+    @Override
+    public String processString(String s) {
+        return new StringBuilder(s).reverse().toString();
+    }
+}</pre><p class="e"><code>@Component(&quot;reverseProcessing&quot;)</code>; <code>new StringBuilder(s).reverse().toString()</code>.</p>
+</details>
+<details><summary>6.3 · implementations/handlers – trzy klasy handlerów</summary>
+<pre>package org.example.implementations.handlers;
+
+import org.example.requestprocessorlibrary.*;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
+
+@Component
+public class UpperCaseHandler extends Handler {
+    public UpperCaseHandler(@Qualifier(&quot;upperCaseProcessing&quot;) StringProcessing sp) {
+        super(&quot;upper&quot;, sp);
+    }
+}</pre><p class="e"><code>Handler</code> nie może być jednym komponentem (jest ich kilka, a Spring nie wiedziałby, jaką wartość dać <code>requestType</code>). Dlatego każdy handler to <strong>podklasa</strong> <code>Handler</code> z <code>@Component</code>. Konstruktor dostaje funkcję wskazaną <code>@Qualifier(&quot;upperCaseProcessing&quot;)</code> (spośród trzech beanów <code>StringProcessing</code>) i przekazuje ją z typem <code>&quot;upper&quot;</code> do konstruktora nadrzędnego: <code>super(&quot;upper&quot;, sp)</code>.</p>
+<pre>package org.example.implementations.handlers;
+
+import org.example.requestprocessorlibrary.*;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
+
+@Component
+public class LowerCaseHandler extends Handler {
+    public LowerCaseHandler(@Qualifier(&quot;lowerCaseProcessing&quot;) StringProcessing sp) {
+        super(&quot;lower&quot;, sp);
+    }
+}</pre><p class="e">Typ <code>&quot;lower&quot;</code>, funkcja <code>lowerCaseProcessing</code>.</p>
+<pre>package org.example.implementations.handlers;
+
+import org.example.requestprocessorlibrary.*;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.stereotype.Component;
+
+@Component
+public class ReverseHandler extends Handler {
+    public ReverseHandler(@Qualifier(&quot;reverseProcessing&quot;) StringProcessing sp) {
+        super(&quot;reverse&quot;, sp);
+    }
+}</pre><p class="e">Typ <code>&quot;reverse&quot;</code>, funkcja <code>reverseProcessing</code>.</p>
+</details>
+<details><summary>6.3 · application.properties i ApplicationTests</summary>
+<pre>spring.application.name=05-2-spring-boot</pre><p class="e">Konfiguracja Spring Boot: <code>spring.application.name</code> – nazwa aplikacji (generowana przez start.spring.io).</p>
+<pre>package org.example;
+
+import org.junit.jupiter.api.Test;
+import org.springframework.boot.test.context.SpringBootTest;
+
+@SpringBootTest
+class ApplicationTests {
+
+	@Test
+	void contextLoads() {
+	}
+
+}</pre><p class="e"><code>@SpringBootTest</code> uruchamia pełny kontekst aplikacji; pusty test <code>contextLoads()</code> przechodzi tylko wtedy, gdy wszystkie beany da się utworzyć i połączyć (test dymny konfiguracji DI).</p>
+</details>
+<details><summary>Porównanie trzech podejść (ściąga)</summary>
+<p><strong>Tworzenie obiektów:</strong> 6.1 – <code>new</code> w <code>App0Generator</code>; 6.2 – metody <code>@Bean</code> w <code>App1Config</code>; 6.3 – <code>@Component</code> na klasach.
+<strong>Łączenie zależności:</strong> 6.1 – ręcznie, konstruktorami; 6.2 – kontener IoC (parametry <code>@Bean</code>, <code>@Qualifier</code>, <code>List&lt;Handler&gt;</code>); 6.3 – kontener + skanowanie (<code>@SpringBootApplication</code>).
+<strong>Start:</strong> 6.1 – <code>App0.main</code>; 6.2 – <code>new AnnotationConfigApplicationContext(App1Config.class)</code>; 6.3 – <code>SpringApplication.run(Application.class, args)</code>.
+<strong>Zależność:</strong> 6.1 – brak; 6.2 – <code>spring-context</code>; 6.3 – <code>spring-boot-starter</code>.
+<strong>Funkcje przetwarzania:</strong> 6.1 – lambdy; 6.2 – beany z lambdami; 6.3 – klasy <code>…Processing</code>.
+<strong>Handlery:</strong> 6.1 – <code>new Handler(&quot;upper&quot;, f)</code>; 6.2 – beany <code>Handler</code>; 6.3 – podklasy <code>…Handler</code>.
+
+<strong>IoC (Inversion of Control)</strong> – kontener tworzy obiekty i zarządza nimi. <strong>DI (Dependency Injection)</strong> – zależności są wstrzykiwane z zewnątrz (konstruktor, parametr <code>@Bean</code>), obiekt sam ich nie tworzy.</p>
+</details></main></body></html>

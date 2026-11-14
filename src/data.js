@@ -31,6 +31,7 @@ export const subjects = Object.entries(raw)
         return {
           id: lec.id ?? id,
           title: lec.title ?? id,
+          notes: lec.notes ?? [],
           questions: lec.questions.map((q) => ({
             ...q,
             uid: `${s.meta.id ?? folder}:${q.id}`,
