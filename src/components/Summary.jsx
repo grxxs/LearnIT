@@ -1,3 +1,4 @@
+import Rich from './Rich.jsx';
 import React from 'react';
 
 export default function Summary({ results, mode, title, onBack, onRetry }) {
@@ -47,11 +48,11 @@ export default function Summary({ results, mode, title, onBack, onRetry }) {
             {wrong.map((r, i) => (
               <li key={i} className="card">
                 <span className="tag">{r.q.lectureTitle}</span>
-                <p className="question sm">{r.q.q}</p>
+                <p className="question sm"><Rich text={r.q.q} /></p>
                 <p className="ans bad-text">✕ {r.chosen}</p>
                 {r.chosenWhy && <p className="small trap">{r.chosenWhy}</p>}
                 <p className="ans good-text">✓ {r.correctText}</p>
-                <p className="muted small">{r.q.e}</p>
+                <p className="muted small"><Rich text={r.q.e} /></p>
               </li>
             ))}
           </ul>

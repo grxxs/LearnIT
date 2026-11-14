@@ -1,0 +1,326 @@
+{
+  "id": "l04",
+  "title": "L4 · Sieć TCP/IP – gra „zgadnij liczbę” (4.1–4.2)",
+  "questions": [
+    {
+      "id": "l04-01",
+      "q": "Lab 4.1 – gra „zgadnij liczbę”. Jak rozkładają się role w architekturze klient–serwer?",
+      "a": [
+        "Serwer = uczestnik główny (losuje i zna liczbę, ocenia propozycje), klienci = pozostali uczestnicy (zgadują)",
+        "Serwer zgaduje, a klienci losują liczbę",
+        "Każdy klient losuje własną liczbę i serwer ją zgaduje",
+        "Klienci komunikują się bezpośrednio ze sobą, serwer tylko startuje grę"
+      ],
+      "w": [
+        "Odwrotnie: liczbę zna tylko serwer.",
+        "Jest jedna tajna liczba po stronie serwera, wspólna dla wszystkich klientów.",
+        "Cała komunikacja idzie klient ↔ serwer."
+      ],
+      "e": "Zasady: uczestnik główny losuje `number` z zakresu 0…N, tylko on ją zna; N przekazuje graczom przy dołączeniu. Pozostali wysyłają propozycje i dostają jedną z odpowiedzi: `HIT` (trafiona), `OVERVALUED` (za duża), `UNDERVALUED` (za mała). Po `HIT` gracz kończy grę. W projekcie: `Server` (z `N = 25`), a klienci: `RedGamer`, `GreenGamer`, `BlueGamer`."
+    },
+    {
+      "id": "l04-02",
+      "q": "Jakie komunikaty (DTO) przesyłane są w protokole gry i w którą stronę?",
+      "a": [
+        "ClientGameEnterRequest (nick, kolor) → serwer; ServerGameEnterResponse (zakres liczb) → klient; ClientGuessRequest (guess) → serwer; ServerEvaluationResponse (guess, wynik) → klient",
+        "Tylko Integer od klienta i String od serwera",
+        "Serwer wysyła ClientGuessRequest, klient ServerEvaluationResponse",
+        "Wszystko przez jeden obiekt Message z polem typu"
+      ],
+      "w": [
+        "Gra wysyła obiekty (DTO), nie proste typy.",
+        "Nazwy mówią, kto wysyła: `Client…` od klienta, `Server…` od serwera.",
+        "Zaimplementowano osobne klasy dla każdego typu komunikatu."
+      ],
+      "e": "Dwa kroki: 1) wejście do gry: `ClientGameEnterRequest(nick, color)` ↔ `ServerGameEnterResponse(from, fromIncluded, to, toIncluded)` – serwer wysyła reguły (zakres). 2) pętla zgadywania: `ClientGuessRequest(guess)` ↔ `ServerEvaluationResponse(guess, result)`. Serwer rozróżnia typ komunikatu przez `instanceof`."
+    },
+    {
+      "id": "l04-03",
+      "q": "Dlaczego klasy DTO implementują `Serializable` i mają `private static final long serialVersionUID`?",
+      "a": [
+        "Serializable pozwala przesłać obiekt strumieniem (ObjectOutputStream); serialVersionUID identyfikuje wersję klasy i chroni przed niezgodnością przy deserializacji",
+        "Bo każda klasa musi mieć serialVersionUID, inaczej się nie skompiluje",
+        "Serializable szyfruje dane",
+        "Serializable przyspiesza przesyłanie przez sieć"
+      ],
+      "w": [
+        "To nie wymóg kompilatora – ostrzeżenie; domyślnie JVM wylicza wartość.",
+        "Serializacja nie szyfruje – zamienia obiekt na bajty.",
+        "Nie dotyczy szybkości."
+      ],
+      "e": "```\npublic class ClientGuessRequest implements Serializable {\n    private static final long serialVersionUID = 10L;\n    final public int guess;\n    public ClientGuessRequest(int guess) { this.guess = guess; }\n}\n```\nPola `final public` + konstruktor = niezmienny (immutable) komunikat. Różne `serialVersionUID` w klasach (1L, 2L, 10L, 11L) to etykiety wersji. Gdyby klient i serwer miały różne wersje klasy, odbiorca rzuciłby `InvalidClassException`. Enumy (`Evaluation`, `GameColor`) są serializowalne automatycznie."
+    },
+    {
+      "id": "l04-04",
+      "q": "Typ pola `ServerEvaluationResponse.result` to enum `Evaluation`:\n```\nHIT(\"HIT! :-)\"), OVERVALUED(\"TOO HIGH :-(\"), UNDERVALUED(\"TOO LOW :-(\");\n```\nJak enum jest przesyłany obiektowym strumieniem?",
+      "a": [
+        "Enumy są serializowalne – przesyła się nazwę stałej, a po stronie odbiorcy odtwarzana jest ta sama stała (można porównywać ==)",
+        "Trzeba je ręcznie zamienić na String przed wysłaniem",
+        "Enumy nie mogą być przesyłane przez sieć",
+        "Przesyłany jest cały obiekt z kopią komunikatu, więc `==` nie zadziała"
+      ],
+      "w": [
+        "Nie trzeba.",
+        "Mogą.",
+        "Po deserializacji dostajemy tę samą stałą singleton, dlatego klient robi `result == HIT`."
+      ],
+      "e": "Klient porównuje: `if (serverEvaluation.result == HIT) break;`. W enumie nadpisano `toString()`, więc `serverEvaluation.result` w konkatenacji daje „TOO HIGH :-(” itd. Pole `message` jest prywatne i ustawiane w konstruktorze enuma."
+    },
+    {
+      "id": "l04-05",
+      "q": "Co robi `ServerGameEnterResponse(int max)`?\n```\npublic ServerGameEnterResponse(int max) { this(0, true, max, true); }\n```",
+      "a": [
+        "Tworzy zakres [0, max] z obu końcami włączonymi, delegując do głównego konstruktora; główny konstruktor rzuca IllegalArgumentException, gdy from >= to",
+        "Tworzy zakres (0, max) z obydwoma końcami wyłączonymi",
+        "Losuje liczbę z zakresu",
+        "Wysyła zakres do klienta"
+      ],
+      "w": [
+        "Flagi są `true` – oba końce są włączone.",
+        "Losowanie jest w `ServerUtils.generateSecretNumber`.",
+        "To zwykły konstruktor – wysyła `handleClient`."
+      ],
+      "e": "Pola: `from`, `to`, `fromIncluded`, `toIncluded`. W `Server`: `N = 25` → zakres 0…25 włącznie. Możliwe są też zakresy typu (0, 25), gdzie flagi wyłączają krańce, a klient i serwer przeliczają realny zakres: `fromIncluded ? from : from + 1`, `toIncluded ? to : to - 1`."
+    },
+    {
+      "id": "l04-06",
+      "q": "Jak serwer losuje tajną liczbę?\n```\nstatic int generateSecretNumber(int fromIncluded, int toIncluded) {\n    return new Random().nextInt((toIncluded - fromIncluded) + 1) + fromIncluded;\n}\n```",
+      "a": [
+        "nextInt(n) zwraca liczbę 0…n−1; dodanie +1 do rozpiętości i przesunięcie o fromIncluded daje losową liczbę z przedziału domkniętego [from, to]",
+        "nextInt(n) zwraca 1…n, więc wystarczy wywołać nextInt(to)",
+        "Zwraca zawsze wartość ‘to’",
+        "Metoda zwraca liczbę z zakresu otwartego (from, to)"
+      ],
+      "w": [
+        "`nextInt(n)` zwraca 0…n−1.",
+        "Wynik jest losowy.",
+        "Przy +1 oba końce są włączone."
+      ],
+      "e": "Przykład: from=0, to=25 → `nextInt(26) + 0` → 0…25. Ten sam wzór używa klient w `ClientUtils.generateRandomGuess` – losuje strzały z zakresu otrzymanego od serwera (gracze zgadują losowo, bez strategii połowienia)."
+    },
+    {
+      "id": "l04-07",
+      "q": "Serwer `ServerGuessingGame.start()`:\n```\ntry (ServerSocket serverSocket = new ServerSocket(port)) {\n    while (true) {\n        Socket socketForClient = serverSocket.accept();\n        Thread.startVirtualThread(() -> handleClient(socketForClient));\n    }\n}\n```\nCo robi `accept()` i po co osobny wątek?",
+      "a": [
+        "accept() blokuje, aż klient się połączy, i zwraca Socket tego klienta; obsługę klienta oddajemy do osobnego (wirtualnego) wątku, żeby serwer od razu mógł przyjąć kolejnych",
+        "accept() zamyka serwer po pierwszym kliencie",
+        "accept() zwraca true/false w zależności od tego, czy klient jest online",
+        "Osobny wątek jest potrzebny wyłącznie dla kolorowania wyjścia"
+      ],
+      "w": [
+        "Pętla `while(true)` przyjmuje kolejnych.",
+        "Zwraca `Socket`.",
+        "Wątek jest po to, by obsługa jednego klienta nie blokowała pozostałych."
+      ],
+      "e": "Bez wątków serwer obsługiwałby jednego klienta na raz (pętla `readObject` nie kończy się, dopóki klient nie odejdzie). `Thread.startVirtualThread` (Java 21, Project Loom) tworzy lekki wątek wirtualny – tani, więc może być ich bardzo wiele. `ServerSocket` jest w try-with-resources, więc zamknie się automatycznie."
+    },
+    {
+      "id": "l04-08",
+      "q": "Co oznacza port `43210` z `server.properties`, i czego wymaga `AppUtils.getServerPortNumberFromProperties()`?",
+      "a": [
+        "Port TCP serwera; metoda akceptuje tylko 1024…49151 (porty zarejestrowane), w przeciwnym razie zwraca null",
+        "Adres IP serwera",
+        "Maksymalną liczbę klientów",
+        "Metoda akceptuje 0…1023 – porty systemowe"
+      ],
+      "w": [
+        "Port to numer, a adres IP to osobna informacja (`HOST`).",
+        "Port nie określa liczby klientów.",
+        "Te porty są poniżej dopuszczalnego zakresu."
+      ],
+      "e": "```\nserver.port=43210\nserver.dalayms=5000\n```\n`server.dalayms` (z literówką „dalay” w kluczu) to maksymalne opóźnienie odpowiedzi serwera w ms (0…5000). Konfiguracja czytana jest z classpath: `AppUtils.class.getResourceAsStream(\"/server.properties\")`, a `Properties.load(input)` może rzucić `IOException`, a `Integer.parseInt` – `NumberFormatException` (w obu przypadkach zwracane jest null). Konstruktor serwera rzuca `IllegalArgumentException`, gdy port lub opóźnienie są null."
+    },
+    {
+      "id": "l04-09",
+      "q": "Po co serwer robi `Thread.sleep(ThreadLocalRandom.current().nextInt(delayMs))` przed oceną propozycji?",
+      "a": [
+        "Sztuczne opóźnienie o losowej długości (do 5 s) – symuluje wolne sieci i sprawia, że klienci odpowiadają w różnych momentach, więc współbieżność widać na ekranie",
+        "Bo bez sleep serwer nie zdąży wysłać odpowiedzi",
+        "Sleep zapobiega trafieniu przez wielu graczy naraz",
+        "Aby zsynchronizować wątki"
+      ],
+      "w": [
+        "Odpowiedź wysyłana jest po obliczeniu; sleep nie jest potrzebny technicznie.",
+        "Sleep nie wpływa na poprawność gry.",
+        "Nie ma tu żadnej synchronizacji, tylko opóźnienie."
+      ],
+      "e": "`ThreadLocalRandom` to generator zalecany we współbieżności (osobna instancja na wątek). `InterruptedException` jest przechwytywana i ignorowana (`_ignored`). Zadanie dodatkowe: uruchomić grę na kilku komputerach; wtedy zamiast `HOST = \"localhost\"` trzeba wpisać adres komputera z serwerem."
+    },
+    {
+      "id": "l04-10",
+      "q": "Dlaczego w kliencie `ObjectOutputStream` jest tworzony PRZED `ObjectInputStream`, a w serwerze odwrotnie (najpierw `ObjectInputStream`)?\n```\n// klient: Socket s; out = new ObjectOutputStream(s.getOutputStream()); in = new ObjectInputStream(s.getInputStream());\n// serwer: in = new ObjectInputStream(socket.getInputStream());         out = new ObjectOutputStream(socket.getOutputStream());\n```",
+      "a": [
+        "Konstruktor ObjectInputStream blokuje do odebrania nagłówka strumienia; gdyby obie strony tworzyły najpierw `in`, powstałby zakleszczenie – jedna strona musi najpierw wysłać nagłówek (out)",
+        "To przypadek – kolejność jest bez znaczenia",
+        "Klient nie potrzebuje ObjectInputStream",
+        "ObjectInputStream musi być zawsze po stronie serwera pierwszy"
+      ],
+      "w": [
+        "Kolejność ma znaczenie – obie strony na `in` zawisłyby.",
+        "Klient odczytuje odpowiedzi serwera.",
+        "Ważne jest, by obie strony nie czekały jednocześnie na nagłówek."
+      ],
+      "e": "`ObjectOutputStream` przy tworzeniu zapisuje nagłówek, a `ObjectInputStream` w konstruktorze go czyta (czeka). Klient: `out` (wysyła nagłówek) → `in` (czeka na nagłówek serwera). Serwer: `in` (odbiera nagłówek klienta) → `out` (wysyła swój). Dzięki zgodnej kolejności nikt nie czeka w nieskończoność. W kodzie klienta i serwera warto też zwrócić uwagę na `out.flush()` po każdym `writeObject`."
+    },
+    {
+      "id": "l04-11",
+      "q": "Po co `out.flush()` po `out.writeObject(...)`?",
+      "a": [
+        "Wymusza fizyczne wysłanie danych z bufora strumienia – bez tego komunikat może zostać w buforze, a druga strona będzie czekać",
+        "Zamyka strumień",
+        "Czyści obiekt z pamięci",
+        "Pozwala wysłać obiekt dwa razy"
+      ],
+      "w": [
+        "Do zamknięcia służy `close()`.",
+        "flush nie usuwa obiektu.",
+        "To nie ma związku z duplikowaniem."
+      ],
+      "e": "Strumienie są buforowane. W protokole żądanie–odpowiedź każda strona musi od razu wysłać wiadomość, by druga mogła odpowiedzieć – dlatego `flush()` pojawia się po każdym `writeObject` zarówno w kliencie, jak i serwerze."
+    },
+    {
+      "id": "l04-12",
+      "q": "Klient:\n```\ntry (Socket socket = new Socket(serverAddress, serverPort);\n     ObjectOutputStream out = ...; ObjectInputStream in = ...) { ... }\ncatch (UnknownHostException ex) { ... }\ncatch (IOException ex) { ... }\ncatch (ClassNotFoundException ex) { ... }\n```\nDlaczego `UnknownHostException` jest przed `IOException`?",
+      "a": [
+        "UnknownHostException dziedziczy po IOException – szerszy catch przed węższym dałby błąd kompilacji (nieosiągalny blok)",
+        "Kolejność catch jest dowolna",
+        "IOException dziedziczy po UnknownHostException",
+        "Bo UnknownHostException jest nieobsługiwana (unchecked)"
+      ],
+      "w": [
+        "Przy dziedziczeniu kolejność ma znaczenie.",
+        "Odwrotnie: Unknown… jest podklasą IOException.",
+        "To wyjątek sprawdzany (checked), podklasa IOException."
+      ],
+      "e": "Bloki catch sprawdzane są po kolei i dopasowuje się pierwszy pasujący. `ClassNotFoundException` zgłasza `readObject`, gdy odbiorca nie zna klasy odebranego obiektu. Wszystkie zasoby (`Socket`, strumienie) zamykane są automatycznie (try-with-resources)."
+    },
+    {
+      "id": "l04-13",
+      "q": "Co robi klient w pętli?\n```\nClientGuessRequest myGuess = ClientUtils.generateRandomGuess(gameRange);\nwhile (true) {\n    out.writeObject(myGuess); out.flush();\n    ServerEvaluationResponse r = (ServerEvaluationResponse) in.readObject();\n    if (r.result == HIT) break;\n    myGuess = ClientUtils.generateRandomGuess(gameRange);\n}\n```",
+      "a": [
+        "Wysyła losową propozycję, czeka na ocenę i zgaduje dalej, aż dostanie HIT; wyjście z try zamyka połączenie",
+        "Wysyła jedną propozycję i kończy",
+        "Używa wyszukiwania binarnego na podstawie OVERVALUED/UNDERVALUED",
+        "Czeka na kolejne propozycje serwera"
+      ],
+      "w": [
+        "Pętla trwa aż do trafienia.",
+        "Klient losuje za każdym razem z całego zakresu, bez uwzględniania wskazówek.",
+        "Inicjatorem jest klient; serwer odpowiada."
+      ],
+      "e": "Sekwencja: 0) wypis informacji o połączeniu; 1) `writeObject(myGameEnterRequest)` i odczyt zakresu gry (`gameRange`); 2) pętla zgadywania. Odczytany obiekt jest rzutowany na konkretną klasę DTO."
+    },
+    {
+      "id": "l04-14",
+      "q": "Jak serwer rozróżnia typ komunikatu od klienta?\n```\nObject request = in.readObject();\nif (request instanceof ClientGameEnterRequest enterRequest) { ... }\nelse if (request instanceof ClientGuessRequest guessRequest) { ... }\n```",
+      "a": [
+        "Używa instanceof z dopasowaniem wzorca (pattern matching): sprawdza typ i od razu deklaruje zmienną typu docelowego",
+        "Porównuje request.getClass().getName() w switchu napisów",
+        "Każdy typ komunikatu ma osobny port",
+        "Klient wysyła wcześniej int z kodem typu"
+      ],
+      "w": [
+        "Kod używa `instanceof` ze zmienną wzorca.",
+        "Wszystkie komunikaty idą jednym połączeniem.",
+        "Rozróżnienie następuje po klasie obiektu."
+      ],
+      "e": "`instanceof X x` (Java 16+) sprawdza i rzutuje w jednym kroku; bez niego trzeba byłoby napisać `((ClientGuessRequest) request).guess`. Obsługa: enter → odeśle `gameRange`, zapamięta kolor i nick; guess → zaczeka losową chwilę i odeśle `ServerEvaluationResponse`."
+    },
+    {
+      "id": "l04-15",
+      "q": "Jak działa ocena propozycji?\n```\nEvaluation evaluation =\n    clientGuess.guess > secretNumber ? Evaluation.OVERVALUED :\n    clientGuess.guess < secretNumber ? Evaluation.UNDERVALUED :\n    Evaluation.HIT;\n```",
+      "a": [
+        "Zagnieżdżony operator trójargumentowy: większa → OVERVALUED, mniejsza → UNDERVALUED, w przeciwnym razie HIT",
+        "Jeśli propozycja jest większa, serwer zwraca UNDERVALUED",
+        "Dwie instrukcje if bez else",
+        "HIT zwracany jest tylko przy różnicy ≤ 1"
+      ],
+      "w": [
+        "OVERVALUED = za duża.",
+        "Zapisano jako wyrażenie z `?:`.",
+        "HIT oznacza dokładne trafienie."
+      ],
+      "e": "Przykład: sekret = 17, propozycja 20 → `OVERVALUED` („TOO HIGH :-(”), propozycja 10 → `UNDERVALUED` („TOO LOW :-(”), propozycja 17 → `HIT`. Odpowiedź zawiera też propozycję (`guess`), by klient mógł dopasować wynik."
+    },
+    {
+      "id": "l04-16",
+      "q": "Co dzieje się na serwerze, gdy klient po `HIT` kończy działanie?",
+      "a": [
+        "Klient zamyka gniazdo, a serwer przy readObject() dostaje EOFException („Connection closed”); finally zamyka gniazdo, wątek się kończy",
+        "Serwer zamyka się razem z klientem",
+        "Serwer losuje nową liczbę",
+        "Serwer rzuca ClassNotFoundException"
+      ],
+      "w": [
+        "Serwer działa dalej i obsługuje innych.",
+        "Liczba jest losowana raz, w konstruktorze.",
+        "Ten wyjątek dotyczy nieznanej klasy obiektu, a nie rozłączenia."
+      ],
+      "e": "Pętla `while(true)` w `handleClient` kończy się wyjątkiem: `EOFException` (normalne zakończenie), `IOException` (problem z połączeniem), `ClassNotFoundException` (nieznana klasa). W `finally` jest `socket.close()`. Uwaga: tajna liczba jest jedna na uruchomienie serwera – po trafieniu przez pierwszego gracza kolejni też mogą zgadywać tę samą liczbę."
+    },
+    {
+      "id": "l04-17",
+      "q": "Dlaczego w `Server` i `Gamer` są oddzielne klasy `main` (Server, RedGamer, GreenGamer, BlueGamer)?",
+      "a": [
+        "Każdy to osobny proces/uruchomienie: jeden serwer i kilka niezależnych klientów o różnych nickach i kolorach",
+        "Bo Java pozwala tylko jedną klasę z main w projekcie",
+        "Bo klienci muszą dziedziczyć po Server",
+        "Bo to wymóg Gradle"
+      ],
+      "w": [
+        "Można mieć wiele klas z `main`.",
+        "Nie dziedziczą – używają klasy `ClientGuessingGame`.",
+        "To wybór projektu – ułatwia start wielu graczy."
+      ],
+      "e": "Każdy gracz: `new ClientGuessingGame(\"Blue Dolphin\", BLUE).start(HOST, PORT)`. Nick i kolor trafiają w `ClientGameEnterRequest`. Zadanie dodatkowe („uruchomić na kilku komputerach”) wymaga właśnie takich klas uruchomieniowych. Klasa `Main` w projekcie jest pustym szkieletem."
+    },
+    {
+      "id": "l04-18",
+      "q": "Do czego służy `GameColor`?\n```\nRESET_COLOR(\"\\u001B[0m\"), RED(\"\\u001B[31m\"), GREEN(\"\\u001B[32m\"), BLUE(\"\\u001B[34m\");\n```",
+      "a": [
+        "To enum z kodami ANSI do kolorowania wyjścia w konsoli; toString() zwraca kod, więc `color + tekst + RESET_COLOR` koloruje napis",
+        "Wybiera kolor interfejsu graficznego JavaFX",
+        "Określa kolor gniazda sieciowego",
+        "Jest identyfikatorem gracza używanym przez serwer do rozróżniania połączeń"
+      ],
+      "w": [
+        "To aplikacja konsolowa.",
+        "Gniazda nie mają koloru.",
+        "Kolor służy tylko do wypisywania."
+      ],
+      "e": "Serwer również koloruje wypisy gracza (`clientColor + clientNick + \" guessing …\" + RESET_COLOR`), dzięki czemu w konsoli widać, który klient co zgaduje. Enum jest serializowalny, więc przesyłany jest w `ClientGameEnterRequest`."
+    },
+    {
+      "id": "l04-19",
+      "q": "Czym różni się strumień bajtowy `Socket.getInputStream()` od `ObjectInputStream`?",
+      "a": [
+        "Pierwszy daje surowe bajty z gniazda; ObjectInputStream opakowuje go i odtwarza z bajtów całe obiekty Javy (deserializacja)",
+        "To to samo",
+        "ObjectInputStream działa tylko z plikami",
+        "Socket.getInputStream() zwraca obiekty"
+      ],
+      "w": [
+        "ObjectInputStream dodaje deserializację obiektów.",
+        "Można go opakować na dowolnym `InputStream`, także z gniazda.",
+        "Zwraca surowe bajty."
+      ],
+      "e": "Wzorzec dekoratora: `new ObjectInputStream(socket.getInputStream())`. `readObject()` zwraca `Object`, więc potrzebne jest rzutowanie lub `instanceof`. Literatura do lab 4: artykuł Baeldung o wysyłaniu i odbieraniu serializowanych obiektów przez socket channel."
+    },
+    {
+      "id": "l04-20",
+      "q": "Lab 4.2 (gwiazdka) – wersja z `java.nio`. Czym różnią się kanały nieblokujące od klasycznych gniazd z 4.1?",
+      "a": [
+        "Jeden wątek z Selectorem może obsługiwać wiele kanałów: operacje nie blokują, a Selector zgłasza gotowość (accept/read/write) – nie trzeba wątku na klienta",
+        "Kanały nieblokujące są szybsze, bo nie używają TCP",
+        "Nie wymagają serializacji ani buforów",
+        "Nieblokujące kanały działają tylko po stronie klienta"
+      ],
+      "w": [
+        "Nadal używają TCP.",
+        "Dane przechodzą przez `ByteBuffer`; obiekty nadal trzeba zserializować.",
+        "Dotyczą obu stron; typowo ServerSocketChannel i SocketChannel."
+      ],
+      "e": "Klasy NIO: `ServerSocketChannel`, `SocketChannel`, `Selector`, `ByteBuffer`, ustawienie `configureBlocking(false)`. Zadanie zakłada tylko „niewielką modyfikację serwera i klienta” względem 4.1 – protokół i DTO zostają. W 4.1 zamiast tego użyto blokującego I/O z wątkami wirtualnymi."
+    }
+  ]
+}

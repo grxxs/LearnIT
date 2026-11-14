@@ -1,0 +1,502 @@
+{
+  "id": "l01",
+  "title": "L1 · Generyki, lambdy, adnotacje i refleksja (1.1–1.3)",
+  "questions": [
+    {
+      "id": "l01-01",
+      "q": "Lab 1.1 – klasa `SecretData<T1, T2>` ma dwa pola prywatne `data1` i `data2` typów T1 i T2. Co dają parametry typu T1 i T2?",
+      "a": [
+        "Jedna klasa może przechowywać dowolne dwa typy (String+PrintStream, Integer+Double…), a kompilator pilnuje typów bez rzutowania",
+        "Pola stają się dynamiczne – typ sprawdza się dopiero w czasie działania i trzeba rzutować na Object",
+        "Klasa jest automatycznie serializowalna",
+        "Pola mogą przechowywać tylko typy liczbowe"
+      ],
+      "w": [
+        "To zachowanie klasy z polami typu Object. Generyki dają sprawdzanie typów w czasie kompilacji.",
+        "Parametry typu nie mają nic wspólnego z serializacją.",
+        "Bez ograniczenia `extends` parametr typu przyjmuje dowolny typ referencyjny."
+      ],
+      "e": "Generyki (typy sparametryzowane) pozwalają napisać klasę raz i używać jej z różnymi typami. `new SecretData<>(\"Dane tekstowe\", System.out)` to `SecretData<String, PrintStream>`, a `new SecretData<>(5, 2.2)` to `SecretData<Integer, Double>`. Dzięki temu `getData1()` zwraca od razu String lub Integer – bez rzutowania, a błędy typów wychodzą w czasie kompilacji, nie w czasie działania. Pola są prywatne i dostępne przez gettery/settery (enkapsulacja), a konstruktor ustawia obie wartości."
+    },
+    {
+      "id": "l01-02",
+      "q": "W `Main` jest zapis `new SecretData<>(\"Dane tekstowe\", System.out)`. Co oznacza pusty nawias `<>`?",
+      "a": [
+        "Operator diamond – kompilator sam wnioskuje argumenty typu (tu <String, PrintStream>) z lewej strony przypisania i z argumentów konstruktora",
+        "Wymusza użycie typu Object dla obu parametrów",
+        "Tworzy surowy typ (raw type), więc kompilator wyłącza sprawdzanie typów",
+        "Jest błędem składniowym – argumenty typu zawsze trzeba wpisywać jawnie"
+      ],
+      "w": [
+        "Diamond nie wymusza Object – typy są wnioskowane.",
+        "Raw type to `new SecretData(...)` bez nawiasów. Diamond zachowuje pełną kontrolę typów.",
+        "Od Javy 7 diamond jest poprawny i zalecany."
+      ],
+      "e": "```\nSecretData<String, PrintStream> t = new SecretData<>(\"Dane tekstowe\", System.out);\n```\nPo lewej podajemy pełny typ, po prawej `<>` – kompilator dopasuje `<String, PrintStream>` (`System.out` jest typu `PrintStream`). To skrót wprowadzony w Javie 7, żeby nie powtarzać argumentów typu."
+    },
+    {
+      "id": "l01-03",
+      "q": "Metoda z `SecretDataActions`:\n```\npublic static <T1 extends Number, T2 extends Number>\ndouble sumOfData(SecretData<T1, T2> data) {\n    return data.getData1().doubleValue() + data.getData2().doubleValue();\n}\n```\nCo oznacza `T1 extends Number`?",
+      "a": [
+        "Ograniczenie górne: T1 musi być klasą Number lub jej podklasą (Integer, Double, Long…), dlatego wolno wywołać doubleValue()",
+        "T1 musi implementować interfejs Number",
+        "T1 może być dowolnym typem, `extends` jest tylko komentarzem dla programisty",
+        "T1 musi być dokładnie typem Number – Integer jest zabroniony"
+      ],
+      "w": [
+        "Number to klasa abstrakcyjna; w ograniczeniu typu `extends` dotyczy i klas, i interfejsów, ale tu chodzi o dziedziczenie po Number.",
+        "To realne ograniczenie sprawdzane przez kompilator.",
+        "Podklasy Number są dozwolone – po to jest ograniczenie górne."
+      ],
+      "e": "Bounded type parameter. Bez ograniczenia kompilator wiedziałby o T1 tylko tyle, że to Object, i `doubleValue()` by się nie skompilowało. `Number` ma metody `intValue()`, `doubleValue()` itd., więc przy ograniczeniu można je wołać. Zadanie wymagało „sumy tylko dla pól liczbowych” – to właśnie realizuje to ograniczenie: dla `SecretData<String, Integer>` wywołanie `sumOfData` nie skompiluje się."
+    },
+    {
+      "id": "l01-04",
+      "q": "Jaki wynik wypisze fragment z `Main`?\n```\nSecretData<Integer, Double> numericData = new SecretData<>(5, 2.2);\ndouble sum = SecretDataActions.sumOfData(numericData);\nSystem.out.println(\"suma=\" + sum);\n```",
+      "a": [
+        "suma=7.2",
+        "suma=7",
+        "suma=52.2",
+        "Błąd kompilacji – Integer i Double nie mogą występować razem"
+      ],
+      "w": [
+        "Obie wartości są zamieniane na double (doubleValue()), więc część ułamkowa zostaje.",
+        "Nie ma tu konkatenacji tekstowej liczb – sumowanie odbywa się na typie double.",
+        "Mogą: oba dziedziczą po Number, a metoda ma dwa niezależne parametry T1 i T2."
+      ],
+      "e": "Metoda ma osobne parametry T1 i T2 (oba `extends Number`), więc mogą to być różne typy. `5` jest autoboxowane do Integer, `2.2` do Double. W środku: `5.0 + 2.2 = 7.2`, wynik zwracany jako `double` – dlatego kluczowe jest użycie `doubleValue()` zamiast np. `intValue()`."
+    },
+    {
+      "id": "l01-05",
+      "q": "Co się stanie przy wywołaniu `SecretDataActions.sumOfData(new SecretData<>(\"tekst\", 5))`?",
+      "a": [
+        "Błąd kompilacji – String nie spełnia ograniczenia T1 extends Number",
+        "Wyjątek ClassCastException w czasie działania",
+        "Zwróci 5.0, bo String zostanie zignorowany",
+        "Zwróci 0.0 bez błędu"
+      ],
+      "w": [
+        "Ograniczenie jest sprawdzane już przez kompilator, program się nie uruchomi.",
+        "Kompilator nie robi takich konwersji.",
+        "Do wywołania w ogóle nie dojdzie – kod się nie skompiluje."
+      ],
+      "e": "Typ `String` nie jest podklasą `Number`, więc argument typu T1 = String łamie ograniczenie. To zaleta generyków: błąd wykrywany jest w czasie kompilacji. Taki sam efekt daje `writeToStream` – działa tylko, gdy pierwsze pole to `String`, a drugie dziedziczy po `OutputStream`."
+    },
+    {
+      "id": "l01-06",
+      "q": "Metoda:\n```\npublic static <T2 extends OutputStream>\nboolean writeToStream(SecretData<String, T2> data)\n```\nDlaczego można ją wywołać dla `SecretData<String, PrintStream>`?",
+      "a": [
+        "PrintStream dziedziczy po OutputStream (przez FilterOutputStream), więc spełnia ograniczenie T2, a pierwszy parametr to dokładnie String",
+        "Bo PrintStream implementuje interfejs OutputStream",
+        "Bo System.out jest zawsze rzutowany na OutputStream w czasie działania",
+        "Nie można – wymagany jest dokładnie typ OutputStream, nie jego podklasa"
+      ],
+      "w": [
+        "OutputStream to klasa abstrakcyjna, a nie interfejs; PrintStream po niej dziedziczy.",
+        "Żadne rzutowanie nie jest potrzebne – ograniczenie sprawdza kompilator.",
+        "`extends` dopuszcza podklasy."
+      ],
+      "e": "Pierwszy parametr jest ustalony na `String` (nie jest generyczny) – w zadaniu „pierwsze pole String”. Drugi to T2 ograniczony do `OutputStream`: może być `FileOutputStream`, `ByteArrayOutputStream`, `PrintStream`… W Main: `SecretData<String, PrintStream>` z `System.out`. Metoda zapisuje `text.getBytes()`, potem znak nowej linii `write('\\n')`; przy `IOException` zwraca `false`, inaczej `true`."
+    },
+    {
+      "id": "l01-07",
+      "q": "Co robi `writeToStream` w przypadku błędu zapisu?\n```\ntry {\n    outputStream.write(text.getBytes());\n    outputStream.write('\\n');\n    return true;\n} catch (IOException e) {\n    return false;\n}\n```",
+      "a": [
+        "Przechwytuje IOException i zwraca false – tak zadanie definiuje porażkę (true = sukces)",
+        "Rzuca wyjątek dalej do Main",
+        "Zamyka strumień i kończy program",
+        "Zwraca null"
+      ],
+      "w": [
+        "Wyjątek jest łapany w tej metodzie i nie wychodzi na zewnątrz.",
+        "Metoda nie zamyka strumienia ani nie kończy programu.",
+        "Typ zwracany to prymitywny boolean – null nie jest możliwy."
+      ],
+      "e": "`OutputStream.write(...)` deklaruje `throws IOException` (checked exception), więc trzeba go obsłużyć. Zadanie 1.1 mówi: „zwraca true, gdy się powiodło, false, gdy nie”, więc w `catch` jest `return false`. Uwaga: `write('\\n')` przyjmuje `int` – znak jest rozszerzany do int. Ważny szczegół: `System.out` (PrintStream) nie rzuca IOException w ogóle (ustawia wewnętrzną flagę błędu), więc dla niego ścieżka `false` praktycznie się nie zdarza."
+    },
+    {
+      "id": "l01-08",
+      "q": "Dwie przeciążone metody w `SecretDataActions`:\n```\nstatic <T extends HaveFunctionPrintOnScreen> void printOnScreen(T data)\nstatic <T1, T2> void printOnScreen(SecretData<T1, T2> data)\n```\nDla `SecretData<String, PrintStream>` zostanie wybrana:",
+      "a": [
+        "Druga – SecretData nie implementuje HaveFunctionPrintOnScreen, więc pierwsza nie pasuje",
+        "Pierwsza – zawsze wybierana jest pierwsza zadeklarowana",
+        "Obie naraz",
+        "Żadna – błąd kompilacji, bo metody mają tę samą nazwę"
+      ],
+      "w": [
+        "Wybór zależy od typów argumentów, nie od kolejności deklaracji.",
+        "Wywoływana jest dokładnie jedna metoda.",
+        "Przeciążanie (ta sama nazwa, różne parametry) jest legalne."
+      ],
+      "e": "Overload resolution: kompilator sprawdza, które metody są stosowalne. Pierwsza wymaga typu implementującego `HaveFunctionPrintOnScreen` – zwykły `SecretData` tego nie robi. Druga przyjmuje dowolny `SecretData<T1,T2>`, więc pasuje. Wypisze: „Wykonuję: <T1, T2> void printOnScreen(SecretData<T1, T2> data” i zawartość pól (`data1 + \" \" + data2`). Wzorzec „dwa sposoby wypisania” był w zadaniu po to, by oba przeciążenia dało się odróżnić na ekranie."
+    },
+    {
+      "id": "l01-09",
+      "q": "Dlaczego w `Main` przy `SecretDataWithPrintOnScreen` są rzutowania?\n```\nSecretDataActions.printOnScreen((HaveFunctionPrintOnScreen) obj);\nSecretDataActions.printOnScreen((SecretData<?,?>) obj);\n```",
+      "a": [
+        "Obiekt pasuje do obu przeciążeń (jest i SecretData, i HaveFunctionPrintOnScreen), więc bez rzutowania wywołanie jest niejednoznaczne (ambiguous) – rzutowanie wybiera konkretną metodę",
+        "Bez rzutowania obiekt nie ma metody printOnScreen",
+        "Rzutowanie jest wymagane, bo generyki nie działają z dziedziczeniem",
+        "To tylko styl – kompilator wybrałby pierwszą metodę"
+      ],
+      "w": [
+        "Ma ją – klasa implementuje interfejs.",
+        "Działają – problemem jest dwuznaczność wyboru przeciążenia.",
+        "Kompilator zgłosiłby błąd „reference to printOnScreen is ambiguous”."
+      ],
+      "e": "`SecretDataWithPrintOnScreen<T1,T2> extends SecretData<T1,T2> implements HaveFunctionPrintOnScreen` – pasuje do obu metod i żadna nie jest bardziej szczegółowa. Rzutowanie na interfejs wywoła wersję 1 (która woła `data.printOnScreen()` – metodę klasy, wypisującą „Data 1 -> …” i „Data 2 -> …”). Rzutowanie na `SecretData<?,?>` wywoła wersję 2 (wypis jednej linią). Dzięki temu w jednym programie widać oba przeciążenia."
+    },
+    {
+      "id": "l01-10",
+      "q": "Co oznacza `SecretData<?, ?>` w rzutowaniu `(SecretData<?,?>) obj`?",
+      "a": [
+        "Wildcard (znak zapytania) – SecretData z dowolnymi, nieznanymi argumentami typu",
+        "Surowy typ, odpowiednik `SecretData` bez generyków",
+        "Operator ternarny",
+        "Tablicę nieznanych typów"
+      ],
+      "w": [
+        "Raw type to `SecretData` bez nawiasów; wildcard to bezpieczny typ z nieznanymi argumentami.",
+        "Tu `?` jest znakiem wieloznacznym typu, nie operatorem.",
+        "Wildcard nie ma nic wspólnego z tablicami."
+      ],
+      "e": "Wildcard `?` = „jakiś typ, nie wiem jaki”. `SecretData<?,?>` pozwala zapisać typ bez wskazywania T1 i T2. Przez taki typ można czytać pola (jako Object), ale nie można ustawić wartości (poza null). Wywołanie metody generycznej `<T1,T2> printOnScreen(SecretData<T1,T2>)` jest poprawne, bo kompilator „łapie” wildcardy (capture conversion)."
+    },
+    {
+      "id": "l01-11",
+      "q": "Czym jest wymazywanie typów (type erasure) i dlaczego przeciążenia `printOnScreen(T extends HaveFunctionPrintOnScreen)` i `printOnScreen(SecretData<T1,T2>)` mogą współistnieć?",
+      "a": [
+        "Po kompilacji generyki są usuwane: pierwsza staje się printOnScreen(HaveFunctionPrintOnScreen), druga printOnScreen(SecretData) – sygnatury się różnią",
+        "Wymazywanie dodaje typy do bytecode, więc metody są rozróżniane po T1/T2",
+        "Java trzyma pełne informacje o T w czasie działania, dlatego da się przeciążać",
+        "Mogą współistnieć tylko przy użyciu @Override"
+      ],
+      "w": [
+        "Odwrotnie – informacje o argumentach typu są usuwane.",
+        "Nie trzyma – to właśnie wymazywanie.",
+        "`@Override` dotyczy nadpisywania, nie przeciążania."
+      ],
+      "e": "Type erasure: T zastępowane jest swoim ograniczeniem (lub Object). Pierwsza metoda → `printOnScreen(HaveFunctionPrintOnScreen)`, druga → `printOnScreen(SecretData)`. Różne sygnatury po wymazaniu = brak konfliktu. Gdyby obie sprowadzały się do tej samej sygnatury (np. `f(List<String>)` i `f(List<Integer>)`), kompilator zgłosiłby błąd „name clash: same erasure”."
+    },
+    {
+      "id": "l01-12",
+      "q": "Klasa:\n```\npublic class SecretDataWithPrintOnScreen<T1, T2>\n    extends SecretData<T1, T2>\n    implements HaveFunctionPrintOnScreen {\n    public SecretDataWithPrintOnScreen(T1 d1, T2 d2) { super(d1, d2); }\n    @Override public void printOnScreen() { ... }\n}\n```\nDlaczego konieczne jest `super(d1, d2)`?",
+      "a": [
+        "Klasa bazowa SecretData nie ma konstruktora bezargumentowego – podklasa musi jawnie wywołać istniejący konstruktor rodzica",
+        "Bo każda klasa generyczna wymaga wywołania super()",
+        "Bo implementacja interfejsu wymaga konstruktora z argumentami",
+        "Wcale nie jest konieczne – kompilator doda go sam"
+      ],
+      "w": [
+        "Wymóg dotyczy braku domyślnego konstruktora w klasie bazowej, nie generyków jako takich.",
+        "Interfejs nie wpływa na konstruktory.",
+        "Kompilator dodaje tylko `super()` bez argumentów, a taki konstruktor w SecretData nie istnieje."
+      ],
+      "e": "Zadanie mówi, że klasa potrzebuje „własnego konstruktora”. Skoro `SecretData` definiuje tylko `SecretData(T1, T2)`, domyślny `super()` nie istnieje, więc trzeba przekazać dane do rodzica. `@Override` przy `printOnScreen()` sprawdza, że faktycznie implementujemy metodę interfejsu; metoda pobiera pola przez `getData1()` / `getData2()`, bo są `private` w klasie bazowej."
+    },
+    {
+      "id": "l01-13",
+      "q": "Klasa dziedziczy po klasie ORAZ implementuje interfejs: `extends SecretData<T1,T2> implements HaveFunctionPrintOnScreen`. Co to pokazuje?",
+      "a": [
+        "W Javie klasa może mieć jedną klasę bazową, ale wiele interfejsów – zachowanie można dokładać przez interfejsy",
+        "Klasa może dziedziczyć po wielu klasach, jeśli dopisze się je po przecinku",
+        "`implements` musi poprzedzać `extends`",
+        "Interfejs HaveFunctionPrintOnScreen jest klasą abstrakcyjną"
+      ],
+      "w": [
+        "Wielodziedziczenie klas nie istnieje; po przecinku wymienia się interfejsy.",
+        "Kolejność jest odwrotna: najpierw `extends`, potem `implements`.",
+        "Tu jest to interfejs z jedną metodą `void printOnScreen()`."
+      ],
+      "e": "```\npublic interface HaveFunctionPrintOnScreen {\n    void printOnScreen();\n}\n```\nTo interfejs z jedną metodą abstrakcyjną. Klasa może przyjąć wiele takich „ról”. Dzięki niemu `SecretDataActions.printOnScreen(T data)` przyjmuje obiekty dowolnej klasy, która go implementuje – nie tylko SecretData."
+    },
+    {
+      "id": "l01-14",
+      "q": "Jakie linie wypisze fragment `SecretDataActions.writeToStream(tekstWithOutputStreamSecretData);` dla `SecretData<String, PrintStream>(\"Dane tekstowe\", System.out)`?",
+      "a": [
+        "Wypisze „Dane tekstowe” i przejdzie do nowej linii (zapis bajtów tekstu + '\\n' do System.out)",
+        "Nic – metoda tylko zwraca true",
+        "Wypisze „Wykonuję: …” jak printOnScreen",
+        "Wypisze `java.io.PrintStream@…`"
+      ],
+      "w": [
+        "Metoda faktycznie zapisuje bajty do strumienia, który przekazano w drugim polu.",
+        "To komunikat przeciążonych `printOnScreen`, a nie `writeToStream`.",
+        "To byłby efekt wypisania obiektu PrintStream przez `printOnScreen(SecretData)` (drugie pole)."
+      ],
+      "e": "Kolejność w Main: 1) `writeToStream` → „Dane tekstowe”; 2) `printOnScreen(SecretData)` → „Wykonuję: <T1, T2> …” + „Dane tekstowe java.io.PrintStream@…” (toString obiektu PrintStream); 3) `printOnScreen(numericData)` → „5 2.2”; 4) „suma=7.2”; 5) dwa wywołania z rzutowaniami. Wynik zwracany przez `writeToStream` w Main nie jest używany."
+    },
+    {
+      "id": "l01-15",
+      "q": "Lab 1.2:\n```\n@FunctionalInterface\npublic interface MathOperation {\n    double performOperation(double x, double y);\n}\n```\nCo daje adnotacja `@FunctionalInterface`?",
+      "a": [
+        "Kompilator sprawdza, że interfejs ma dokładnie jedną metodę abstrakcyjną – dzięki temu można go implementować lambdą",
+        "Dodaje do interfejsu domyślną implementację metody",
+        "Zmienia interfejs w klasę",
+        "Jest wymagana – bez niej lambda nie zadziała"
+      ],
+      "w": [
+        "Adnotacja niczego nie generuje – tylko weryfikuje.",
+        "Nadal jest to interfejs.",
+        "Nie jest wymagana: każdy interfejs z jedną metodą abstrakcyjną jest funkcyjny; adnotacja to zabezpieczenie."
+      ],
+      "e": "Interfejs funkcyjny = dokładnie jedna metoda abstrakcyjna (SAM). Mogą być dodatkowo metody `default`, `static` i publiczne metody z klasy Object (np. `equals`). Adnotacja `@FunctionalInterface` powoduje błąd kompilacji, gdy ktoś dopisze drugą metodę abstrakcyjną i „zepsuje” użycie lambd. Lambda jest wtedy skróconą implementacją tej jednej metody."
+    },
+    {
+      "id": "l01-16",
+      "q": "Kod:\n```\nMathOperation adding = (a, b) -> a + b;\ndouble r = MathCalculator1.executeOperation(2.1, -1.3, adding);\n```\nSkąd kompilator zna typy `a` i `b` w lambdzie?",
+      "a": [
+        "Z typu docelowego (target type) – MathOperation.performOperation(double, double)",
+        "Z nazw zmiennych – `a` i `b` oznaczają zawsze liczby",
+        "Trzeba je zawsze podawać jawnie, np. (double a, double b)",
+        "Z wartości 2.1 i -1.3 użytych w wywołaniu executeOperation"
+      ],
+      "w": [
+        "Nazwy nic nie znaczą dla kompilatora.",
+        "Typy można pominąć – są wnioskowane.",
+        "Lambda jest typowana przez interfejs, do którego jest przypisana, a nie przez przyszłe wywołania."
+      ],
+      "e": "Lambda nie ma własnego typu – przyjmuje typ interfejsu funkcyjnego, w którym kontekście jest użyta (target typing). `MathOperation adding = (a, b) -> a + b` oznacza: zaimplementuj `double performOperation(double x, double y)` jako `return x + y`. Można też zapisać `(double a, double b) -> { return a + b; }` – ten sam efekt."
+    },
+    {
+      "id": "l01-17",
+      "q": "Jak działa ta metoda?\n```\npublic static double executeOperation(double x, double y, MathOperation operation) {\n    return operation.performOperation(x, y);\n}\n```",
+      "a": [
+        "Przyjmuje operację jako parametr (kod jako dane) i wywołuje ją na x i y – to funkcja wyższego rzędu",
+        "Sama wykonuje dodawanie, a operation jest ignorowane",
+        "Tworzy nową klasę implementującą MathOperation przy każdym wywołaniu",
+        "Działa tylko z dwiema zdefiniowanymi operacjami: dodawaniem i mnożeniem"
+      ],
+      "w": [
+        "Wynik zależy wyłącznie od przekazanej operacji.",
+        "Obiekt dostarcza wywołujący (np. lambda).",
+        "Można przekazać dowolną lambdę, np. sin(x)+cos(y)."
+      ],
+      "e": "Wzorzec strategii w wersji funkcyjnej: `executeOperation` nie wie, co liczy – deleguje do przekazanej operacji. W Main: dodawanie (`adding`), mnożenie (`multiply`) i wzór prosto w wywołaniu: `(a, b) -> Math.sin(a) + Math.cos(b)`."
+    },
+    {
+      "id": "l01-18",
+      "q": "Co wypisze ten fragment (przybliżenie)?\n```\nMathCalculator1.executeOperation(2.1, -1.3, (a, b) -> Math.sin(a) + Math.cos(b))\n```",
+      "a": [
+        "Ok. 1,13 – sin(2,1)≈0,863 plus cos(−1,3)≈0,267; cosinus jest parzysty, więc cos(−1,3)=cos(1,3)",
+        "Ok. 0,6 – sin i cos są liczone w stopniach",
+        "Wyjątek – cosinus nie przyjmuje liczb ujemnych",
+        "Ok. −0,4 – wynik jest iloczynem obu funkcji"
+      ],
+      "w": [
+        "Math.sin/cos przyjmują radiany, nie stopnie.",
+        "Math.cos akceptuje każdą wartość double.",
+        "We wzorze jest suma, nie iloczyn."
+      ],
+      "e": "Wzór z zadania: f(x,y) = sin(x) + cos(y). `Math.sin(2.1) ≈ 0.8632`, `Math.cos(-1.3) = Math.cos(1.3) ≈ 0.2675`. Suma ≈ 1.1307. Kluczowe: argumenty w radianach. Dwa pozostałe wyniki w Main: 2.1 + (−1.3) = ok. 0,8 oraz 2.1 · (−1.3) = ok. −2,73."
+    },
+    {
+      "id": "l01-19",
+      "q": "`MathCalculator2` używa `BiFunction<Double, Double, Double>`. Dlaczego w parametrze jest `Double`, a nie `double`?",
+      "a": [
+        "Parametry typu generycznego muszą być typami referencyjnymi – prymitywy są opakowywane (autoboxing)",
+        "Bo `BiFunction` działa wyłącznie na klasach z java.lang.Math",
+        "Bo `double` jest wolniejszy niż `Double`",
+        "Bo `double` nie obsługuje liczb ujemnych"
+      ],
+      "w": [
+        "To ogólny interfejs funkcyjny z java.util.function.",
+        "Jest odwrotnie – boxing ma narzut.",
+        "Obsługuje – to kwestia generyków, nie zakresu liczb."
+      ],
+      "e": "```\npublic static double executeOperation(double x, double y,\n        BiFunction<Double, Double, Double> operation) {\n    return operation.apply(x, y);\n}\n```\nArgumenty `x`, `y` (double) są automatycznie opakowywane do `Double` przy `apply`, a zwracany `Double` jest rozpakowywany do `double`. Dla uniknięcia boxingu Java ma też specjalizacje, np. `DoubleBinaryOperator`."
+    },
+    {
+      "id": "l01-20",
+      "q": "Jaka jest różnica między własnym `MathOperation` a standardowym `BiFunction<Double,Double,Double>`?",
+      "a": [
+        "Funkcjonalnie to samo (dwa argumenty → wynik); własny interfejs ma czytelną nazwę i prymitywy, standardowy nie wymaga pisania nowego typu, ale używa boxingu",
+        "BiFunction nie pozwala na lambdy",
+        "MathOperation jest wolniejszy, bo jest własny",
+        "Różnią się tym, że BiFunction może przyjmować tylko jeden argument"
+      ],
+      "w": [
+        "BiFunction jest typowym interfejsem funkcyjnym, lambdy działają.",
+        "Nie – własny typ unika boxingu.",
+        "Bi = dwa argumenty; jeden to `Function`."
+      ],
+      "e": "Metoda: `MathOperation.performOperation(x,y)` vs `BiFunction.apply(x,y)`. W Main oba kalkulatory są wywoływane tymi samymi lambdami `(a, b) -> a + b`, `(a, b) -> a * b`, `(a, b) -> Math.sin(a) + Math.cos(b)`. Zadanie 1.2 miało pokazać, że standardowe interfejsy z `java.util.function` (Function, BiFunction, Supplier, Consumer, Predicate…) zwykle wystarczają i nie trzeba pisać własnych."
+    },
+    {
+      "id": "l01-21",
+      "q": "Które z wyrażeń NIE da się zapisać jako lambda?",
+      "a": [
+        "Implementacja interfejsu, który ma dwie metody abstrakcyjne",
+        "Implementacja MathOperation",
+        "Implementacja BiFunction<Double,Double,Double>",
+        "Implementacja Runnable"
+      ],
+      "w": [
+        "Ma jedną metodę abstrakcyjną – lambda jest poprawna.",
+        "BiFunction ma jedną metodę abstrakcyjną `apply` (reszta to `default`).",
+        "Runnable ma jedną metodę `run()`."
+      ],
+      "e": "Lambdą można implementować wyłącznie interfejsy funkcyjne (jedna metoda abstrakcyjna). Przy dwóch i więcej trzeba klasy anonimowej lub zwykłej klasy."
+    },
+    {
+      "id": "l01-22",
+      "q": "Lab 1.3:\n```\n@Retention(RetentionPolicy.RUNTIME)\npublic @interface Task {\n    int numberOfRepetition() default 1;\n}\n```\nDlaczego potrzebne jest `RetentionPolicy.RUNTIME`?",
+      "a": [
+        "Tylko wtedy adnotacja jest dostępna w czasie działania przez refleksję (isAnnotationPresent / getAnnotation)",
+        "Bez niej adnotacja nie skompiluje się",
+        "RUNTIME sprawia, że metoda sama się uruchamia",
+        "RUNTIME ogranicza adnotację do metod"
+      ],
+      "w": [
+        "Skompiluje się, ale domyślna retencja to CLASS – refleksja jej nie zobaczy.",
+        "Adnotacja niczego nie uruchamia – robi to kod, który ją odczytuje.",
+        "Do ograniczenia celu służy `@Target`."
+      ],
+      "e": "Poziomy: SOURCE (tylko kod), CLASS (domyślny – kod + bytecode, ale nie refleksja), RUNTIME (także refleksja). `TaskRunner` woła `cls.isAnnotationPresent(Task.class)` – przy retencji CLASS zwróciłoby `false` i żaden task by się nie wykonał."
+    },
+    {
+      "id": "l01-23",
+      "q": "W `@interface Task` zapis `int numberOfRepetition() default 1;` oznacza:",
+      "a": [
+        "Element adnotacji (parametr) typu int z wartością domyślną 1; użycie: @Task(numberOfRepetition = 5)",
+        "Pole statyczne o wartości 1",
+        "Metodę, którą trzeba zaimplementować w klasie z adnotacją",
+        "Konstruktor adnotacji"
+      ],
+      "w": [
+        "Elementy adnotacji deklaruje się jako metody bez parametrów.",
+        "To nie metoda do implementacji, tylko parametr adnotacji.",
+        "Adnotacje nie mają konstruktorów."
+      ],
+      "e": "Zadanie wymagało: „adnotacja ma parametr określający, ile razy wywołać metodę”. Dzięki `default 1` użycie samego `@Task` oznacza 1 powtórzenie. Odczyt: `cls.getAnnotation(Task.class).numberOfRepetition()`. Adnotacja jest metadanymi – sama niczego nie wykonuje."
+    },
+    {
+      "id": "l01-24",
+      "q": "Do czego służy biblioteka Reflections (ronmamo) użyta w `TaskRunner`?",
+      "a": [
+        "Do skanowania classpath i wyszukiwania klas według adnotacji, interfejsu lub nazwy – także w plikach JAR",
+        "Do kompilowania kodu w locie",
+        "Do serializacji obiektów do XML",
+        "Do wstrzykiwania zależności"
+      ],
+      "w": [
+        "To nie kompilator, tylko skaner klas.",
+        "To zadanie JAXB (Lab 3).",
+        "To rola Spring/DI (Lab 6)."
+      ],
+      "e": "```\nReflections reflections = new Reflections(packageName);\nSet<Class<? extends HaveRunMethod>> classes =\n    reflections.getSubTypesOf(HaveRunMethod.class);\n```\nWskazujemy pakiet (`\"org.example.tasks\"`) – biblioteka skanuje go i zwraca wszystkie klasy implementujące `HaveRunMethod`. Zwracane są obiekty `Class`, nie instancje."
+    },
+    {
+      "id": "l01-25",
+      "q": "Po co w pętli jest warunek `if(!cls.isAnnotationPresent(Task.class)) continue;`?",
+      "a": [
+        "getSubTypesOf zwraca każdą klasę implementującą HaveRunMethod – trzeba odfiltrować te bez adnotacji @Task",
+        "Żeby pominąć klasy abstrakcyjne",
+        "Żeby uniknąć wyjątku NullPointerException w Reflections",
+        "Bo getSubTypesOf zwraca tylko klasy z adnotacją, a warunek jest dodatkowym zabezpieczeniem"
+      ],
+      "w": [
+        "Ten warunek sprawdza adnotację, nie modyfikator abstract.",
+        "To filtr logiczny, nie obrona przed NPE.",
+        "getSubTypesOf szuka po typie, nie po adnotacji."
+      ],
+      "e": "Zadanie: „znajdź klasy z @Task implementujące HaveRunMethod”. Biblioteka daje implementacje interfejsu; adnotację sprawdza się ręcznie. (Alternatywa: `reflections.getTypesAnnotatedWith(Task.class)` i filtr po interfejsie.)"
+    },
+    {
+      "id": "l01-26",
+      "q": "Co robi `cls.getDeclaredConstructor().newInstance()`?",
+      "a": [
+        "Tworzy obiekt klasy cls przez refleksję, wywołując konstruktor bezargumentowy (klasa musi go mieć)",
+        "Zwraca listę wszystkich konstruktorów",
+        "Wywołuje metodę run()",
+        "Działa tylko dla klas z adnotacją @Inherited"
+      ],
+      "w": [
+        "To `getDeclaredConstructors()` (liczba mnoga).",
+        "Tylko tworzy instancję; `run()` jest wołane później.",
+        "Nie ma takiego wymagania."
+      ],
+      "e": "Każdy task (`TaskRed`, `TaskGreen`, `TaskYellow`) ma domyślny konstruktor. Metoda deklaruje wiele wyjątków sprawdzanych (InstantiationException, IllegalAccessException, NoSuchMethodException…), więc w kodzie jest `catch (Exception e)`. W projekcie `catch` jest pusty – błąd tworzenia obiektu zostanie po cichu pominięty (w prawdziwych aplikacjach warto go zalogować)."
+    },
+    {
+      "id": "l01-27",
+      "q": "Co przechowuje `Map<HaveRunMethod, Integer> tasksWithCounters`?",
+      "a": [
+        "Instancję zadania i liczbę jej uruchomień pobraną z adnotacji (numberOfRepetition)",
+        "Nazwę klasy i jej adnotację",
+        "Klasy zadań i ich kolory",
+        "Wyniki wykonania metod run()"
+      ],
+      "w": [
+        "Kluczem jest obiekt (instancja), nie nazwa.",
+        "Kolory są stałymi w klasach tasków, nie w mapie.",
+        "run() jest `void` – nic nie zwraca."
+      ],
+      "e": "```\ntasksWithCounters.forEach((task, n) -> {\n    for (int i = 0; i < n; i++) task.run();\n});\n```\nDwa etapy: najpierw skanowanie i budowa mapy, potem wykonanie. Użycie `HashMap` oznacza, że kolejność uruchamiania tasków nie jest gwarantowana."
+    },
+    {
+      "id": "l01-28",
+      "q": "`TaskRed` ma `@Task(numberOfRepetition = 3)`, `TaskYellow` 4, `TaskGreen` 5. Ile wierszy „Task …” wypisze program?",
+      "a": [
+        "12 (3 + 4 + 5), a kolejność kolorów może być różna",
+        "3 – tyle razy co najmniejsza wartość",
+        "5 – maksymalna wartość",
+        "0 – bez konstruktora publicznego nic się nie wykona"
+      ],
+      "w": [
+        "Każdy task jest uruchamiany tyle razy, ile mówi jego adnotacja.",
+        "Sumują się powtórzenia wszystkich tasków.",
+        "Klasy mają domyślne publiczne konstruktory, więc się wykonają."
+      ],
+      "e": "Dodatkowo `TaskRunner` wypisuje „ -> Skanuję pakiet: org.example.tasks” na początku i „ -> Wszystkie taski wykonane” na końcu. Kolory to sekwencje ANSI: `\\u001B[31m` czerwony, `[32m` zielony, `[33m` żółty, `[0m` reset."
+    },
+    {
+      "id": "l01-29",
+      "q": "Po co w `build.gradle.kts` jest `implementation(\"org.slf4j:slf4j-nop:2.0.9\")`?",
+      "a": [
+        "Reflections loguje przez SLF4J; bez implementacji pojawiają się ostrzeżenia – slf4j-nop jest „pustym” loggerem, który je wycisza",
+        "To biblioteka potrzebna do działania adnotacji",
+        "Służy do wypisywania kolorowych napisów",
+        "Zastępuje bibliotekę Reflections"
+      ],
+      "w": [
+        "Adnotacje są częścią języka.",
+        "Kolory to sekwencje ANSI w kodzie.",
+        "Reflections jest osobną zależnością."
+      ],
+      "e": "Zadanie mówiło: „Reflections wykorzystuje slf4j przy starcie. Program działa bez niej, ale wyświetla niechciane ostrzeżenia”. `nop` = no-operation: logi są odrzucane. Zależności projektu: `org.reflections:reflections:0.10.2` + `org.slf4j:slf4j-nop:2.0.9`."
+    },
+    {
+      "id": "l01-30",
+      "q": "Dlaczego dodanie nowego zadania do pakietu `tasks` nie wymaga zmiany w `Main` ani `TaskRunner`?",
+      "a": [
+        "Bo klasy są wykrywane dynamicznie przez refleksję na podstawie adnotacji i interfejsu – wystarczy nowa klasa z @Task implementująca HaveRunMethod",
+        "Bo Main zawsze wczytuje wszystkie pliki .java z dysku",
+        "Bo nowe klasy kompilator dopisuje do Main",
+        "Bo TaskRunner zna nazwy zadań z pliku properties"
+      ],
+      "w": [
+        "Skanowanie dotyczy skompilowanych klas na classpath.",
+        "Kompilator nie modyfikuje istniejących klas.",
+        "Nazwy nie są nigdzie zapisane – są wykrywane."
+      ],
+      "e": "To zalążek idei znanej ze Springa: klasy „same się rejestrują” przez adnotację (porównaj Lab 6.3 i `@Component`). Mechanizm: skan pakietu → filtr po adnotacji → utworzenie obiektu → wywołanie metody z interfejsu."
+    },
+    {
+      "id": "l01-31",
+      "q": "Co różni adnotację od zwykłego komentarza?",
+      "a": [
+        "Adnotacja to metadane widoczne dla kompilatora i (zależnie od @Retention) dla refleksji, a komentarz jest usuwany przy kompilacji",
+        "Nic – oba są ignorowane przez program",
+        "Adnotacja sama wykonuje logikę przypisaną do klasy",
+        "Adnotacje można pisać tylko nad klasami"
+      ],
+      "w": [
+        "Adnotacje z RUNTIME są odczytywane w czasie działania.",
+        "Logikę wykonuje kod, który ją odczyta (u nas `TaskRunner`).",
+        "Mogą być też nad metodami, polami, parametrami, pakietami."
+      ],
+      "e": "Z wykładu: adnotacja jest metadaną (nie samodzielnym kodem). W labie: `@Task(numberOfRepetition = 5)` nie robi nic sama – dopiero `TaskRunner` odczytuje wartość przez `getAnnotation(Task.class).numberOfRepetition()` i na tej podstawie wywołuje `run()` odpowiednią liczbę razy."
+    }
+  ]
+}
