@@ -1,3 +1,4 @@
+import Rich from './Rich.jsx';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { shuffle } from '../srs.js';
 
@@ -144,7 +145,7 @@ export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinis
         <span className="tag">{item.q.lectureTitle}</span>
         {item.q.official && <span className="tag official" title="Oryginalne pytanie z listy pytań testowych wykładowcy">📝 pytanie od wykładowcy</span>}
         {item.again && <span className="tag again">powtórka</span>}
-        <h2 className="question">{item.q.q}</h2>
+        <h2 className="question"><Rich text={item.q.q} /></h2>
 
         <div className="options">
           {item.options.map((o, i) => {
@@ -158,7 +159,7 @@ export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinis
             return (
               <button key={i} className={cls} onClick={() => choose(i)} disabled={picked !== null}>
                 <span className="letter">{LETTERS[i]}</span>
-                <span>{o.text}</span>
+                <span><Rich text={o.text} /></span>
               </button>
             );
           })}
@@ -169,13 +170,13 @@ export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinis
             <strong>{pickedOk ? 'Dobrze!' : 'Niestety nie.'}</strong>
             {!pickedOk && (
               <p className="answer-line">
-                Poprawna odpowiedź: <b>{LETTERS[correctIdx]}</b> · {item.options[correctIdx].text}
+                Poprawna odpowiedź: <b>{LETTERS[correctIdx]}</b> · <Rich text={item.options[correctIdx].text} />
               </p>
             )}
             {!pickedOk && item.options[picked].why && (
-              <p className="trap"><span>Twój wybór ({LETTERS[picked]}):</span> {item.options[picked].why}</p>
+              <p className="trap"><span>Twój wybór ({LETTERS[picked]}):</span> <Rich text={item.options[picked].why} /></p>
             )}
-            <p className="why"><span>Dlaczego:</span> {item.q.e}</p>
+            <p className="why"><span>Dlaczego:</span> <Rich text={item.q.e} /></p>
             {!pickedOk && !item.again && (
               <p className="muted small">To pytanie wróci za kilka pytań.</p>
             )}

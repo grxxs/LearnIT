@@ -50,3 +50,5 @@ npm run build    # -> dist/index.html (jeden plik do wysłania)
 ## Źródła pytań
 
 KPWA: slajdy W1–W15 dr. T. Nowickiego (tomeknowicki.pl/kpwa). Lokalne pliki W5, W13 i W15 były puste (0 B), więc ich treść pochodzi z oryginalnych slajdów online: *objects-relationship*, *platform-2* i *business-automation-flows*.
+
+**Java – laboratoria** (`data/java-labs/`): pytania z wyjaśnionymi kodami z labów 1–6 (kody w podfolderach `La1`, `Lab1.2`, … `05-2-spring-boot`) oraz treści zadań ze stron nowicki.house/java2/labs i slajdów zad-5.x / zad-6.x. Lab 5 (Hibernate/Thymeleaf) oraz zadania 2.2–2.4, 3.3–3.4, 4.2 nie mają kodu w repo – pytania opierają się na opisie zadań i slajdach (kod na slajdach jest obrazkami). W pytaniach i wyjaśnieniach można używać bloków kodu w ```…``` i `kodu inline`.
