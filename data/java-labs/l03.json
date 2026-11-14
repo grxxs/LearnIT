@@ -322,5 +322,241 @@
       ],
       "e": "Dla każdego dnia pobieramy tabelę A (XML), mapujemy ją (np. JAXB) na obiekty i wybieramy pozycje o kodach `USD` i `EUR`. Nie każdy dzień ma tabelę (weekendy, święta) – stąd „ostatnie n dostępnych dni”. Wynik: średnia arytmetyczna kursów `mid`."
     }
+  ],
+  "notes": [
+    {
+      "title": "Treść zadań Lab 3 (z nowicki.house/java2/labs/03-lab)",
+      "text": "**Zakres:** JAXB do obsługi plików XML i XSD.\n\n**3.1 Zapis danych w XML.** Modele JAXB: `Observation` (pomiar temperatury: znacznik czasu, jednostka Celsius/Fahrenheit/Kelvin, wartość, opcjonalny komentarz) i `ObservationList` (lista pomiarów). Wygenerować pliki XSD dla modelu; napisać generator losowych pomiarów; wygenerować jeden pomiar do pliku XML oraz 1000 pomiarów do pliku XML.\n\n**3.2 Odczyt z lokalnych plików XML.** Nowy projekt z modelem z 3.1; skopiować wygenerowane XSD i XML. Zwalidować XML względem XSD; wczytać plik z jednym pomiarem i wyświetlić; wczytać serię i wyświetlić rosnąco wszystkie pomiary z wartością od −1 do +1 °C, które mają komentarz (bez komentarza pomijać).\n\n**3.3 Odczyt XML z publicznego API.** Dane: `https://nowicki.house/java2/labs/observations.xml` (ten sam model). Wczytać prosto z zasobu sieciowego do strumienia; wyświetlić pierwsze 5 rekordów; policzyć i wyświetlić: łączną liczbę pomiarów, liczbę z komentarzem i bez, liczbę w każdej jednostce, średnią temperaturę dla każdej jednostki.\n\n**✫ 3.4 Kursy NBP.** XML: `https://api.nbp.pl/api/exchangerates/tables/a/YYYY-MM-DD/?format=xml`. Obliczyć średnie kursy USD i EUR z ostatnich n dostępnych dni."
+    },
+    {
+      "title": "3.1 · build.gradle.kts – zależności JAXB",
+      "chunks": [
+        {
+          "code": "plugins {\n    id(\"java\")\n}\n\ngroup = \"org.example\"\nversion = \"1.0-SNAPSHOT\"\n\nrepositories {\n    mavenCentral()\n}",
+          "text": "Plugin `java`, repozytorium Maven Central."
+        },
+        {
+          "code": "dependencies {\n    implementation(\"jakarta.xml.bind:jakarta.xml.bind-api:4.0.2\")\n    runtimeOnly(\"org.glassfish.jaxb:jaxb-runtime:4.0.5\")\n    testImplementation(platform(\"org.junit:junit-bom:6.0.0\"))\n    testImplementation(\"org.junit.jupiter:junit-jupiter\")\n    testRuntimeOnly(\"org.junit.platform:junit-platform-launcher\")\n}\n\ntasks.test {\n    useJUnitPlatform()\n}",
+          "text": "`jakarta.xml.bind-api:4.0.2` – API JAXB (adnotacje, `JAXBContext`, `Marshaller`, `Unmarshaller`) potrzebne do kompilacji. `runtimeOnly(\"org.glassfish.jaxb:jaxb-runtime:4.0.5\")` – implementacja, wymagana dopiero w czasie działania. Pakiet to `jakarta.xml.bind` (dawniej `javax.xml.bind`). Reszta – JUnit."
+        }
+      ]
+    },
+    {
+      "title": "3.1 · Observation.java – model z adnotacjami JAXB",
+      "chunks": [
+        {
+          "code": "package org.example.model;\n\nimport jakarta.xml.bind.annotation.XmlRootElement;\nimport jakarta.xml.bind.annotation.adapters.XmlJavaTypeAdapter;\nimport jakarta.xml.bind.annotation.XmlAccessorType;\nimport jakarta.xml.bind.annotation.XmlAccessType;\nimport jakarta.xml.bind.annotation.XmlElement;\nimport java.time.LocalDateTime;",
+          "text": "Importy adnotacji JAXB, adaptera i `LocalDateTime`."
+        },
+        {
+          "code": "@XmlRootElement(name = \"weather-observation\", namespace = \"http://example.org/weather-observation\")\n@XmlAccessorType(XmlAccessType.FIELD)\npublic class Observation {",
+          "text": "`@XmlRootElement(name=…, namespace=…)` – klasa może być korzeniem dokumentu XML: tag `weather-observation` w przestrzeni nazw `http://example.org/weather-observation` (w pliku pojawia się jako `ns2:weather-observation`). `@XmlAccessorType(FIELD)` – JAXB mapuje pola klasy (także prywatne), nie gettery/settery."
+        },
+        {
+          "code": "    public enum TemperatureUnit { Celsius, Fahrenheit, Kelvin }",
+          "text": "Enum z jednostkami – trafia do XSD jako typ prosty z listą dozwolonych wartości (`xs:enumeration`)."
+        },
+        {
+          "code": "    @XmlElement(required = true)\n    @XmlJavaTypeAdapter(LocalDateTimeAdapter.class)\n    private LocalDateTime timeStamp;\n\n    @XmlElement(required = true)\n    private TemperatureUnit unit;\n\n    @XmlElement(required = true)\n    private double value;\n\n    @XmlElement(required = false)\n    private String comment;",
+          "text": "Pola: `timeStamp` (`@XmlJavaTypeAdapter(LocalDateTimeAdapter.class)` – JAXB nie zna `LocalDateTime`, adapter zamienia go na tekst), `unit`, `value` – wszystkie `required = true` (w XSD bez `minOccurs`), oraz `comment` z `required = false` (w XSD `minOccurs=\"0\"`, a przy `null` tag w ogóle nie jest zapisywany)."
+        },
+        {
+          "code": "    public Observation() {}\n\n    public Observation(LocalDateTime timeStamp, TemperatureUnit unit, double value, String comment) {\n        this.timeStamp = timeStamp;\n        this.unit = unit;\n        this.value = value;\n        this.comment = comment;\n    }",
+          "text": "Konstruktor bezargumentowy – **wymagany** przez JAXB do tworzenia obiektów przy odczycie (unmarshalling). Drugi konstruktor ustawia wszystkie pola; używa go generator losowych pomiarów."
+        },
+        {
+          "code": "    public String getComment() { return comment; }\n    public void setComment(String comment) { this.comment = comment; }\n\n    public LocalDateTime getTimeStamp() { return timeStamp; }\n    public void setTimeStamp(LocalDateTime timeStamp) { this.timeStamp = timeStamp; }\n\n    public TemperatureUnit getUnit() { return unit; }\n    public void setUnit(TemperatureUnit unit) { this.unit = unit; }\n\n    public double getValue() { return value; }\n    public void setValue(double value) { this.value = value; }\n\n    @Override\n    public String toString() {\n        return \"Observation{\" +\n                \"timeStamp='\" + timeStamp + '\\'' +\n                \", unit='\" + unit + '\\'' +\n                \", value=\" + value +\n                \", comment='\" + comment + '\\'' +\n                '}';\n    }\n}",
+          "text": "Gettery i settery (dla własnego kodu; przy FIELD JAXB ich nie potrzebuje) oraz `toString()` do czytelnego wypisu pomiaru."
+        }
+      ]
+    },
+    {
+      "title": "3.1 · ObservationList.java i LocalDateTimeAdapter.java",
+      "chunks": [
+        {
+          "code": "package org.example.model;\n\nimport jakarta.xml.bind.annotation.XmlRootElement;\nimport jakarta.xml.bind.annotation.XmlAccessorType;\nimport jakarta.xml.bind.annotation.XmlElement;\nimport jakarta.xml.bind.annotation.XmlAccessType;\nimport java.util.List;\nimport java.util.ArrayList;",
+          "text": "Importy JAXB i kolekcji."
+        },
+        {
+          "code": "@XmlRootElement(name = \"weather-observations\", namespace = \"http://example.org/weather-observation\")\n@XmlAccessorType(XmlAccessType.FIELD)\npublic class ObservationList {",
+          "text": "Korzeń `weather-observations` w tej samej przestrzeni nazw; pola mapowane bezpośrednio."
+        },
+        {
+          "code": "    @XmlElement(name = \"observation\")\n    private List<Observation> observations = new ArrayList<>();",
+          "text": "Lista `observations`; `name = \"observation\"` sprawia, że każdy element listy jest zapisywany jako tag `<observation>` (bez dodatkowego opakowania). W XSD: `minOccurs=\"0\" maxOccurs=\"unbounded\"`. Inicjalizacja `new ArrayList<>()` zapobiega `null`."
+        },
+        {
+          "code": "    public ObservationList() {}\n\n    public ObservationList(List<Observation> observations) {\n        this.observations = observations;\n    }\n\n    public List<Observation> getObservations() {\n        return observations;\n    }\n\n    public void setObservations(List<Observation> observations) {\n        this.observations = observations;\n    }\n\n    public void addObservation(Observation observation) {\n        this.observations.add(observation);\n    }\n\n    @Override\n    public String toString() {\n        return \"ObservationList{\" +\n                \"observations=\" + observations +\n                '}';\n    }\n}",
+          "text": "Konstruktor domyślny dla JAXB, drugi z gotową listą, `addObservation` dopisuje pomiar, `toString` wypisuje listę."
+        },
+        {
+          "code": "package org.example.model;\n\nimport jakarta.xml.bind.annotation.adapters.XmlAdapter;\nimport java.time.LocalDateTime;\nimport java.time.format.DateTimeFormatter;\n\npublic class LocalDateTimeAdapter extends XmlAdapter<String, LocalDateTime> {\n\n    private static final DateTimeFormatter FORMATTER = DateTimeFormatter.ISO_DATE_TIME;\n\n    @Override",
+          "text": "`XmlAdapter<String, LocalDateTime>`: typ w XML = `String`, typ w Javie = `LocalDateTime`. Format `ISO_DATE_TIME` (np. `2026-10-10T21:15:33.200496182`)."
+        },
+        {
+          "code": "    public LocalDateTime unmarshal(String v) {\n        return LocalDateTime.parse(v, FORMATTER);\n    }\n\n    @Override\n    public String marshal(LocalDateTime v) {\n        return v.format(FORMATTER);\n    }\n}",
+          "text": "`unmarshal` – tekst z XML → `LocalDateTime` (przy odczycie); `marshal` – `LocalDateTime` → tekst (przy zapisie)."
+        }
+      ]
+    },
+    {
+      "title": "3.1 · RandomObservation.java – generator losowych pomiarów",
+      "chunks": [
+        {
+          "code": "package org.example.service;\n\nimport java.time.LocalDateTime;\nimport java.time.temporal.ChronoUnit;\nimport java.util.Random;\nimport org.example.model.Observation;\n\npublic class RandomObservation {",
+          "text": "Importy: czas, `Random`, model."
+        },
+        {
+          "code": "    private static final Observation.TemperatureUnit[] UNITS\n            = Observation.TemperatureUnit.values();\n\n    private static final String[] COMMENTS\n            = {\"Sunny\", \"Cloudy\", \"Rainy\", \"Windy\", \"Foggy\", \"Stormy\", \"Clear night\"};\n\n    private static final Random RANDOM = new Random();",
+          "text": "Stałe: tablica jednostek (`values()` enuma), lista możliwych komentarzy i jeden współdzielony `Random`."
+        },
+        {
+          "code": "    public static Observation generate() {\n\n        LocalDateTime timeStamp = LocalDateTime.now()\n                .minus(RANDOM.nextInt(7 * 24), ChronoUnit.HOURS)\n                .minus(RANDOM.nextInt(60), ChronoUnit.MINUTES);\n\n        Observation.TemperatureUnit unit = UNITS[RANDOM.nextInt(UNITS.length)];",
+          "text": "Czas = teraz minus losowa liczba godzin (0–167, czyli do 7 dni) minus losowe minuty. Jednostka losowana z `UNITS`."
+        },
+        {
+          "code": "        double value = switch (unit) {\n            case Celsius -> -10 + RANDOM.nextDouble() * 45;\n            case Fahrenheit -> 14 + RANDOM.nextDouble() * 95;\n            case Kelvin -> 263 + RANDOM.nextDouble() * 45;\n        };",
+          "text": "Wartość zależna od jednostki – `switch` jako wyrażenie (`->`, Java 14+), musi pokryć wszystkie stałe enuma: Celsius −10…35, Fahrenheit 14…109, Kelvin 263…308."
+        },
+        {
+          "code": "        String comment = RANDOM.nextBoolean() ? COMMENTS[RANDOM.nextInt(COMMENTS.length)] : null;\n\n        return new Observation(timeStamp, unit, value, comment);\n    }\n}",
+          "text": "Losowo (`nextBoolean`) komentarz z listy albo `null` (wtedy brak tagu `<comment>`). Na końcu `new Observation(...)`."
+        }
+      ]
+    },
+    {
+      "title": "3.1 · XmlFileWriter.java i XsdFileGenerator.java",
+      "chunks": [
+        {
+          "code": "package org.example.service;\n\nimport java.io.File;\nimport jakarta.xml.bind.JAXBContext;\nimport jakarta.xml.bind.JAXBException;\nimport jakarta.xml.bind.Marshaller;\n\npublic class XmlFileWriter {",
+          "text": "Importy JAXB."
+        },
+        {
+          "code": "    public static boolean write(Object data, String fileName) {\n\n        try {\n            JAXBContext context = JAXBContext.newInstance(data.getClass());\n            Marshaller marshaller = context.createMarshaller();\n            marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);\n            marshaller.marshal(data, new File(fileName));\n            return true;\n        } catch (JAXBException ex) { return false; }\n    }\n}",
+          "text": "**Marshalling** (obiekt → XML): `JAXBContext.newInstance(data.getClass())` – kontekst dla klasy obiektu; `createMarshaller()`; `JAXB_FORMATTED_OUTPUT = true` – wcięcia; `marshal(obiekt, plik)`. Zwraca `true`, a przy `JAXBException` `false`."
+        },
+        {
+          "code": "package org.example.service;\n\nimport jakarta.xml.bind.JAXBContext;\nimport jakarta.xml.bind.JAXBException;\nimport jakarta.xml.bind.SchemaOutputResolver;\nimport javax.xml.transform.Result;\nimport javax.xml.transform.stream.StreamResult;\nimport java.io.File;\nimport java.io.IOException;\n\npublic class XsdFileGenerator {",
+          "text": "Importy JAXB oraz klasy do zapisu wyniku."
+        },
+        {
+          "code": "    public static boolean generate(Class<?>... jaxbClasses) {\n\n        try {\n            JAXBContext context = JAXBContext.newInstance(jaxbClasses);",
+          "text": "Przyjmuje klasy JAXB (varargs `Class<?>...`) i tworzy kontekst dla wszystkich."
+        },
+        {
+          "code": "            SchemaOutputResolver resolver = new SchemaOutputResolver() {\n                @Override\n                public Result createOutput(String namespaceUri, String suggestedFileName) throws IOException {\n                    File file = new File(suggestedFileName);\n                    StreamResult result = new StreamResult(file);\n                    result.setSystemId(file.getAbsolutePath());\n                    return result;\n                }\n            };",
+          "text": "`SchemaOutputResolver` – decyduje, gdzie zapisać każdy generowany plik schematu: `createOutput` zwraca `StreamResult` dla `new File(suggestedFileName)`. Klasa anonimowa nadpisuje jedną metodę."
+        },
+        {
+          "code": "            context.generateSchema(resolver);\n            return true;\n\n        } catch (JAXBException ex) {\n            return false;\n        } catch (IOException ex) {\n            return false;\n        }\n    }\n}",
+          "text": "`generateSchema` zapisuje XSD (tu `schema1.xsd` z elementami głównymi i `schema2.xsd` z typami). Błędy `JAXBException`/`IOException` → `false`."
+        }
+      ]
+    },
+    {
+      "title": "3.1 · App.java i wygenerowane XSD/XML",
+      "chunks": [
+        {
+          "code": "package org.example;\n\nimport org.example.model.Observation;\nimport org.example.model.ObservationList;\nimport org.example.service.RandomObservation;\nimport org.example.service.XmlFileWriter;\nimport org.example.service.XsdFileGenerator;\n\npublic class App {\n\n    public static void main(String[] args) {",
+          "text": "Importy modelu i serwisów."
+        },
+        {
+          "code": "        XsdFileGenerator.generate(Observation.class, ObservationList.class);\n\n        Observation observation = RandomObservation.generate();\n        XmlFileWriter.write(observation, \"observation.xml\");\n\n        ObservationList observationList = new ObservationList();\n        for(int i=0; i<1000; i++) observationList.addObservation(RandomObservation.generate());\n        XmlFileWriter.write(observationList, \"observations.xml\");\n    }\n}",
+          "text": "Kroki zadania: 1) generuje schematy XSD z klas `Observation` i `ObservationList`; 2) generuje jeden pomiar i zapisuje `observation.xml`; 3) pętla 1000 razy dodaje losowy pomiar do `ObservationList` i zapisuje całość do `observations.xml`."
+        },
+        {
+          "code": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<xs:schema version=\"1.0\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\" xmlns:ns1=\"http://example.org/weather-observation\">\n\n  <xs:import namespace=\"http://example.org/weather-observation\" schemaLocation=\"schema1.xsd\"/>",
+          "text": "Wygenerowany schemat (`schema2.xsd`): `xs:import` powiązanego `schema1.xsd`."
+        },
+        {
+          "code": "  <xs:complexType name=\"observation\">\n    <xs:sequence>\n      <xs:element name=\"timeStamp\" type=\"xs:string\"/>\n      <xs:element name=\"unit\" type=\"temperatureUnit\"/>\n      <xs:element name=\"value\" type=\"xs:double\"/>\n      <xs:element name=\"comment\" type=\"xs:string\" minOccurs=\"0\"/>\n    </xs:sequence>\n  </xs:complexType>",
+          "text": "Typ `observation`: sekwencja `timeStamp` (xs:string – bo adapter zamienia czas na tekst), `unit`, `value` (xs:double) i `comment` z `minOccurs=\"0\"` (opcjonalny)."
+        },
+        {
+          "code": "  <xs:complexType name=\"observationList\">\n    <xs:sequence>\n      <xs:element name=\"observation\" type=\"observation\" minOccurs=\"0\" maxOccurs=\"unbounded\"/>\n    </xs:sequence>\n  </xs:complexType>",
+          "text": "Typ listy: powtarzalny element `observation` (0…∞)."
+        },
+        {
+          "code": "  <xs:simpleType name=\"temperatureUnit\">\n    <xs:restriction base=\"xs:string\">\n      <xs:enumeration value=\"Celsius\"/>\n      <xs:enumeration value=\"Fahrenheit\"/>\n      <xs:enumeration value=\"Kelvin\"/>\n    </xs:restriction>\n  </xs:simpleType>\n</xs:schema>",
+          "text": "Enum jako ograniczenie typu string do trzech wartości."
+        },
+        {
+          "code": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?>\n<xs:schema version=\"1.0\" targetNamespace=\"http://example.org/weather-observation\" xmlns:xs=\"http://www.w3.org/2001/XMLSchema\">\n\n  <xs:import schemaLocation=\"schema2.xsd\"/>\n\n  <xs:element name=\"weather-observation\" type=\"observation\"/>\n\n  <xs:element name=\"weather-observations\" type=\"observationList\"/>\n\n\n</xs:schema>",
+          "text": "`schema1.xsd`: `targetNamespace`, import `schema2.xsd` oraz dwa elementy główne: `weather-observation` (typ observation) i `weather-observations` (typ observationList)."
+        }
+      ]
+    },
+    {
+      "title": "3.2 · XmlValidator.java – walidacja XML względem XSD",
+      "chunks": [
+        {
+          "code": "package org.example.service;\n\nimport java.io.File;\nimport java.io.IOException;\nimport java.util.Arrays;\n\nimport javax.xml.XMLConstants;\nimport javax.xml.transform.Source;\nimport javax.xml.transform.stream.StreamSource;\nimport javax.xml.validation.SchemaFactory;\nimport javax.xml.validation.Validator;\nimport javax.xml.validation.Schema;\n\nimport org.xml.sax.SAXException;\n\npublic class XmlValidator {",
+          "text": "Importy standardowego API walidacji (`javax.xml.validation`, bez JAXB)."
+        },
+        {
+          "code": "    public static boolean validate(String xmlFileName, String... xsdFileNames) {\n\n        File xmlFile = new File(xmlFileName);\n        Source[] schemaFiles = Arrays.stream(xsdFileNames)\n                .map(name -> new StreamSource(new File(name).getAbsolutePath()))\n                .toArray(Source[]::new);",
+          "text": "Przyjmuje nazwę pliku XML i dowolną liczbę XSD (varargs). Strumieniem zamienia nazwy plików na tablicę `Source[]` (`StreamSource`)."
+        },
+        {
+          "code": "        SchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);\n\n        try {\n            Schema schema = factory.newSchema(schemaFiles);\n            Validator validator = schema.newValidator();\n            validator.validate(new StreamSource(xmlFile.getAbsolutePath()));\n            return true;\n        } catch (SAXException ex) {\n            return false;\n        } catch (IOException ex) {\n            return false;\n        }\n    }\n}",
+          "text": "`SchemaFactory` dla XML Schema (`W3C_XML_SCHEMA_NS_URI`) buduje `Schema` z kilku plików naraz (schema1 + schema2 wzajemnie się importują); `schema.newValidator()` tworzy walidator; `validate(źródło)` sprawdza dokument. `true` – zgodny; `SAXException` (niezgodny/uszkodzony) lub `IOException` → `false`."
+        }
+      ]
+    },
+    {
+      "title": "3.2 · XmlFileReader.java – odczyt (unmarshalling)",
+      "chunks": [
+        {
+          "code": "package org.example.service;\n\nimport jakarta.xml.bind.JAXBContext;\nimport jakarta.xml.bind.JAXBException;\nimport jakarta.xml.bind.Unmarshaller;\nimport java.io.File;\n\npublic class XmlFileReader {",
+          "text": "Importy JAXB."
+        },
+        {
+          "code": "    public static <T> T readObservation(String xmlFileName, Class<T> clazz) {\n\n        File xmlFile = new File(xmlFileName);\n\n        try {\n            JAXBContext context = JAXBContext.newInstance(clazz);\n            Unmarshaller unmarshaller = context.createUnmarshaller();\n            return clazz.cast(unmarshaller.unmarshal(xmlFile));\n        } catch (JAXBException _ignored) { return null; }\n    }\n}",
+          "text": "Metoda generyczna: `Class<T>` mówi, jaką klasę wczytać; `JAXBContext.newInstance(clazz)` → `createUnmarshaller()` → `unmarshal(plik)` → `clazz.cast(...)` (bezpieczne rzutowanie). Dla `Observation.class` zwraca `Observation`, dla `ObservationList.class` – `ObservationList`. Przy błędzie zwraca `null`."
+        }
+      ]
+    },
+    {
+      "title": "3.2 · App.java (Lab3.2) – walidacja, odczyt i filtrowanie strumieniem",
+      "chunks": [
+        {
+          "code": "package org.example;\n\nimport org.example.model.Observation;\nimport org.example.model.ObservationList;\nimport org.example.service.XmlFileReader;\nimport org.example.service.XmlValidator;\nimport java.util.List;\nimport java.util.Comparator;\n\npublic class App {",
+          "text": "Importy."
+        },
+        {
+          "code": "    final static String [] schemaFiles = { \"schema1.xsd\", \"schema2.xsd\" };\n    final static String dataObservationFile = \"observation.xml\";\n    final static String dataObservationsFile = \"observations.xml\";\n\n    public static void main(String[] args) {",
+          "text": "Stałe: nazwy plików XSD (`schema1.xsd`, `schema2.xsd`) i plików danych (`observation.xml`, `observations.xml`) skopiowane z 3.1 do katalogu projektu."
+        },
+        {
+          "code": "        boolean reslut_1 = XmlValidator.validate(dataObservationFile, schemaFiles);\n        boolean reslut_list = XmlValidator.validate(dataObservationsFile, schemaFiles);\n        System.out.println(\"Validate: \" + dataObservationFile + \" -> \" + reslut_1);\n        System.out.println(\"Validate: \" + dataObservationsFile + \" -> \" + reslut_list);\n\n        System.out.println(\"---\");",
+          "text": "Walidacja obu plików; wypis `Validate: observation.xml -> true`."
+        },
+        {
+          "code": "        Observation observation = XmlFileReader.readObservation(dataObservationFile, Observation.class);\n        System.out.println(observation);\n\n        System.out.println(\"---\");",
+          "text": "Odczyt pojedynczego pomiaru i wypis (używa `toString`)."
+        },
+        {
+          "code": "        ObservationList observationList = XmlFileReader.readObservation(dataObservationsFile, ObservationList.class);\n\n        List<Observation> observationListFiltered = observationList.getObservations().stream()",
+          "text": "Odczyt całej serii. Dalej strumień:"
+        },
+        {
+          "code": "                .filter(o -> o.getComment() != null)\n                .map(o -> {\n                    double valueInCelsius = switch (o.getUnit()) {\n                        case Celsius -> o.getValue();\n                        case Fahrenheit -> (o.getValue() - 32) * 5.0 / 9.0;\n                        case Kelvin -> o.getValue() - 273.15;\n                    };\n                    return new Observation( o.getTimeStamp(), Observation.TemperatureUnit.Celsius, valueInCelsius,o.getComment());})\n                .filter(o -> o.getValue() > -1 && o.getValue() < 1)\n                .sorted(Comparator.comparingDouble(Observation::getValue))\n                .toList();",
+          "text": "1) odrzuca pomiary bez komentarza; 2) `map` przelicza każdy na °C: `switch` – Celsius bez zmian, Fahrenheit `(F − 32)·5/9`, Kelvin `K − 273,15`, i tworzy **nowy** `Observation` w Celsjuszach; 3) `filter` zostawia wartości w przedziale (−1, 1); 4) `sorted(Comparator.comparingDouble(Observation::getValue))` – rosnąco; 5) `toList()`. Przeliczenie musi być przed filtrem zakresu, bo dane są w różnych jednostkach."
+        },
+        {
+          "code": "        observationListFiltered.forEach(System.out::println);\n    }\n}",
+          "text": "Wypisanie wyniku."
+        }
+      ]
+    },
+    {
+      "title": "3.3 · Przykładowe rozwiązanie – XML z URL i statystyki (brak kodu w repo)",
+      "chunks": [
+        {
+          "code": "ObservationList list;\ntry (InputStream in = URI.create(\"https://nowicki.house/java2/labs/observations.xml\")\n                        .toURL().openStream()) {\n    list = (ObservationList) JAXBContext.newInstance(ObservationList.class)\n            .createUnmarshaller().unmarshal(in);\n}\nList<Observation> all = list.getObservations();\n\nall.stream().limit(5).forEach(System.out::println);          // pierwsze 5 rekordów\nSystem.out.println(\"Razem: \" + all.size());\n\nMap<Boolean, Long> byComment = all.stream()\n        .collect(Collectors.partitioningBy(o -> o.getComment() != null, Collectors.counting()));\nMap<Observation.TemperatureUnit, Long> byUnit = all.stream()\n        .collect(Collectors.groupingBy(Observation::getUnit, Collectors.counting()));\nMap<Observation.TemperatureUnit, Double> avgByUnit = all.stream()\n        .collect(Collectors.groupingBy(Observation::getUnit,\n                 Collectors.averagingDouble(Observation::getValue)));",
+          "text": "**Uwaga:** szkic zgodny z treścią zadania (kodu 3.3 nie ma w repo). `URI.create(...).toURL().openStream()` czyta XML prosto z sieci i `unmarshal(InputStream)` buduje obiekty (model identyczny jak w 3.1). `limit(5)` – pierwsze pięć; `partitioningBy` – dwie grupy (z komentarzem / bez); `groupingBy(jednostka, counting())` – liczba pomiarów na jednostkę; `groupingBy(jednostka, averagingDouble(...))` – średnia na jednostkę. Zadanie 3.4 (NBP) – ta sama technika: pobrać XML dla dni wstecz, wybrać pozycje `USD`/`EUR` i policzyć średnią `mid`."
+        }
+      ]
+    }
   ]
 }

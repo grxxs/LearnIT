@@ -354,5 +354,117 @@
       ],
       "e": "JPA = specyfikacja (`jakarta.persistence-api`), Hibernate = jej implementacja (`hibernate-core`), a SQLite = baza (sterownik JDBC + dialekt). Wykład 5 omawia te same pojęcia."
     }
+  ],
+  "notes": [
+    {
+      "title": "Treść zadań Lab 5 (z nowicki.house/java2/labs/05-lab i slajdów)",
+      "text": "**Uwaga:** kodu Lab 5 nie ma w repozytorium, a na slajdach zad-5.1 / 5.2 jest on w obrazkach. Poniższy kod jest **odtworzony** na podstawie opisu zadania i tekstów slajdów (struktura, nazwy klas, zależności, opisy pól i programów App_1…App_6). Nie był kompilowany – służy do nauki schematu rozwiązania; jeśli masz własne pliki z labu, porównaj je z tym szkicem.\n\n\n**Zakres:** Lombok, Hibernate (model danych, tworzenie bazy, zapis i odczyt), Thymeleaf w trybie standalone. Projekt kontynuowany w kolejnych labach.\n\n**Baza aplikacji „Let's brainstorm⚡”** – trzy tabele: **Users** (zarejestrowani użytkownicy), **Problems** (problemy zgłaszane przez użytkowników), **Ideas** (propozycje rozwiązań konkretnego problemu). Użytkownicy tworzą Problems i Ideas, które mają autorów.\nPola wspólne: **Id** (automatyczny klucz główny) oraz automatyczny znacznik czasu – **Registration** (Users) lub **Publication** (Problems, Ideas).\nUsers: **Nick**, **Info** (tekst). Problems: **Questioner** (FK do użytkownika), **Title**, **Question** (tekst). Ideas: **Originator** (FK do użytkownika), **Problem** (FK do problemu), **Answer** (tekst).\n\n**5.1 Baza danych.** Zdefiniować model według API Hibernate, utworzyć bazę SQLite, zapisać przykładowe dane, odczytać dane.\n**5.2 Prezentacja danych.** Szablony Thymeleaf: lista wszystkich użytkowników; lista wszystkich problemów wraz z nadesłanymi pomysłami i ich autorami; wspólny styl; szablony generują pliki HTML.\n\n**Slajdy 5.1 – kroki:** projekt Gradle (Kotlin DSL); w Gradle 9 źródła są w `app/src`, główny pakiet `org.example`, podpakiety `model` i `persistence`; klasy `App_1`…`App_6` z `main`. Zależności: `jakarta.persistence-api 3.2.0`, `hibernate-core 7.1.6.Final`, `slf4j-api 2.0.17`, `sqlite-jdbc 3.50.3.0`, `hibernate-community-dialects 6.6.26.Final`, Lombok 1.18.42 (`compileOnly` + `annotationProcessor`). W IDE: wtyczka Lombok (obowiązkowa) i SQLite Viewer (zalecany). `hibernate.properties`: sterownik i URL `jdbc:sqlite:BrainStormDataBase.sqlite`, dialekt SQLite, `hbm2ddl.auto=update`, `show_sql` / `format_sql` (true na początku, od App_2 false). Uwaga: drugie uruchomienie App_1 kończy się błędem (unikalny nick) – usuń plik `BrainStormDataBase.sqlite`.\n**Slajdy 5.2:** kopia projektu 5.1; nowe pliki `users.html`, `problems.html`, `style.css`; zależność `org.thymeleaf:thymeleaf:3.1.2.RELEASE`; `App_5` (użytkownicy → HTML) i `App_6` (problemy z pomysłami i autorami → HTML); jeśli strona wygląda inaczej – zła ścieżka do CSS."
+    },
+    {
+      "title": "5.1 · build.gradle.kts – zależności (odtworzone)",
+      "chunks": [
+        {
+          "code": "dependencies {\n    // Hibernate / JPA\n    implementation(\"jakarta.persistence:jakarta.persistence-api:3.2.0\")\n    implementation(\"org.hibernate.orm:hibernate-core:7.1.6.Final\")\n    implementation(\"org.slf4j:slf4j-api:2.0.17\")\n\n    // SQLite\n    implementation(\"org.xerial:sqlite-jdbc:3.50.3.0\")\n    implementation(\"org.hibernate.orm:hibernate-community-dialects:6.6.26.Final\")\n\n    // Lombok\n    compileOnly(\"org.projectlombok:lombok:1.18.42\")\n    annotationProcessor(\"org.projectlombok:lombok:1.18.42\")\n\n    // 5.2: Thymeleaf standalone\n    implementation(\"org.thymeleaf:thymeleaf:3.1.2.RELEASE\")\n}",
+          "text": "**Uwaga:** kodu Lab 5 nie ma w repozytorium, a na slajdach zad-5.1 / 5.2 jest on w obrazkach. Poniższy kod jest **odtworzony** na podstawie opisu zadania i tekstów slajdów (struktura, nazwy klas, zależności, opisy pól i programów App_1…App_6). Nie był kompilowany – służy do nauki schematu rozwiązania; jeśli masz własne pliki z labu, porównaj je z tym szkicem.\n\n`jakarta.persistence-api` – adnotacje i interfejsy JPA (specyfikacja); `hibernate-core` – jej implementacja (ORM); `slf4j-api` – logowanie; `sqlite-jdbc` – sterownik JDBC do pliku bazy SQLite; `hibernate-community-dialects` – dialekt SQLite (nie ma go w rdzeniu Hibernate); Lombok – generowanie getterów, konstruktorów, buildera w czasie kompilacji (`compileOnly` + `annotationProcessor`); Thymeleaf – silnik szablonów HTML (dopiero w 5.2)."
+        }
+      ]
+    },
+    {
+      "title": "5.1 · resources/hibernate.properties – konfiguracja (odtworzone)",
+      "chunks": [
+        {
+          "code": "hibernate.connection.driver_class=org.sqlite.JDBC\nhibernate.connection.url=jdbc:sqlite:BrainStormDataBase.sqlite\nhibernate.dialect=org.hibernate.community.dialect.SQLiteDialect\nhibernate.hbm2ddl.auto=update\nhibernate.show_sql=true\nhibernate.format_sql=true",
+          "text": "Hibernate sam wczytuje `hibernate.properties` z classpath. Sterownik i URL: baza to plik `BrainStormDataBase.sqlite` tworzony w katalogu projektu. Dialekt SQLite generuje poprawny dla SQLite SQL. `hbm2ddl.auto=update` – przy starcie tworzy brakujące tabele / dodaje kolumny według encji (bez kasowania danych). `show_sql` + `format_sql` – wypisują wykonywane zapytania (po App_1 zmienione na `false`, żeby nie zaśmiecać konsoli)."
+        }
+      ]
+    },
+    {
+      "title": "5.1 · model/User.java – encja (odtworzone)",
+      "chunks": [
+        {
+          "code": "package org.example.model;\n\nimport jakarta.persistence.*;\nimport lombok.*;\nimport org.hibernate.annotations.CreationTimestamp;\nimport java.time.LocalDateTime;\n\n@Entity\n@Table(name = \"users\")\n@Getter @Setter\n@NoArgsConstructor @AllArgsConstructor\n@Builder\n@ToString @EqualsAndHashCode\npublic class User {\n\n    @Id\n    @GeneratedValue(strategy = GenerationType.IDENTITY)\n    private Long id;\n\n    @CreationTimestamp\n    @Column(updatable = false)\n    private LocalDateTime registration;\n\n    @Column(nullable = false, unique = true, updatable = false)\n    private String nick;\n\n    @Column(columnDefinition = \"TEXT\")\n    private String info;\n}",
+          "text": "`@Entity` – klasa jest encją JPA; `@Table(name=\"users\")` – nazwa tabeli. `@Id` + `@GeneratedValue` – automatyczny klucz główny. `@CreationTimestamp` (Hibernate) – czas ustawiany automatycznie przy pierwszym zapisie (`registration`); `updatable=false` – późniejsze zmiany go nie dotykają. `nick`: wymagany (`nullable=false`), unikalny (`unique=true`), niezmienialny (`updatable=false`) – dlatego drugi uruchomiony App_1 zakończy się błędem. `info` – długi tekst. Lombok: `@Getter/@Setter`, `@NoArgsConstructor` (JPA wymaga konstruktora bezargumentowego), `@AllArgsConstructor`, `@Builder` (`User.builder().nick(\"x\").info(\"y\").build()`), `@ToString`, `@EqualsAndHashCode`."
+        }
+      ]
+    },
+    {
+      "title": "5.1 · model/Problem.java – relacje (odtworzone)",
+      "chunks": [
+        {
+          "code": "@Entity\n@Table(name = \"problems\")\n@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder\n@ToString @EqualsAndHashCode\npublic class Problem {\n\n    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)\n    private Long id;\n\n    @CreationTimestamp @Column(updatable = false)\n    private LocalDateTime publication;\n\n    @ManyToOne(optional = false)\n    @JoinColumn(name = \"questioner_id\")\n    private User questioner;\n\n    @Column(nullable = false, length = 200)\n    private String title;\n\n    @Column(nullable = false, columnDefinition = \"TEXT\")\n    private String question;\n\n    @OneToMany(mappedBy = \"problem\")\n    @ToString.Exclude\n    @EqualsAndHashCode.Exclude\n    @Builder.Default\n    private List<Idea> ideas = new ArrayList<>();\n}",
+          "text": "`@ManyToOne` + `@JoinColumn` – wiele problemów ma jednego autora; klucz obcy `questioner_id` jest w tabeli `problems`. `title` – wymagany, o ograniczonej długości; `question` – wymagany tekst. `ideas` – **odwrotna strona** relacji dwukierunkowej: `@OneToMany(mappedBy = \"problem\")` (kolumny nie tworzy – klucz obcy jest w `ideas`). Pole wykluczone z `toString` i `equals/hashCode`, bo Problem ↔ Idea tworzy cykl i groziłby `StackOverflowError`. `@Builder.Default` – żeby builder nie ustawiał listy na `null` (zgodnie z opisem na slajdach). Kolekcje są domyślnie ładowane **leniwie** (lazy)."
+        }
+      ]
+    },
+    {
+      "title": "5.1 · model/Idea.java (odtworzone)",
+      "chunks": [
+        {
+          "code": "@Entity\n@Table(name = \"ideas\")\n@Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder\n@ToString @EqualsAndHashCode\npublic class Idea {\n\n    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)\n    private Long id;\n\n    @CreationTimestamp @Column(updatable = false)\n    private LocalDateTime publication;\n\n    @ManyToOne(optional = false)\n    @JoinColumn(name = \"originator_id\")\n    private User originator;\n\n    @ManyToOne(optional = false)\n    @JoinColumn(name = \"problem_id\")\n    @ToString.Exclude\n    @EqualsAndHashCode.Exclude\n    private Problem problem;\n\n    @Column(nullable = false, columnDefinition = \"TEXT\")\n    private String answer;\n}",
+          "text": "Idea ma dwa klucze obce: do autora (`originator`) i do problemu (`problem`). Po stronie „wiele” relacji znajduje się kolumna klucza obcego. `problem` wykluczone z `toString`/`equals` (przerywa cykl z `Problem.ideas`) – przy takim podejściu wystarczy wykluczenie po jednej stronie, a opis slajdów mówi o `ideas` w Problem."
+        }
+      ]
+    },
+    {
+      "title": "5.1 · persistence/HibernateSessionFactory.java (odtworzone)",
+      "chunks": [
+        {
+          "code": "package org.example.persistence;\n\nimport org.example.model.*;\nimport org.hibernate.Session;\nimport org.hibernate.SessionFactory;\nimport org.hibernate.cfg.Configuration;\n\npublic class HibernateSessionFactory {\n\n    private static final SessionFactory sessionFactory;\n\n    static {\n        sessionFactory = new Configuration()\n                .addAnnotatedClass(User.class)\n                .addAnnotatedClass(Problem.class)\n                .addAnnotatedClass(Idea.class)\n                .buildSessionFactory();\n\n        Runtime.getRuntime().addShutdownHook(new Thread(sessionFactory::close));\n    }\n\n    public static Session getNewSession() {\n        return sessionFactory.openSession();\n    }\n}",
+          "text": "Klasa statyczna. Blok `static` wykonuje się raz, przy pierwszym użyciu klasy: `Configuration` (czyta `hibernate.properties`) + zarejestrowane encje → `buildSessionFactory()` (kosztowne, więc raz na aplikację). **Shutdown hook** – osobny wątek uruchamiany przy kończeniu JVM zamyka `SessionFactory` i połączenie z bazą. `getNewSession()` zwraca świeżą `Session` (jednostkę pracy) w każdym miejscu użycia."
+        }
+      ]
+    },
+    {
+      "title": "5.1 · App_1 – zapis danych (odtworzone)",
+      "chunks": [
+        {
+          "code": "public class App_1 {\n    public static void main(String[] args) {\n\n        User u1 = User.builder().nick(\"anna\").info(\"Lubi algorytmy\").build();\n        User u2 = User.builder().nick(\"bartek\").info(\"Backend\").build();\n        User u3 = User.builder().nick(\"celina\").info(\"Testy\").build();\n\n        Problem p1 = Problem.builder().questioner(u1)\n                .title(\"Jak szybko sortować?\").question(\"Jaki algorytm dla 1 mln liczb?\").build();\n        Problem p2 = Problem.builder().questioner(u2)\n                .title(\"Jak uczyć się Springa?\").question(\"Od czego zacząć?\").build();\n\n        Idea i1 = Idea.builder().originator(u2).problem(p1).answer(\"Quicksort / sort() z biblioteki\").build();\n        Idea i2 = Idea.builder().originator(u3).problem(p1).answer(\"Merge sort – stabilny\").build();\n        Idea i3 = Idea.builder().originator(u1).problem(p2).answer(\"Zacząć od Spring Boot\").build();\n\n        System.out.println(u1);   // toString z Lomboka\n\n        try (Session session = HibernateSessionFactory.getNewSession()) {\n            Transaction tx = session.beginTransaction();\n            session.persist(u1); session.persist(u2); session.persist(u3);\n            session.persist(p1); session.persist(p2);\n            session.persist(i1); session.persist(i2); session.persist(i3);\n            tx.commit();\n        }\n    }\n}",
+          "text": "Obiekty budowane **builderami** (Lombok), wypisywane przez `toString`, zapisywane w sesji. **try-with-resources** zamyka `Session` automatycznie. Zapis wymaga transakcji: `beginTransaction()` → `persist(...)` → `commit()`. Kolejność: najpierw użytkownicy, potem problemy, na końcu pomysły (klucze obce muszą wskazywać na zapisane rekordy). Po pierwszym uruchomieniu powstaje plik `BrainStormDataBase.sqlite`; drugie uruchomienie → błąd unikalności `nick` (usuń plik bazy)."
+        }
+      ]
+    },
+    {
+      "title": "5.1 · App_2, App_3, App_4 – odczyt (odtworzone)",
+      "chunks": [
+        {
+          "code": "// App_2 – wszyscy użytkownicy\ntry (Session session = HibernateSessionFactory.getNewSession()) {\n    List<User> users = session\n            .createSelectionQuery(\"from User\", User.class)\n            .getResultList();\n    users.forEach(System.out::println);\n}",
+          "text": "HQL `from User` – zapytanie na **encjach**, nie na tabelach SQL. `getResultList()` zwraca listę obiektów `User`."
+        },
+        {
+          "code": "// App_3 – problemy z pomysłami i autorami, wszystko w jednej sesji\ntry (Session session = HibernateSessionFactory.getNewSession()) {\n    List<Problem> problems = session\n            .createSelectionQuery(\"from Problem\", Problem.class)\n            .getResultList();\n    for (Problem p : problems) {\n        System.out.println(p.getTitle() + \" – \" + p.getQuestioner().getNick());\n        for (Idea i : p.getIdeas())                       // leniwe ładowanie – sesja jeszcze otwarta\n            System.out.println(\"  • \" + i.getAnswer() + \" – \" + i.getOriginator().getNick());\n    }\n}",
+          "text": "Relacje (`questioner`, `ideas`, `originator`) są ładowane leniwie – Hibernate dociąga je dopiero przy dostępie. W App_3 działa, bo odczyt odbywa się **wewnątrz otwartej sesji**."
+        },
+        {
+          "code": "// App_4 – dane dostępne PO zamknięciu sesji\nList<Problem> problems;\ntry (Session session = HibernateSessionFactory.getNewSession()) {\n    problems = session.createSelectionQuery(\n            \"select distinct p from Problem p \" +\n            \"join fetch p.questioner \" +\n            \"left join fetch p.ideas i \" +\n            \"left join fetch i.originator\", Problem.class).getResultList();\n}\n// sesja zamknięta – ale dane są już w pamięci\nproblems.forEach(p -> { /* wypis jak w App_3 */ });",
+          "text": "`join fetch` każe Hibernate pobrać relacje **od razu** jednym zapytaniem, więc po zamknięciu sesji nie będzie `LazyInitializationException`. `left join fetch` – problem bez pomysłów też zostanie zwrócony; `distinct` – bez powielania problemu dla każdego pomysłu. To potrzebne dla 5.2 – HTML generujemy już po zamknięciu sesji."
+        }
+      ]
+    },
+    {
+      "title": "5.2 · Thymeleaf: App_5 – użytkownicy do HTML (odtworzone)",
+      "chunks": [
+        {
+          "code": "<!-- src/main/resources/users.html -->\n<!DOCTYPE html>\n<html xmlns:th=\"http://www.thymeleaf.org\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Users List</title>\n  <link rel=\"stylesheet\" href=\"app/src/main/resources/static/style.css\">\n</head>\n<body>\n  <h1>Users</h1>\n  <ul>\n    <li th:each=\"user : ${users}\">\n      <b th:text=\"${user.nick}\">nick</b>\n      <span th:text=\"${user.info}\">info</span>\n      <small th:text=\"${user.registration}\">date</small>\n    </li>\n  </ul>\n</body>\n</html>",
+          "text": "Szablon HTML z atrybutami Thymeleaf: `th:each=\"user : ${users}\"` powtarza element dla każdego użytkownika z kolekcji `users` (podanej w kontekście); `th:text=\"${user.nick}\"` podstawia wartość pola (przez getter). Tekst „nick” w tagu to tylko makieta widoczna przy otwarciu szablonu bez silnika. Ścieżka w `href` jest względna do **miejsca zapisu wygenerowanego HTML** – zła ścieżka = strona bez stylów."
+        },
+        {
+          "code": "public class App_5 {\n    public static void main(String[] args) throws IOException {\n        List<User> users;\n        try (Session session = HibernateSessionFactory.getNewSession()) {\n            users = session.createSelectionQuery(\"from User\", User.class).getResultList();\n        }\n\n        ClassLoaderTemplateResolver resolver = new ClassLoaderTemplateResolver();\n        resolver.setTemplateMode(TemplateMode.HTML);\n        resolver.setPrefix(\"/\");\n        resolver.setSuffix(\".html\");\n\n        TemplateEngine engine = new TemplateEngine();\n        engine.setTemplateResolver(resolver);\n\n        Context context = new Context();\n        context.setVariable(\"users\", users);\n\n        String html = engine.process(\"users\", context);\n        Files.writeString(Path.of(\"users-output.html\"), html);\n    }\n}",
+          "text": "Kroki: 1) odczyt użytkowników z bazy; 2) `ClassLoaderTemplateResolver` – gdzie szukać szablonów (classpath, prefiks `/`, sufiks `.html`, tryb HTML); 3) `TemplateEngine` – silnik (**standalone**, bez Springa i serwera WWW); 4) `Context` – zmienne dostępne w szablonie (`users`); 5) `engine.process(\"users\", context)` zwraca gotowy HTML jako `String`; 6) zapis do pliku. Zależność: `org.thymeleaf:thymeleaf:3.1.2.RELEASE`."
+        }
+      ]
+    },
+    {
+      "title": "5.2 · problems.html i App_6 – problemy z pomysłami (odtworzone)",
+      "chunks": [
+        {
+          "code": "<!-- src/main/resources/problems.html -->\n<!DOCTYPE html>\n<html xmlns:th=\"http://www.thymeleaf.org\">\n<head>\n  <meta charset=\"UTF-8\">\n  <title>Problems List</title>\n  <link rel=\"stylesheet\" href=\"app/src/main/resources/static/style.css\">\n</head>\n<body>\n  <h1>Problems</h1>\n  <p th:if=\"${#lists.isEmpty(problems)}\">No problems found.</p>\n\n  <div class=\"problem\" th:each=\"p : ${problems}\">\n    <h2 th:text=\"${p.title}\">Title</h2>\n    <p th:text=\"${p.question}\">Question</p>\n    <small>by <b th:text=\"${p.questioner.nick}\">nick</b>, <span th:text=\"${p.publication}\">date</span></small>\n\n    <ul th:if=\"${!#lists.isEmpty(p.ideas)}\">\n      <li th:each=\"i : ${p.ideas}\">\n        <span th:text=\"${i.answer}\">answer</span> –\n        <b th:text=\"${i.originator.nick}\">author</b>\n      </li>\n    </ul>\n  </div>\n</body>\n</html>",
+          "text": "Zgodny z opisem slajdu: tytuł „Problems List”, link do `style.css`, „No problems found.” gdy lista pusta (`th:if` – renderuje element tylko przy prawdziwym warunku), a dla każdego problemu: tytuł, pytanie, nick autora, data publikacji i – jeśli są – lista pomysłów (odpowiedź + nick autora). Pętle zagnieżdżone: `th:each` po problemach, a w środku po `p.ideas`."
+        },
+        {
+          "code": "public class App_6 {\n    public static void main(String[] args) throws IOException {\n        List<Problem> problems;\n        try (Session session = HibernateSessionFactory.getNewSession()) {\n            problems = session.createSelectionQuery(\n                    \"select distinct p from Problem p join fetch p.questioner \" +\n                    \"left join fetch p.ideas i left join fetch i.originator\", Problem.class)\n                    .getResultList();\n        }\n        // ... ten sam TemplateEngine co w App_5 ...\n        Context context = new Context();\n        context.setVariable(\"problems\", problems);\n        Files.writeString(Path.of(\"problems-output.html\"), engine.process(\"problems\", context));\n    }\n}",
+          "text": "Dane pobrane z `join fetch`, żeby po zamknięciu sesji szablon mógł swobodnie czytać `p.ideas`, `p.questioner` i `i.originator` (bez `LazyInitializationException`). Reszta jak w App_5, tylko inny szablon i zmienna `problems`."
+        }
+      ]
+    }
   ]
 }

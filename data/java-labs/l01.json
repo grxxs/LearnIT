@@ -498,5 +498,227 @@
       ],
       "e": "Z wykładu: adnotacja jest metadaną (nie samodzielnym kodem). W labie: `@Task(numberOfRepetition = 5)` nie robi nic sama – dopiero `TaskRunner` odczytuje wartość przez `getAnnotation(Task.class).numberOfRepetition()` i na tej podstawie wywołuje `run()` odpowiednią liczbę razy."
     }
+  ],
+  "notes": [
+    {
+      "title": "Treść zadań Lab 1 (z nowicki.house/java2/labs/01-lab)",
+      "text": "**Zakres:** typy generyczne, wyrażenia lambda, adnotacje + refleksja.\n\n**Zadanie 1.1 – typy generyczne** (projekt `La1`)\n1. Klasa `SecretData` z dwoma prywatnymi polami generycznymi `data1` i `data2`, konstruktorem przyjmującym oba, getterami i setterami.\n2. Interfejs `HaveFunctionPrintOnScreen` z jedną metodą `void printOnScreen()`.\n3. Klasa `SecretDataWithPrintOnScreen` dziedziczy po `SecretData` i implementuje interfejs; metoda wypisuje `data1` i `data2`; klasa ma własny konstruktor.\n4. Klasa `SecretDataActions` ze statycznymi metodami: `printOnScreen` dla obiektu dowolnej klasy implementującej `HaveFunctionPrintOnScreen`; `printOnScreen` dla `SecretData` (wypis w inny sposób, żeby odróżnić przeciążenia); `sumOfData` (tylko gdy oba pola są liczbami, zwraca sumę); `writeToStream` (tylko gdy pierwsze pole to `String`, a drugie podklasa `OutputStream`; zapisuje tekst do strumienia, zwraca `true` / `false`).\n5. `Main` wywołuje wszystkie metody `SecretDataActions`, tworząc potrzebne obiekty. 6. Uruchomić.\n\n**Zadanie 1.2 – interfejsy funkcyjne i lambdy** (projekt `Lab1.2`)\n1. Interfejs funkcyjny `MathOperation` z metodą `performOperation(double, double)` zwracającą `double`.\n2. `MathCalculator1.executeOperation(double, double, MathOperation)` zwraca wynik przekazanej operacji.\n3. W `main`: dwa obiekty `MathOperation` (dodawanie i mnożenie) oraz wzór f(x,y) = sin(x) + cos(y) przekazany wprost jako lambda.\n4. `MathCalculator2` – to samo, ale z `BiFunction<Double, Double, Double>`.\n\n**Zadanie 1.3 – adnotacje i refleksja** (projekt `Lab1.3`)\nBiblioteka Reflections (ronmamo) wyszukuje klasy w czasie działania po adnotacji, interfejsie lub nazwie (katalogi klas i JAR-y). Dodać slf4j (Reflections używa go przy starcie; bez niego są ostrzeżenia). Pakiet `tasks` skanowany przy starcie; znaleźć klasy z adnotacją `@Task` implementujące `HaveRunMethod`, utworzyć obiekt każdej i wywołać jej metodę; parametr `@Task` określa, ile razy ją wywołać."
+    },
+    {
+      "title": "1.1 · HaveFunctionPrintOnScreen.java",
+      "chunks": [
+        {
+          "code": "package org.example;\n\npublic interface HaveFunctionPrintOnScreen {\n    void printOnScreen();\n}",
+          "text": "Interfejs z jedną metodą abstrakcyjną – „umowa”: każda klasa, która go implementuje, umie wypisać się na ekran. Dzięki niemu `SecretDataActions.printOnScreen(T data)` przyjmie obiekt dowolnej klasy z tą umiejętnością (polimorfizm przez interfejs)."
+        }
+      ]
+    },
+    {
+      "title": "1.1 · SecretData.java – klasa generyczna",
+      "chunks": [
+        {
+          "code": "package org.example;",
+          "text": "Pakiet `org.example`."
+        },
+        {
+          "code": "public class SecretData <T1, T2>{",
+          "text": "`<T1, T2>` – dwa parametry typu. Klasa nie wie, czym będą pola, dopóki ktoś nie utworzy obiektu, np. `SecretData<String, PrintStream>` albo `SecretData<Integer, Double>`. Kompilator pilnuje typów (bez rzutowań)."
+        },
+        {
+          "code": "    private T1 data1;\n    private T2 data2;",
+          "text": "Dwa pola prywatne typów T1 i T2 – dostęp tylko przez gettery/settery (enkapsulacja)."
+        },
+        {
+          "code": "    public SecretData(T1 data1, T2 data2){\n        this.data1 = data1;\n        this.data2 = data2;\n    }",
+          "text": "Konstruktor ustawia oba pola. Nie ma konstruktora bezargumentowego – dlatego podklasa musi wywołać `super(data1, data2)`."
+        },
+        {
+          "code": "    public void setData1(T1 data1) {this.data1 = data1;}\n    public void setData2(T2 data2) {this.data2 = data2;}\n\n    public T1 getData1() {return data1;}\n    public T2 getData2() {return data2;}\n\n}",
+          "text": "Settery (`setData1`, `setData2`) przyjmują wartość typu T1/T2 i zmieniają pole. Gettery zwracają T1/T2, więc `getData1()` dla `SecretData<String,…>` zwraca od razu `String`."
+        }
+      ]
+    },
+    {
+      "title": "1.1 · SecretDataWithPrintOnScreen.java – dziedziczenie + interfejs",
+      "chunks": [
+        {
+          "code": "package org.example;\n\npublic class SecretDataWithPrintOnScreen<T1, T2> extends SecretData<T1, T2> implements HaveFunctionPrintOnScreen {",
+          "text": "Klasa jest generyczna (`<T1, T2>`), dziedziczy po `SecretData<T1, T2>` (jedna klasa bazowa) i implementuje `HaveFunctionPrintOnScreen` (interfejs). Kolejność: najpierw `extends`, potem `implements`."
+        },
+        {
+          "code": "    public SecretDataWithPrintOnScreen(T1 data1, T2 data2){\n        super(data1, data2);\n    }",
+          "text": "Własny konstruktor wymagany w zadaniu. `super(data1, data2)` woła jedyny konstruktor klasy bazowej – obowiązkowe, bo `SecretData` nie ma konstruktora domyślnego."
+        },
+        {
+          "code": "    @Override\n    public void printOnScreen(){\n        System.out.println(\"Data 1 -> \" + getData1());\n        System.out.println(\"Data 2 -> \" + getData2());\n    }\n}",
+          "text": "Implementacja metody interfejsu. `@Override` – kompilator sprawdzi, że faktycznie nadpisujemy metodę z interfejsu. Pola `data1`/`data2` są prywatne w klasie bazowej, więc odczyt przez `getData1()` / `getData2()`."
+        }
+      ]
+    },
+    {
+      "title": "1.1 · SecretDataActions.java – metody generyczne z ograniczeniami",
+      "chunks": [
+        {
+          "code": "package org.example;\n\nimport java.io.IOException;\nimport java.io.OutputStream;\n\npublic class SecretDataActions {",
+          "text": "Klasa narzędziowa – tylko metody `static` (nie tworzymy jej obiektów)."
+        },
+        {
+          "code": "    public static <T extends HaveFunctionPrintOnScreen> void printOnScreen(T data) {\n        System.out.println(\"Wykonuję: <T extends HavaFunctionPrintOnScreen> void printOnScreen(T data)\");\n        data.printOnScreen();\n    }",
+          "text": "**Przeciążenie 1.** `<T extends HaveFunctionPrintOnScreen>` – ograniczenie górne: T musi implementować interfejs. Metoda wypisuje komunikat „Wykonuję: …” i woła `data.printOnScreen()` (metoda obiektu). Po wymazaniu typów (type erasure) sygnatura to `printOnScreen(HaveFunctionPrintOnScreen)`."
+        },
+        {
+          "code": "    public static <T1, T2> void printOnScreen(SecretData<T1, T2> data){\n        System.out.println(\"Wykonuję: <T1, T2> void printOnScreen(SecretData<T1, T2> data\");\n        System.out.println(data.getData1() + \" \" + data.getData2());\n    }",
+          "text": "**Przeciążenie 2.** Przyjmuje dowolny `SecretData<T1,T2>` i wypisuje oba pola jedną linią (`data1 + \" \" + data2`) – inny sposób wypisania niż w 1, żeby dało się odróżnić, które przeciążenie zadziałało. Po wymazaniu: `printOnScreen(SecretData)` – inna sygnatura, więc przeciążenia mogą współistnieć."
+        },
+        {
+          "code": "    public static <T1 extends Number, T2 extends Number> double sumOfData(SecretData<T1, T2>data){\n        double sum = data.getData1().doubleValue() + data.getData2().doubleValue();\n        return sum;\n    }",
+          "text": "`sumOfData` – oba parametry typu mają ograniczenie `extends Number` (Integer, Double, Long…). Dzięki temu wolno wywołać `doubleValue()` i zsumować różne typy liczbowe. Dla `SecretData<String,…>` wywołanie się nie skompiluje."
+        },
+        {
+          "code": "    public static <T2 extends OutputStream> boolean writeToStream(SecretData<String, T2> data){\n\n        OutputStream outputStream = data.getData2();\n        String text = data.getData1();\n\n        try{\n            outputStream.write(text.getBytes());\n            outputStream.write('\\n');\n            return true;\n        } catch (IOException e){\n            return false;\n        }\n\n    }\n\n}",
+          "text": "`writeToStream` – pierwszy typ to dokładnie `String`, drugi dowolna podklasa `OutputStream` (np. `PrintStream` z `System.out`, `FileOutputStream`). Zapisuje bajty tekstu (`getBytes()`) i znak `'\\n'`; `IOException` jest łapany i metoda zwraca `false`, sukces → `true`."
+        }
+      ]
+    },
+    {
+      "title": "1.1 · Main.java (La1) – wywołania i rzutowania",
+      "chunks": [
+        {
+          "code": "package org.example;\nimport java.io.PrintStream;\n\npublic class Main {\n    static void main() {",
+          "text": "`static void main()` bez `public` i bez `String[] args` – nowy, uproszczony punkt wejścia (Java 25, w `pom.xml` źródła ustawione na 25). W starszych wersjach: `public static void main(String[] args)`."
+        },
+        {
+          "code": "        SecretData<String, PrintStream> tekstWithOutputStreamSecretData = new SecretData<>(\"Dane tekstowe\", System.out);\n        SecretDataActions.writeToStream(tekstWithOutputStreamSecretData);\n        SecretDataActions.printOnScreen(tekstWithOutputStreamSecretData);",
+          "text": "Dane tekstowe + `System.out` (typu `PrintStream`, podklasa `OutputStream`). Diamond `<>` – typy wnioskowane. `writeToStream` wypisze „Dane tekstowe” + nowa linia. `printOnScreen(...)` wybierze **przeciążenie 2** (zwykły SecretData nie implementuje interfejsu)."
+        },
+        {
+          "code": "        SecretData<Integer, Double> numericData = new SecretData<>(5, 2.2);\n        SecretDataActions.printOnScreen(numericData);\n        double sum = SecretDataActions.sumOfData(numericData);\n        System.out.println(\"suma=\" + sum);",
+          "text": "Liczby: 5 (autoboxing do Integer) i 2.2 (Double). `sumOfData` → 5.0 + 2.2 = 7.2, wypis: `suma=7.2`."
+        },
+        {
+          "code": "        SecretDataWithPrintOnScreen<String, Integer> secretDataWithPrintOnScreen = new SecretDataWithPrintOnScreen<>(\"Opis\", 5);\n        SecretDataActions.printOnScreen((HaveFunctionPrintOnScreen) secretDataWithPrintOnScreen);\n        SecretDataActions.printOnScreen((SecretData<?,?>)secretDataWithPrintOnScreen);\n    }\n}",
+          "text": "Obiekt pasuje do **obu** przeciążeń (jest `SecretData` i `HaveFunctionPrintOnScreen`) – bez rzutowania kompilator zgłosiłby „ambiguous”. Rzutowanie na `(HaveFunctionPrintOnScreen)` → przeciążenie 1 (wypis „Data 1 -> …”, „Data 2 -> …”). Rzutowanie na `(SecretData<?,?>)` → przeciążenie 2 (wildcard `?` = dowolne argumenty typu)."
+        }
+      ]
+    },
+    {
+      "title": "1.2 · MathOperation.java – interfejs funkcyjny",
+      "chunks": [
+        {
+          "code": "package org.example;\n\n@FunctionalInterface\npublic interface MathOperation {\n\n    double performOperation(double x, double y);\n}",
+          "text": "`@FunctionalInterface` – kompilator pilnuje, żeby była dokładnie jedna metoda abstrakcyjna. Taki interfejs można zaimplementować lambdą: `(a, b) -> a + b`. Metoda bierze dwa `double` i zwraca `double`."
+        }
+      ]
+    },
+    {
+      "title": "1.2 · MathCalculator1.java i MathCalculator2.java",
+      "chunks": [
+        {
+          "code": "package org.example;\n\npublic class MathCalculator1 {\n\n    public static double executeOperation(double x, double y, MathOperation operation){\n\n        return operation.performOperation(x, y);\n    }\n}",
+          "text": "**Wersja 1 – własny interfejs.** `executeOperation` dostaje dwie liczby i operację, i zwraca `operation.performOperation(x, y)`. To funkcja wyższego rzędu: kod (operacja) przekazany jak dane – wzorzec strategii."
+        },
+        {
+          "code": "package org.example;\n\nimport java.util.function.BiFunction;\n\npublic class MathCalculator2 {\n\n    public static double executeOperation(\n            double x,\n            double y,\n            BiFunction<Double, Double, Double> operation ){\n\n        return operation.apply(x, y);\n    }\n\n}",
+          "text": "**Wersja 2 – standardowy `BiFunction<Double, Double, Double>`** z `java.util.function` (dwa argumenty → wynik; metoda `apply`). W typach generycznych muszą być klasy opakowujące (`Double`, nie `double`); argumenty `x`, `y` są autoboxowane, a wynik rozpakowany do `double`."
+        }
+      ]
+    },
+    {
+      "title": "1.2 · Main.java (Lab1.2) – lambdy",
+      "chunks": [
+        {
+          "code": "package org.example;\n\n//TIP To <b>Run</b> code, press <shortcut actionId=\"Run\"/> or\n// click the <icon src=\"AllIcons.Actions.Execute\"/> icon in the gutter.\npublic class Main {\n    static void main() {",
+          "text": "Pakiet; komentarz „TIP” to ślad generatora IntelliJ."
+        },
+        {
+          "code": "        MathOperation adding = (a, b) -> a + b;\n        MathOperation multiply = (a, b) -> a * b;",
+          "text": "Dwie operacje jako lambdy przypisane do zmiennych typu `MathOperation`: dodawanie `(a, b) -> a + b` i mnożenie `(a, b) -> a * b`. Typy `a`, `b` wnioskuje kompilator z `performOperation(double, double)`."
+        },
+        {
+          "code": "        double resultAdding1 = MathCalculator1.executeOperation(2.1, -1.3, adding);\n        double resultMuliply1 = MathCalculator1.executeOperation(2.1, -1.3, multiply);\n\n        double resultFunction1\n                = MathCalculator1.executeOperation(2.1, -1.3, (a, b) -> Math.sin(a) + Math.cos(b));",
+          "text": "Wywołania `MathCalculator1.executeOperation(2.1, -1.3, …)`: z `adding` (≈0,8), z `multiply` (≈−2,73) i ze wzorem podanym bezpośrednio `Math.sin(a) + Math.cos(b)` (≈1,13; funkcje trygonometryczne liczą w radianach)."
+        },
+        {
+          "code": "        System.out.println(resultAdding1);\n        System.out.println(resultMuliply1);\n        System.out.println(resultFunction1);",
+          "text": "Wypisanie trzech wyników wersji 1."
+        },
+        {
+          "code": "        double resultAdding2\n                = MathCalculator2.executeOperation(2.1, -1.3, (a, b) -> a + b);\n\n        double resultMuliply2\n                = MathCalculator2.executeOperation(2.1, -1.3, (a, b) -> a * b);\n\n        double resultFunction2\n                = MathCalculator2.executeOperation(2.1, -1.3, (a, b) -> Math.sin(a) + Math.cos(b));\n\n        System.out.println(resultAdding2);\n        System.out.println(resultMuliply2);\n        System.out.println(resultFunction2);\n    }\n}",
+          "text": "To samo z `MathCalculator2` (BiFunction) – lambdy podane od razu w wywołaniu, bez osobnych zmiennych; wyniki identyczne jak w wersji 1."
+        }
+      ]
+    },
+    {
+      "title": "1.3 · build.gradle.kts (Lab1.3) – zależności",
+      "chunks": [
+        {
+          "code": "plugins {\n    id(\"java\")\n}\n\ngroup = \"org.example\"\nversion = \"1.0-SNAPSHOT\"\n\nrepositories {\n    mavenCentral()\n}",
+          "text": "Plugin `java`, grupa/wersja, repozytorium Maven Central."
+        },
+        {
+          "code": "dependencies {\n    testImplementation(platform(\"org.junit:junit-bom:6.0.0\"))\n    testImplementation(\"org.junit.jupiter:junit-jupiter\")\n    testRuntimeOnly(\"org.junit.platform:junit-platform-launcher\")\n    implementation(\"org.reflections:reflections:0.10.2\")\n    implementation(\"org.slf4j:slf4j-nop:2.0.9\")\n}\n\ntasks.test {\n    useJUnitPlatform()\n}",
+          "text": "`org.reflections:reflections:0.10.2` – skanowanie klas po adnotacji/interfejsie/pakiecie. `org.slf4j:slf4j-nop:2.0.9` – „pusty” logger SLF4J; Reflections loguje przez SLF4J, a bez implementacji drukowałby ostrzeżenia. Pozostałe linie to JUnit do testów (`useJUnitPlatform()`)."
+        }
+      ]
+    },
+    {
+      "title": "1.3 · Task.java i HaveRunMethod.java – adnotacja i interfejs",
+      "chunks": [
+        {
+          "code": "package org.example;\n\nimport java.lang.annotation.Retention;\nimport java.lang.annotation.RetentionPolicy;\n\n@Retention(RetentionPolicy.RUNTIME)\npublic @interface Task {\n\n    int numberOfRepetition() default 1;\n\n}",
+          "text": "`@interface` definiuje adnotację. `@Retention(RetentionPolicy.RUNTIME)` – dostępna w czasie działania przez refleksję (bez tego domyślnie CLASS i `isAnnotationPresent` zwróciłoby false). Element `int numberOfRepetition() default 1;` to parametr adnotacji z wartością domyślną; użycie: `@Task(numberOfRepetition = 5)`."
+        },
+        {
+          "code": "package org.example;\n\npublic interface HaveRunMethod {\n\n    void run();\n}",
+          "text": "Interfejs z metodą `run()` – wspólny kontrakt wszystkich zadań. Skaner szuka klas, które go implementują."
+        }
+      ]
+    },
+    {
+      "title": "1.3 · TaskRunner.java – skanowanie i uruchamianie",
+      "chunks": [
+        {
+          "code": "package org.example;\n\nimport org.reflections.Reflections;\nimport java.util.Set;\nimport java.util.Map;\nimport java.util.HashMap;\n\npublic class TaskRunner {",
+          "text": "Importy: `Reflections` oraz kolekcje."
+        },
+        {
+          "code": "    public void scanPackageAndRun(String packageName) {\n\n        System.out.println(\" -> Skanuję pakiet: \" + packageName);",
+          "text": "Metoda dostaje nazwę pakietu do przeszukania i wypisuje informację."
+        },
+        {
+          "code": "        Reflections reflections = new Reflections(packageName);\n\n        Set<Class<? extends HaveRunMethod>> classes\n                = reflections.getSubTypesOf(HaveRunMethod.class);",
+          "text": "`new Reflections(packageName)` – skanuje classpath w podanym pakiecie. `getSubTypesOf(HaveRunMethod.class)` zwraca zbiór obiektów `Class` – wszystkich klas implementujących interfejs (nie instancje!)."
+        },
+        {
+          "code": "        Map<HaveRunMethod, Integer> tasksWithCounters = new HashMap<>();",
+          "text": "Mapa: instancja zadania → liczba powtórzeń. Użyty `HashMap`, więc kolejność wykonania tasków nie jest określona."
+        },
+        {
+          "code": "        for(Class<? extends HaveRunMethod> cls : classes){\n\n            if(!cls.isAnnotationPresent(Task.class)) continue;\n\n            Task annotation = cls.getAnnotation(Task.class);\n\n            try {\n\n                HaveRunMethod instance = cls.getDeclaredConstructor().newInstance();\n\n                tasksWithCounters.put(instance, annotation.numberOfRepetition());\n\n            } catch (Exception e) {\n            }\n\n        }",
+          "text": "Dla każdej znalezionej klasy: `isAnnotationPresent(Task.class)` – pominięcie tych bez adnotacji; `cls.getAnnotation(Task.class)` – odczyt adnotacji; `cls.getDeclaredConstructor().newInstance()` – utworzenie obiektu przez refleksję (wymaga konstruktora bezargumentowego); `annotation.numberOfRepetition()` – odczyt parametru. Pusty `catch` połyka błędy tworzenia obiektu."
+        },
+        {
+          "code": "        tasksWithCounters.forEach((taskInstance, numeberOfRepetitions) -> {\n\n            for(int i=0; i<numeberOfRepetitions; i++) taskInstance.run();\n\n        });\n\n        System.out.println(\" -> Wszystkie taski wykonane\");\n    }\n}",
+          "text": "Wykonanie: dla każdego zadania pętla `numberOfRepetitions` razy woła `taskInstance.run()`. Na końcu komunikat „Wszystkie taski wykonane”."
+        }
+      ]
+    },
+    {
+      "title": "1.3 · TaskRed.java (+ TaskGreen, TaskYellow) i Main.java",
+      "chunks": [
+        {
+          "code": "package org.example.tasks;\n\nimport org.example.HaveRunMethod;\nimport org.example.Task;\n\n@Task(numberOfRepetition = 3)\npublic class TaskRed implements HaveRunMethod {\n\n    static final String RED = \"\\u001B[31m\";\n    static final String RESET = \"\\u001B[0m\";",
+          "text": "`@Task(numberOfRepetition = 3)` – metadane: wykonaj 3 razy. Klasa implementuje `HaveRunMethod`, więc skaner ją znajdzie. `\\u001B[31m` to sekwencja ANSI zmieniająca kolor tekstu w konsoli (31 – czerwony, 32 – zielony, 33 – żółty), `\\u001B[0m` – reset koloru. `TaskGreen` ma `numberOfRepetition = 5` i kolor zielony, `TaskYellow` – 4 i żółty; poza tym są identyczne."
+        },
+        {
+          "code": "    @Override\n    public void run() {\n        System.out.println( RED + \"Task RED -> wykonuję swoje zadanie\" + RESET);\n    }\n\n}",
+          "text": "`run()` wypisuje kolorowy komunikat. Łącznie wypisze się 3 + 5 + 4 = 12 linii (w nieokreślonej kolejności tasków)."
+        },
+        {
+          "code": "package org.example;\n\npublic class Main {\n\n    public static void main(String[] args) {\n\n        TaskRunner taskRunner = new TaskRunner();\n\n        taskRunner.scanPackageAndRun(\"org.example.tasks\");\n    }\n\n}",
+          "text": "`Main` tworzy `TaskRunner` i prosi o przeskanowanie pakietu `org.example.tasks`. Dodanie nowego zadania = nowa klasa w tym pakiecie z `@Task` i `implements HaveRunMethod` – bez zmian w `Main` i `TaskRunner`."
+        }
+      ]
+    }
   ]
 }

@@ -258,5 +258,71 @@
       ],
       "e": "To właśnie uzasadnia drugie kryterium sortowania: identyczne (x, y) mają tę samą odległość, więc rozstrzyga `value` malejąco."
     }
+  ],
+  "notes": [
+    {
+      "title": "Treść zadań Lab 2 (z nowicki.house/java2/labs/02-lab)",
+      "text": "**Zakres:** operacje pośrednie strumieni (`filter`, `map`, `distinct`, `sorted`), końcowe (`toList`, `collect`, `forEach`), odczyt/zapis plików tekstowych, try-with-resources, biblioteka OpenCSV.\n\n**2.1 Strumienie i dane statyczne.** Statyczna lista 32 napisów typu `\"ID-30492-a\"`, `\"key-330345-C\"`, `\"kEy-333594-a\"`… Metody: `clean` (wielkie litery, bez duplikatów, posortowane, zwraca listę), `filterByPrefix` (filtr po prefiksie np. `\"key\"`, bez rozróżniania wielkości liter, wynik w oryginalnej pisowni, zwraca listę), `countBySuffix` (sufiks = litera po ostatnim myślniku, wielkość liter ignorowana; zlicza wystąpienia, zwraca `Map`). Uruchomić i wyświetlić wyniki.\n\n**2.2 Strumienie i pliki tekstowe.** Pobrać `dane-raw.txt` do katalogu projektu. Wczytać poprawnie sformatowane liczby, pominąć pozostałe linie, posortować liczby i zapisać do nowego pliku (np. `dane-clean.txt`).\n\n**2.3 Strumienie i CSV (OpenCSV).** Plik `data2d.csv`: kolumny `x`, `y`, `value` (nagłówek + wiersze; dane nieposortowane; pary (x,y) mogą się powtarzać z różnymi wartościami). Klasa modelu; odczyt jako strumień obiektów; wybór obiektów wewnątrz koła o danym środku i promieniu (np. r=0,5, środek x=0, y=1); sortowanie rosnąco po odległości od środka, a przy równej odległości malejąco po `value`; zapis wyniku do nowego pliku `.csv`.\n\n**✫ 2.4 Aplikacja CLI.** `java -jar data2dCircleFilter.jar data2d.csv data2d_X0.0_Y1.0_D0.5` – plik wejściowy i nazwa pliku wyjściowego kodująca parametry filtra (x=0.0, y=1.0, promień 0.5). Obsługa błędów w pliku danych. (Na stronie jest niespójność `_D0.5` / `_R0.5`.)"
+    },
+    {
+      "title": "2.1 · Main.java (Lab2.1) – dane i metody strumieniowe",
+      "chunks": [
+        {
+          "code": "package org.example;\n\nimport java.util.List;\nimport java.util.Map;\nimport java.util.stream.Collectors;\n\npublic class Main {",
+          "text": "Importy: `List`, `Map` i `Collectors` (do grupowania/zliczania)."
+        },
+        {
+          "code": "    static List<String> dataRaw = List.of(\n            \"ID-30492-a\", \"ID-60492-a\", \"key-330345-C\", \"kEy-333594-a\", \"key-330494-c\", \"Id-30262-c\",\n            \"key-333594-a\", \"key-330494-c\", \"KEY-550494-A\", \"uid-304911-a\", \"key-550494-a\", \"uid-304911-A\",\n            \"uid-304944-a\", \"key-660494-b\", \"ID-30435-B\", \"ID-99435-b\", \"id-30435-b\", \"uid-304923-b\",\n            \"uid-304234-b\", \"id-60492-a\", \"ID-38462-c\", \"uid-364984-A\", \"uid-304944-c\", \"uid-304923-b\",\n            \"KEY-330494-c\", \"uid-304944-C\", \"key-330494-a\", \"Key-340494-a\", \"key-330494-b\", \"kEy-550494-a\",\n            \"key-660494-B\", \"keY-660494-b\"\n    );",
+          "text": "`List.of(...)` – niemodyfikowalna lista 32 napisów (dane wsadowe z zadania). Napisy mają format `PREFIKS-numer-sufiks`, z mieszaną wielkością liter."
+        },
+        {
+          "code": "    static List<String> clean(List<String> dataRaw) {\n        return dataRaw.stream()\n                .map(s -> s.toUpperCase())\n                .distinct()\n                .sorted()\n                .toList();\n    }",
+          "text": "`clean`: `stream()` → `map(s -> s.toUpperCase())` (ujednolicenie wielkości liter) → `distinct()` (usuwa duplikaty – po ujednoliceniu np. `key-330494-c` i `KEY-330494-c` są takie same) → `sorted()` (porządek naturalny Stringów) → `toList()` (operacja końcowa; lista niemodyfikowalna). Wynik: 20 elementów. Kolejność operacji ma znaczenie: distinct przed uppercase nie usunąłby duplikatów różniących się wielkością liter."
+        },
+        {
+          "code": "    static List<String> filterByPrefix(List<String> rawData, String prefix) {\n        return dataRaw.stream()\n                .filter(s -> s.toUpperCase().startsWith(prefix.toUpperCase()))\n                .toList();\n    }",
+          "text": "`filterByPrefix`: `filter(s -> s.toUpperCase().startsWith(prefix.toUpperCase()))` – porównanie bez rozróżniania wielkości liter, ale elementy przechodzą dalej bez zmian (oryginalna pisownia). Dla `\"key\"` – 15 elementów. Uwaga: strumień budowany jest z pola `dataRaw`, a nie z parametru `rawData` (działa, bo w `main` przekazano tę samą listę – poprawniej `rawData.stream()`)."
+        },
+        {
+          "code": "    public static Map<String, Long> countBySuffix(List<String> data) {\n        return data.stream()\n                .map(s -> s.substring(s.lastIndexOf('-') + 1))\n                .map(String::toLowerCase)\n                .collect(Collectors.groupingBy(\n                        s -> s,\n                        Collectors.counting()\n                ));\n    }",
+          "text": "`countBySuffix`: `s.substring(s.lastIndexOf('-') + 1)` – wycina tekst po ostatnim myślniku; `String::toLowerCase` – referencja do metody (ujednolicenie a/A); `collect(Collectors.groupingBy(s -> s, Collectors.counting()))` – grupuje identyczne sufiksy i zlicza (`Long`). Wynik: a→14, b→10, c→8. Zwracany `HashMap`, więc kolejność wypisu jest dowolna."
+        },
+        {
+          "code": "    public static void main(String[] args) {\n        System.out.println(\"Zadanie 2.1\");\n        System.out.println(\"---\");\n        clean(dataRaw).forEach(System.out::println);\n        System.out.println(\"---\");\n        filterByPrefix(dataRaw, \"key\").forEach(System.out::println);\n        System.out.println(\"---\");\n        countBySuffix(dataRaw).forEach((k, v) -> System.out.println(k + \"->\" + v));\n        System.out.println(\"---\");\n    }\n}",
+          "text": "`main`: wypisuje nagłówek i trzy sekcje oddzielone „---”: `forEach(System.out::println)` dla `clean` i `filterByPrefix(dataRaw, \"key\")`, a dla mapy `forEach((k, v) -> System.out.println(k + \"->\" + v))` (BiConsumer: klucz, wartość)."
+        }
+      ]
+    },
+    {
+      "title": "2.1 · build.gradle.kts (Lab2.1)",
+      "chunks": [
+        {
+          "code": "plugins {\n    id(\"java\")\n}\n\ngroup = \"org.example\"\nversion = \"1.0-SNAPSHOT\"\n\nrepositories {\n    mavenCentral()\n}\n\ndependencies {\n    testImplementation(platform(\"org.junit:junit-bom:6.0.0\"))\n    testImplementation(\"org.junit.jupiter:junit-jupiter\")\n    testRuntimeOnly(\"org.junit.platform:junit-platform-launcher\")\n}\n\ntasks.test {\n    useJUnitPlatform()\n}",
+          "text": "Zwykły projekt Gradle bez zewnętrznych bibliotek (strumienie są w JDK); tylko JUnit do testów."
+        }
+      ]
+    },
+    {
+      "title": "2.2 · Przykładowe rozwiązanie – plik tekstowy (brak kodu w repo)",
+      "chunks": [
+        {
+          "code": "package org.example;\n\nimport java.io.IOException;\nimport java.nio.file.*;\nimport java.util.List;\nimport java.util.stream.Stream;\n\npublic class Task22 {\n    public static void main(String[] args) throws IOException {\n        try (Stream<String> lines = Files.lines(Path.of(\"dane-raw.txt\"))) {\n            List<Double> numbers = lines\n                    .map(String::trim)\n                    .filter(l -> l.matches(\"-?\\\\d+(\\\\.\\\\d+)?\"))   // tylko poprawne liczby\n                    .map(Double::parseDouble)\n                    .sorted()                                     // sortowanie liczbowe\n                    .toList();\n\n            Files.write(Path.of(\"dane-clean.txt\"),\n                    numbers.stream().map(String::valueOf).toList());\n        }\n    }\n}",
+          "text": "**Uwaga:** tego labu nie ma w repozytorium – to szkic zgodny z treścią zadania (format pliku `dane-raw.txt` należy sprawdzić; przy przecinku dziesiętnym zmień regex i `replace(',', '.')`). Działanie: `Files.lines` daje `Stream<String>` trzymający otwarty plik, więc **try-with-resources**; `trim` usuwa spacje; `filter` + `matches` (regex) zostawia tylko linie będące liczbami; `parseDouble` zamienia na liczby; `sorted()` sortuje numerycznie (a nie tekstowo); `Files.write(path, Iterable<String>)` zapisuje kolejne linie do `dane-clean.txt`."
+        }
+      ]
+    },
+    {
+      "title": "2.3 · Przykładowe rozwiązanie – CSV z OpenCSV (brak kodu w repo)",
+      "chunks": [
+        {
+          "code": "// build.gradle.kts\ndependencies {\n    implementation(\"com.opencsv:opencsv:5.9\")\n}\n\n// Point.java – model wiersza CSV\npublic class Point {\n    @CsvBindByName private double x;\n    @CsvBindByName private double y;\n    @CsvBindByName private double value;\n\n    public Point() {}                       // wymagany przez OpenCSV\n    public double getX() { return x; }  public void setX(double x) { this.x = x; }\n    public double getY() { return y; }  public void setY(double y) { this.y = y; }\n    public double getValue() { return value; }  public void setValue(double v) { this.value = v; }\n\n    public double distanceTo(double cx, double cy) {\n        return Math.hypot(x - cx, y - cy);  // sqrt((x-cx)^2 + (y-cy)^2)\n    }\n}",
+          "text": "Model: pola oznaczone `@CsvBindByName` są mapowane po nazwach kolumn nagłówka (`x`, `y`, `value`). OpenCSV tworzy obiekty refleksją, więc potrzebuje konstruktora bezargumentowego i setterów. `Math.hypot` liczy odległość od środka koła."
+        },
+        {
+          "code": "double cx = 0, cy = 1, r = 0.5;\n\ntry (Reader in = Files.newBufferedReader(Path.of(\"data2d.csv\"));\n     Writer out = Files.newBufferedWriter(Path.of(\"data2d_X0.0_Y1.0_D0.5.csv\"))) {\n\n    List<Point> result = new CsvToBeanBuilder<Point>(in)\n            .withType(Point.class).build()\n            .stream()                                           // strumień obiektów Point\n            .filter(p -> p.distanceTo(cx, cy) <= r)             // wewnątrz koła\n            .sorted(Comparator.comparingDouble((Point p) -> p.distanceTo(cx, cy))\n                    .thenComparing(Comparator.comparingDouble(Point::getValue).reversed()))\n            .toList();\n\n    new StatefulBeanToCsvBuilder<Point>(out).build().write(result);\n}",
+          "text": "`CsvToBeanBuilder<Point>(reader).withType(Point.class).build()` tworzy `CsvToBean`, który udostępnia `stream()` obiektów. `filter` zostawia punkty w kole (odległość ≤ r). Sortowanie: najpierw rosnąco po odległości (`comparingDouble`), przy remisie (`thenComparing`) malejąco po `value` (`.reversed()`). `StatefulBeanToCsvBuilder` zapisuje listę beanów do pliku CSV (domyślnie nagłówki wielkimi literami; można dopasować adnotacjami). Zadanie 2.4 (CLI) = ten sam kod, ale `args[0]` = plik wejściowy, `args[1]` = nazwa pliku wyjściowego, oraz `try/catch` dla błędów danych (`CsvException`, `IOException`, zła liczba argumentów)."
+        }
+      ]
+    }
   ]
 }
