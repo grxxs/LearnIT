@@ -271,3 +271,8 @@ select, input[type='date'] {
 .note-text { margin: 8px 0; line-height: 1.5; }
 .chunk { margin-top: 12px; padding-top: 4px; border-top: 1px dashed var(--border); }
 pre.codeblock { white-space: pre; }
+
+/* Reading material shown with a question (learning modes only) */
+.material { margin: 0.75rem 0 1rem; padding: 0.6rem 0.9rem; border-left: 3px solid var(--accent, #4f7cff); background: rgba(127, 127, 127, 0.08); border-radius: 6px; font-size: 0.92rem; }
+.material summary { cursor: pointer; font-weight: 600; }
+.material p { margin: 0.5rem 0 0; white-space: pre-line; line-height: 1.5; }

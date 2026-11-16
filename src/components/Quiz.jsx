@@ -147,6 +147,13 @@ export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinis
         {item.again && <span className="tag again">powtórka</span>}
         <h2 className="question"><Rich text={item.q.q} /></h2>
 
+        {!exam && item.q.section && (
+          <details className="material" open>
+            <summary>📖 Materiał: {item.q.section.title}</summary>
+            <p><Rich text={item.q.section.text} /></p>
+          </details>
+        )}
+
         <div className="options">
           {item.options.map((o, i) => {
             let cls = 'option';
