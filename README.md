@@ -45,6 +45,7 @@ npm run build    # -> dist/index.html (jeden plik do wysłania)
      ] }
    ```
    **Pierwsza odpowiedź w `a` jest zawsze poprawna**, aplikacja sama miesza kolejność. `id` pytań muszą być stałe, bo postęp jest do nich przypisany.
+   **Materiał do czytania** (opcjonalnie, widoczny w trybach nauki, ukryty w egzaminie): w pliku wykładu dodaj `"sections": [{ "id": "a", "title": "…", "text": "…" }]`, a w pytaniu `"s": "a"`. Dotychczas dla ZPWO.
 3. `npm run build` i wysyłasz nowy `dist/index.html`.
 
 ## Źródła pytań

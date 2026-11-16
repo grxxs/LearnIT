@@ -3,6 +3,7 @@
 //
 // subject.json: { id, name, short, description, lectures: ["w01", ...] }
 // <lecture>.json: { id, title, questions: [{ id, q, a: [correct, wrong, wrong, wrong], e }] }
+// Optional: lecture `sections: [{ id, title, text }]` + question `s: <section id>` = reading material shown with the question (not in exam mode).
 // The first answer in `a` is always the correct one; the app shuffles the order.
 
 const files = import.meta.glob('../data/*/*.json', { eager: true, import: 'default' });
@@ -32,8 +33,10 @@ export const subjects = Object.entries(raw)
           id: lec.id ?? id,
           title: lec.title ?? id,
           notes: lec.notes ?? [],
+          sections: lec.sections ?? [],
           questions: lec.questions.map((q) => ({
             ...q,
+            section: q.s ? (lec.sections ?? []).find((x) => x.id === q.s) ?? null : null,
             uid: `${s.meta.id ?? folder}:${q.id}`,
             subjectId: s.meta.id ?? folder,
             lectureId: lec.id ?? id,
