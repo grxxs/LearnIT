@@ -2,14 +2,31 @@
   "id": "w07",
   "title": "W7 · Spring Framework (2/2) – Spring Boot i stereotypy",
   "sections": [
-    {"id": "a", "title": "Spring Boot", "text": "**Spring Boot** to automatyzacja Spring Framework: auto-konfiguracja, **startery** (zależności `spring-boot-starter-...` włączające konfigurację danego obszaru) i wbudowane serwery. Zwykły Spring nie ma wbudowanego serwera HTTP, a Spring Boot uruchamia go, jeśli projekt tego wymaga. Projekt startuje się przez **Spring Initializr**. Klasa konfiguracyjna `@Configuration` jest w Spring wymagana, a w Boot opcjonalna (auto-konfigurację można nią nadpisać lub rozszerzyć).\n\n`@SpringBootApplication` to złożenie `@Configuration` + `@EnableAutoConfiguration` + `@ComponentScan`. `SpringApplication.run(App.class, args)` przyjmuje klasę konfiguracyjną, tworzy kontekst, inicjalizuje beany, opakowuje argumenty w `ApplicationArguments` i uruchamia serwer HTTP (jeśli jest w projekcie; ze startera bez web aplikacja kończy się po wykonaniu). Klasa startowa musi leżeć w głównym pakiecie, bo domyślny skan obejmuje jej pakiet i podpakiety. Serwis z równoległego pakietu (np. `com.example.service` przy klasie w `com.example.app`) nie zostanie znaleziony.\n\nGdy nie ustawiono profilu, log informuje: `No active profile set, falling back to 1 default profile: \"default\"`."},
-    {"id": "b", "title": "Stereotypy", "text": "`@Repository`, `@Service` i `@Controller` są specjalizacjami `@Component` (w definicji same mają tę adnotację). Różnice są głównie semantyczne: oznaczają rolę komponentu w architekturze. `@Repository` dodatkowo tłumaczy wyjątki bazodanowe (`SQLException`) na `DataAccessException`.\n\n`@RestController` = `@Controller` + `@ResponseBody`. `@ResponseBody` oznacza, że wartość zwracana z metody jest ciałem odpowiedzi HTTP (np. JSON), a nie nazwą widoku. W klasie `@Controller` bez `@ResponseBody` zwrócony `String` `\"home\"` oznacza nazwę widoku, więc klient zobaczy wyrenderowany widok `home`."},
-    {"id": "c", "title": "ControllerAdvice i Spring Data REST", "text": "`@ControllerAdvice` centralizuje logikę wspólną dla wielu kontrolerów: obsługę wyjątków (`@ExceptionHandler`), atrybuty modelu (`@ModelAttribute`) i binding (`@InitBinder`). Odpowiednik dla REST to `@RestControllerAdvice`.\n\n`@RepositoryRestResource` na interfejsie repozytorium (np. `UserRepository extends CrudRepository<User, Long>`) udostępnia go jako zasób REST z automatycznymi endpointami CRUD: `GET /users`, `GET /users/{id}`, `POST`, `PUT /users/{id}`, `DELETE /users/{id}`. Własne endpointy (np. `GET /users/top10`) trzeba zdefiniować samemu. Dane są zwracane w formacie HATEOAS JSON, z linkami do powiązanych zasobów, więc klient nie musi znać całej struktury API."},
-    {"id": "d", "title": "Beany z @Bean, @Component i inne projekty Spring", "text": "Klasa bez adnotacji może być beanem, jeśli w klasie `@Configuration` jest metoda `@Bean` zwracająca jej obiekt. Definicja `@Component` ma `@Target(ElementType.TYPE)` (stosuje się do typów: klas, interfejsów, enumów) oraz `@Retention(RetentionPolicy.RUNTIME)` (widoczna przez refleksję). Własną nazwę beana nadaje się przez `@Component(\"myBean\")`, a bez niej nazwa jest generowana z nazwy klasy.\n\nInne projekty Spring: **Spring Security** (uwierzytelnianie i autoryzacja), **Spring Data** (dostęp do danych: JPA, MongoDB, Redis...), **Spring Web** z MVC (REST i MVC) oraz **WebFlux** (programowanie reaktywne). Hierarchia adnotacji: `@Component` → `@Repository`, `@Service`, `@Controller` → `@RestController` → `@RestControllerAdvice`."}
+    {
+      "id": "a",
+      "title": "Spring Boot",
+      "text": "**Spring Boot** to automatyzacja Spring Framework: auto-konfiguracja, **startery** (zależności `spring-boot-starter-...` włączające konfigurację danego obszaru) i wbudowane serwery. Zwykły Spring nie ma wbudowanego serwera HTTP, a Spring Boot uruchamia go, jeśli projekt tego wymaga. Projekt startuje się przez **Spring Initializr**. Klasa konfiguracyjna `@Configuration` jest w Spring wymagana, a w Boot opcjonalna (auto-konfigurację można nią nadpisać lub rozszerzyć).\n\n`@SpringBootApplication` to złożenie `@Configuration` + `@EnableAutoConfiguration` + `@ComponentScan`. `SpringApplication.run(App.class, args)` przyjmuje klasę konfiguracyjną, tworzy kontekst, inicjalizuje beany, opakowuje argumenty w `ApplicationArguments` i uruchamia serwer HTTP (jeśli jest w projekcie; ze startera bez web aplikacja kończy się po wykonaniu). Klasa startowa musi leżeć w głównym pakiecie, bo domyślny skan obejmuje jej pakiet i podpakiety. Serwis z równoległego pakietu (np. `com.example.service` przy klasie w `com.example.app`) nie zostanie znaleziony.\n\nGdy nie ustawiono profilu, log informuje: `No active profile set, falling back to 1 default profile: \"default\"`."
+    },
+    {
+      "id": "b",
+      "title": "Stereotypy",
+      "text": "`@Repository`, `@Service` i `@Controller` są specjalizacjami `@Component` (w definicji same mają tę adnotację). Różnice są głównie semantyczne: oznaczają rolę komponentu w architekturze. `@Repository` dodatkowo tłumaczy wyjątki bazodanowe (`SQLException`) na `DataAccessException`.\n\n`@RestController` = `@Controller` + `@ResponseBody`. `@ResponseBody` oznacza, że wartość zwracana z metody jest ciałem odpowiedzi HTTP (np. JSON), a nie nazwą widoku. W klasie `@Controller` bez `@ResponseBody` zwrócony `String` `\"home\"` oznacza nazwę widoku, więc klient zobaczy wyrenderowany widok `home`."
+    },
+    {
+      "id": "c",
+      "title": "ControllerAdvice i Spring Data REST",
+      "text": "`@ControllerAdvice` centralizuje logikę wspólną dla wielu kontrolerów: obsługę wyjątków (`@ExceptionHandler`), atrybuty modelu (`@ModelAttribute`) i binding (`@InitBinder`). Odpowiednik dla REST to `@RestControllerAdvice`.\n\n`@RepositoryRestResource` na interfejsie repozytorium (np. `UserRepository extends CrudRepository<User, Long>`) udostępnia go jako zasób REST z automatycznymi endpointami CRUD: `GET /users`, `GET /users/{id}`, `POST`, `PUT /users/{id}`, `DELETE /users/{id}`. Własne endpointy (np. `GET /users/top10`) trzeba zdefiniować samemu. Dane są zwracane w formacie HATEOAS JSON, z linkami do powiązanych zasobów, więc klient nie musi znać całej struktury API."
+    },
+    {
+      "id": "d",
+      "title": "Beany z @Bean, @Component i inne projekty Spring",
+      "text": "Klasa bez adnotacji może być beanem, jeśli w klasie `@Configuration` jest metoda `@Bean` zwracająca jej obiekt. Definicja `@Component` ma `@Target(ElementType.TYPE)` (stosuje się do typów: klas, interfejsów, enumów) oraz `@Retention(RetentionPolicy.RUNTIME)` (widoczna przez refleksję). Własną nazwę beana nadaje się przez `@Component(\"myBean\")`, a bez niej nazwa jest generowana z nazwy klasy.\n\nInne projekty Spring: **Spring Security** (uwierzytelnianie i autoryzacja), **Spring Data** (dostęp do danych: JPA, MongoDB, Redis...), **Spring Web** z MVC (REST i MVC) oraz **WebFlux** (programowanie reaktywne). Hierarchia adnotacji: `@Component` → `@Repository`, `@Service`, `@Controller` → `@RestController` → `@RestControllerAdvice`."
+    }
   ],
   "questions": [
     {
       "id": "w07-01",
+      "s": "a",
       "q": "Czym jest Spring Boot wg wykładu?",
       "a": [
         "Automatyzacją Spring Framework (auto-konfiguracja, startery, wbudowane serwery)",
@@ -22,10 +39,11 @@
         "Testy to Spring Test.",
         "Zawiera wbudowany serwer, ale nim nie jest."
       ],
-      "e": "Spring Framework → aplikacje z komponentów; Spring Boot → automatyzacja Spring Framework."
+      "e": "Spring Framework pozwala budować aplikacje z komponentów. Spring Boot to automatyzacja Spring Framework: auto-konfiguracja, startery i wbudowane serwery."
     },
     {
       "id": "w07-02",
+      "s": "a",
       "q": "Jak startuje się projekt Spring Boot wg wykładu?",
       "a": [
         "Za pomocą Spring Initializr",
@@ -42,6 +60,7 @@
     },
     {
       "id": "w07-03",
+      "s": "a",
       "q": "Czy zwykły Spring Framework (bez Boot) ma wbudowany serwer HTTP?",
       "a": [
         "Nie",
@@ -58,6 +77,7 @@
     },
     {
       "id": "w07-04",
+      "s": "a",
       "q": "Z jakich adnotacji składa się @SpringBootApplication?",
       "a": [
         "@Configuration, @EnableAutoConfiguration, @ComponentScan",
@@ -74,6 +94,7 @@
     },
     {
       "id": "w07-05",
+      "s": "a",
       "q": "Co robi SpringApplication.run(App.class, args)?",
       "a": [
         "Tworzy kontekst, inicjalizuje beany, opakowuje args w ApplicationArguments i uruchamia serwer HTTP (jeśli jest)",
@@ -90,6 +111,7 @@
     },
     {
       "id": "w07-06",
+      "s": "a",
       "q": "Gdzie powinna znajdować się klasa startowa z @SpringBootApplication?",
       "a": [
         "W głównym pakiecie projektu (komponenty w podpakietach)",
@@ -106,6 +128,7 @@
     },
     {
       "id": "w07-07",
+      "s": "a",
       "q": "Klasa startowa jest w com.example.app, a serwis w com.example.service. Co się stanie (domyślny skan)?",
       "a": [
         "Serwis nie zostanie znaleziony – nie jest w podpakiecie com.example.app",
@@ -122,6 +145,7 @@
     },
     {
       "id": "w07-08",
+      "s": "b",
       "q": "Jaka jest relacja @Repository, @Service, @Controller do @Component?",
       "a": [
         "Są specjalizacjami @Component (same są nią oznaczone)",
@@ -138,6 +162,7 @@
     },
     {
       "id": "w07-09",
+      "s": "b",
       "q": "Na czym polegają różnice między @Component, @Service, @Repository, @Controller?",
       "a": [
         "Głównie semantyczne – oznaczają rolę komponentu; @Repository dodaje tłumaczenie wyjątków",
@@ -150,10 +175,11 @@
         "Wszystkie tworzą beany.",
         "Scope domyślnie singleton dla wszystkich."
       ],
-      "e": "Różnice semantyczne; @Repository dodatkowo konwertuje SQLException → DataAccessException."
+      "e": "Różnice między tymi adnotacjami są głównie semantyczne, bo wskazują rolę komponentu. @Repository dodatkowo zamienia wyjątek SQLException na DataAccessException."
     },
     {
       "id": "w07-10",
+      "s": "b",
       "q": "Jaką dodatkową możliwość daje @Repository?",
       "a": [
         "Automatyczne tłumaczenie wyjątków bazodanowych na DataAccessException",
@@ -166,10 +192,11 @@
         "Tabele tworzy ORM.",
         "Cache to Hibernate/@Cacheable."
       ],
-      "e": "@Repository – konwersja SQLException → DataAccessException."
+      "e": "@Repository automatycznie tłumaczy wyjątki bazodanowe (SQLException) na DataAccessException."
     },
     {
       "id": "w07-11",
+      "s": "b",
       "q": "Czym jest @RestController?",
       "a": [
         "@Controller + @ResponseBody – zwracana wartość to ciało odpowiedzi HTTP",
@@ -186,6 +213,7 @@
     },
     {
       "id": "w07-12",
+      "s": "b",
       "q": "Co oznacza @ResponseBody?",
       "a": [
         "Wartość zwracana z metody jest ciałem odpowiedzi HTTP, a nie nazwą widoku",
@@ -198,10 +226,11 @@
         "To @ResponseStatus.",
         "To @Valid."
       ],
-      "e": "@ResponseBody → wynik metody to treść odpowiedzi (np. JSON)."
+      "e": "@ResponseBody oznacza, że wartość zwrócona z metody jest treścią odpowiedzi HTTP (np. JSON), a nie nazwą widoku."
     },
     {
       "id": "w07-13",
+      "s": "b",
       "q": "Metoda w klasie @Controller zwraca String \"home\" bez @ResponseBody. Co zobaczy klient?",
       "a": [
         "Wyrenderowany widok o nazwie home",
@@ -218,6 +247,7 @@
     },
     {
       "id": "w07-14",
+      "s": "c",
       "q": "Do czego służy @ControllerAdvice?",
       "a": [
         "Do centralizacji logiki wspólnej dla wielu kontrolerów (np. @ExceptionHandler)",
@@ -234,6 +264,7 @@
     },
     {
       "id": "w07-15",
+      "s": "c",
       "q": "Jaki jest odpowiednik @ControllerAdvice dla @RestController?",
       "a": [
         "@RestControllerAdvice",
@@ -250,6 +281,7 @@
     },
     {
       "id": "w07-16",
+      "s": "c",
       "q": "Co robi @RepositoryRestResource na interfejsie UserRepository extends CrudRepository<User, Long>?",
       "a": [
         "Eksponuje repozytorium jako zasób REST z automatycznymi endpointami CRUD",
@@ -266,6 +298,7 @@
     },
     {
       "id": "w07-17",
+      "s": "c",
       "q": "W jakim formacie Spring Data REST zwraca dane?",
       "a": [
         "HATEOAS JSON (z linkami do powiązanych zasobów)",
@@ -282,6 +315,7 @@
     },
     {
       "id": "w07-18",
+      "s": "c",
       "q": "Który endpoint NIE jest generowany automatycznie przez @RepositoryRestResource(path=\"users\")?",
       "a": [
         "GET /users/top10 – własny, niezdefiniowany endpoint",
@@ -298,6 +332,7 @@
     },
     {
       "id": "w07-19",
+      "s": "a",
       "q": "Czy w Spring Boot klasa z @Configuration jest wymagana?",
       "a": [
         "Nie – istnieje auto-konfiguracja, ale można nią nadpisać lub rozszerzyć ustawienia",
@@ -314,6 +349,7 @@
     },
     {
       "id": "w07-20",
+      "s": "d",
       "q": "Klasa Greeter bez adnotacji, a w @Configuration jest metoda @Bean public Greeter greeter(). Czy Greeter będzie beanem?",
       "a": [
         "Tak – bean definiuje metoda @Bean w klasie konfiguracyjnej",
@@ -330,6 +366,7 @@
     },
     {
       "id": "w07-21",
+      "s": "d",
       "q": "Definicja @Component ma @Target(ElementType.TYPE) i @Retention(RetentionPolicy.RUNTIME). Co to oznacza?",
       "a": [
         "Stosuje się ją do typów (klasy, interfejsy, enumy) i jest widoczna w runtime przez refleksję",
@@ -346,6 +383,7 @@
     },
     {
       "id": "w07-22",
+      "s": "d",
       "q": "Jak nadać własną nazwę beanowi komponentu?",
       "a": [
         "@Component(\"myBean\")",
@@ -362,6 +400,7 @@
     },
     {
       "id": "w07-23",
+      "s": "d",
       "q": "Który projekt Spring służy do uwierzytelniania i autoryzacji?",
       "a": [
         "Spring Security",
@@ -374,10 +413,11 @@
         "Batch – przetwarzanie wsadowe.",
         "Cloud – mikroserwisy."
       ],
-      "e": "Spring Security → uwierzytelnianie, autoryzacja."
+      "e": "Do uwierzytelniania i autoryzacji służy projekt Spring Security."
     },
     {
       "id": "w07-24",
+      "s": "d",
       "q": "Który projekt Spring służy do programowania reaktywnego?",
       "a": [
         "Spring WebFlux",
@@ -394,6 +434,7 @@
     },
     {
       "id": "w07-25",
+      "s": "a",
       "q": "Jak nazywają się zależności Spring Boot włączające auto-konfigurację danego obszaru?",
       "a": [
         "Startery spring-boot-starter-...",
@@ -406,10 +447,11 @@
         "Nie istnieją takie nazwy.",
         "Nie istnieją takie nazwy."
       ],
-      "e": "Automatyczna konfiguracja (Spring Boot) → startery spring-boot-starter-…"
+      "e": "Zależności Spring Boot włączające auto-konfigurację danego obszaru to startery, nazywane spring-boot-starter-..."
     },
     {
       "id": "w07-26",
+      "s": "d",
       "q": "Do czego służy Spring Data?",
       "a": [
         "Do dostępu do danych (JPA, MongoDB, Redis…)",
@@ -422,10 +464,11 @@
         "To Spring AI.",
         "To Spring Batch."
       ],
-      "e": "Spring Data → dostęp do danych."
+      "e": "Spring Data służy do dostępu do danych (JPA, MongoDB, Redis i innych)."
     },
     {
       "id": "w07-27",
+      "s": "a",
       "q": "Jaki komunikat wyświetla Spring Boot, gdy nie ustawiono profilu?",
       "a": [
         "No active profile set, falling back to 1 default profile: \"default\"",
@@ -438,10 +481,11 @@
         "Domyślny profil to default, nie prod.",
         "To nie ten komunikat."
       ],
-      "e": "Log startowy: brak aktywnego profilu → profil \"default\"."
+      "e": "Gdy nie ustawiono profilu, w logu startowym pojawia się informacja o użyciu profilu domyślnego: No active profile set, falling back to 1 default profile: \"default\"."
     },
     {
       "id": "w07-28",
+      "s": "a",
       "q": "Co dzieje się przy starcie aplikacji ze spring-boot-starter (bez web)?",
       "a": [
         "Kontekst startuje bez serwera HTTP i aplikacja się kończy po wykonaniu",
@@ -458,6 +502,7 @@
     },
     {
       "id": "w07-29",
+      "s": "a",
       "q": "Co przyjmuje SpringApplication.run jako pierwszy argument?",
       "a": [
         "Klasę konfiguracyjną (np. App.class)",
@@ -474,6 +519,7 @@
     },
     {
       "id": "w07-30",
+      "s": "d",
       "q": "Które stwierdzenie o hierarchii adnotacji Spring jest prawdziwe?",
       "a": [
         "@RestControllerAdvice wywodzi się z @RestController, a ta z @Controller i @Component",
@@ -486,7 +532,7 @@
         "@Configuration też jest pod @Component.",
         "Oba są bezpośrednio pod @Component."
       ],
-      "e": "@Component → @Repository, @Service, @Controller → @RestController → @RestControllerAdvice; @ControllerAdvice; @Configuration."
+      "e": "Hierarchia adnotacji: @Component jest bazą dla @Repository, @Service i @Controller. Z @Controller wywodzi się @RestController, a z niego @RestControllerAdvice. Osobno są @ControllerAdvice i @Configuration."
     }
   ]
 }
