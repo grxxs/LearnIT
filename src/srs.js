@@ -101,7 +101,7 @@ function interleaveBy(list, keyFn) {
 
 /**
  * Build a session from a pool.
- * mode: 'smart' (due first, then new, then weakest) | 'weak' | 'new' | 'exam'
+ * mode: 'smart' (due first, then new, then weakest) | 'weak' | 'new' | 'exam' | 'study' (in order, not tracked)
  */
 export function buildSession(pool, progress, mode, size, now = Date.now()) {
   const seen = pool.filter((q) => progress[q.uid]);
@@ -112,6 +112,9 @@ export function buildSession(pool, progress, mode, size, now = Date.now()) {
   };
 
   let picked;
+  if (mode === 'study') {
+    return pool.slice(0, size); // keeps lecture order so related questions sit next to their material
+  }
   if (mode === 'exam') {
     picked = shuffle(pool).slice(0, size);
   } else if (mode === 'new') {

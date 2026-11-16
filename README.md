@@ -12,6 +12,7 @@ Otwórz plik **`dist/index.html`** w przeglądarce (dwuklik). Nic nie trzeba ins
   - *Inteligentna* – najpierw zaległe powtórki, potem nowe pytania. Domyślna do codziennej nauki.
   - *Nowe* – tylko pytania jeszcze niewidziane, na pierwsze przejście materiału.
   - *Słabe* – pytania z ostatnią złą odpowiedzią albo strzałem.
+  - *Nauka* – pytania po kolei, z materiałem do przeczytania (jeśli przedmiot go ma). Odpowiedzi nie są zapisywane w postępie ani w powtórkach.
   - *Egzamin próbny* – bez podpowiedzi, wynik i wyjaśnienia na końcu.
 - Po dobrej odpowiedzi wybierz **Wiedziałem** (Enter) albo **Strzelałem** (S). Strzał jest traktowany jak niewiedza i pytanie szybko wróci.
 - Błędne pytanie wraca jeszcze w tej samej sesji, kilka pytań później.
@@ -45,7 +46,7 @@ npm run build    # -> dist/index.html (jeden plik do wysłania)
      ] }
    ```
    **Pierwsza odpowiedź w `a` jest zawsze poprawna**, aplikacja sama miesza kolejność. `id` pytań muszą być stałe, bo postęp jest do nich przypisany.
-   **Materiał do czytania** (opcjonalnie, widoczny w trybach nauki, ukryty w egzaminie): w pliku wykładu dodaj `"sections": [{ "id": "a", "title": "…", "text": "…" }]`, a w pytaniu `"s": "a"`. Dotychczas dla ZPWO.
+   **Materiał do czytania** (opcjonalnie, widoczny tylko w trybie Nauka): w pliku wykładu dodaj `"sections": [{ "id": "a", "title": "…", "text": "…" }]`, a w pytaniu `"s": "a"`. Dotychczas dla ZPWO.
 3. `npm run build` i wysyłasz nowy `dist/index.html`.
 
 ## Źródła pytań

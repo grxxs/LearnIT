@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { buildSession, statsFor } from '../srs.js';
 
 export const MODES = [
+  { id: 'study', label: 'Nauka', hint: 'Pytania w kolejności wykładów, z materiałem do przeczytania. Odpowiedzi nie wpływają na postęp, powtórki ani wynik w innych trybach.' },
   { id: 'smart', label: 'Inteligentna', hint: 'Najpierw zaległe powtórki, potem nowe pytania. Najlepsza do codziennej nauki.' },
   { id: 'new', label: 'Nowe', hint: 'Tylko pytania, których jeszcze nie widziałeś. Dobre na pierwsze przejście materiału.' },
   { id: 'weak', label: 'Słabe', hint: 'Pytania, na których się myliłeś albo strzelałeś.' },
