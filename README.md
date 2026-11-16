@@ -12,7 +12,7 @@ Otwórz plik **`dist/index.html`** w przeglądarce (dwuklik). Nic nie trzeba ins
   - *Inteligentna* – najpierw zaległe powtórki, potem nowe pytania. Domyślna do codziennej nauki.
   - *Nowe* – tylko pytania jeszcze niewidziane, na pierwsze przejście materiału.
   - *Słabe* – pytania z ostatnią złą odpowiedzią albo strzałem.
-  - *Nauka* – pytania po kolei, z materiałem do przeczytania (jeśli przedmiot go ma). Odpowiedzi nie są zapisywane w postępie ani w powtórkach.
+  - *Nauka* – pytania w losowej kolejności, z materiałem do przeczytania (jeśli przedmiot go ma). Odpowiedzi nie są zapisywane w postępie ani w powtórkach.
   - *Egzamin próbny* – bez podpowiedzi, wynik i wyjaśnienia na końcu.
 - Po dobrej odpowiedzi wybierz **Wiedziałem** (Enter) albo **Strzelałem** (S). Strzał jest traktowany jak niewiedza i pytanie szybko wróci.
 - Błędne pytanie wraca jeszcze w tej samej sesji, kilka pytań później.

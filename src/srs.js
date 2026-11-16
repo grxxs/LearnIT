@@ -113,7 +113,7 @@ export function buildSession(pool, progress, mode, size, now = Date.now()) {
 
   let picked;
   if (mode === 'study') {
-    return pool.slice(0, size); // keeps lecture order so related questions sit next to their material
+    return shuffle(pool).slice(0, size); // random order; answers are not tracked
   }
   if (mode === 'exam') {
     picked = shuffle(pool).slice(0, size);
