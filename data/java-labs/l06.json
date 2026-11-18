@@ -1,9 +1,37 @@
 {
   "id": "l06",
   "title": "L6 · Wzorzec Request Processor: klasycznie, Spring, Spring Boot (6.1–6.3)",
+  "sections": [
+    {
+      "id": "a",
+      "title": "Wzorzec Request Processor i klasy modelu",
+      "text": "Elementy wzorca: `RequestProcessor` to zewnętrzny kontener, `Dispatcher` przyjmuje żądanie i kieruje je do właściwego `Handlera`, a `Handler` wykonuje jeden rodzaj przetwarzania. Dane to `Request` (type, data) i `Response` (message, data). Typy przetwarzania: `lower` (małe litery), `upper` (wielkie litery) i `reverse` (odwrócony tekst).\n\nKlasy modelu używają Lomboka: `@Getter` (gettery), `@AllArgsConstructor` (konstruktor ze wszystkimi polami), `@Builder` (`Request.builder()...build()`), `@ToString`. Pola są `final`, więc obiekt jest niezmienny. `StringProcessing` to interfejs funkcyjny z jedną metodą `String processString(String data)`, więc przetwarzanie można zapisać lambdą i traktować jak obiekt. W 6.1 funkcje są lambdami, w 6.2 metodami `@Bean`, a w 6.3 klasami `@Component`, bo interfejs nie może być komponentem."
+    },
+    {
+      "id": "b",
+      "title": "Handler, Dispatcher i RequestProcessor",
+      "text": "• **Handler** to para (typ, funkcja): `isYourJob(type)` sprawdza, czy typ żądania pasuje, a `processData(data)` wykonuje przetwarzanie. Przykład: `new Handler(\"upper\", s -> s.toUpperCase())`.\n• **Dispatcher** jest bezstanowy: dostaje listę handlerów w parametrze (`processRequest(Request, List<Handler>)`). Pierwszy pasujący handler wygrywa. Dla pustej lub `null` listy odpowiedź to „No handlers registered”, dla braku dopasowania „No matching handler registered” (w obu `data = null`). Wynik `null` z funkcji daje „Processing failed.”, a poprawny wynik „OK”.\n• **RequestProcessor** to fasada: zawiera `Dispatcher` i `List<Handler>` (zależności dostarczone z zewnątrz konstruktorem) i deleguje do dispatchera.\n\nPrzykłady: `reverse` na „Ala ma kota Filemona” daje „anomeliF atok am alA” (`new StringBuilder(s).reverse().toString()`), `upper` daje „ALA MA KOTA FILEMONA”, a typ `unknown` kończy się brakiem dopasowania."
+    },
+    {
+      "id": "c",
+      "title": "Klasyczne łączenie obiektów, IoC i DI",
+      "text": "W podejściu **klasycznym** (`App0Generator`) ręcznie tworzymy każdy obiekt operatorem `new` i przekazujemy zależności konstruktorami. My budujemy cały graf obiektów. Przy większej liczbie klas robi się to uciążliwe, co motywuje użycie kontenera.\n\n**IoC** (Inversion of Control) oznacza, że obiekty tworzy i zarządza nimi kontener (framework), a nie sam kod aplikacji. **DI** (Dependency Injection) to konkretny sposób: zależności są wstrzykiwane do obiektu z zewnątrz, np. przez konstruktor. W 6.1 obiekty tworzymy sami, a w 6.2 i 6.3 robi to Spring: deklarujemy tylko, co ma być beanem i czego potrzebuje."
+    },
+    {
+      "id": "d",
+      "title": "Spring bez Boota (Lab 6.2)",
+      "text": "Do użycia Springa bez Boota dodaje się zależność `spring-context` (kontener IoC: `ApplicationContext`, `@Configuration`, `@Bean`, `@Qualifier`, `AnnotationConfigApplicationContext`). Zmieniają się tylko dwa pliki: `App1Config.java` (odpowiednik `App0Generator`) i `App1.java` (odpowiednik `App0`).\n\n• `@Configuration` oznacza klasę jako źródło definicji beanów (konfiguracja w Javie).\n• `@Bean` nad metodą: Spring wywoła ją raz i zarejestruje zwróconą wartość jako bean (domyślnie singleton), nazwany jak metoda. Parametry metody `@Bean` są wstrzykiwane przez Springa.\n• Są trzy beany typu `StringProcessing`, więc `@Qualifier(\"upperCaseProcessing\")` wskazuje po nazwie konkretny bean. Bez tego Spring nie wiedziałby, który wstrzyknąć (`NoUniqueBeanDefinitionException`). Alternatywą jest `@Primary`.\n• Parametr typu `List<Handler>` dostaje kolekcję WSZYSTKICH beanów typu `Handler`, więc nowy bean trafia do listy bez zmiany `requestProcessor`.\n• W `App1` kontener tworzy `new AnnotationConfigApplicationContext(App1Config.class)`, bean pobiera `context.getBean(RequestProcessor.class)`, a na końcu `context.close()`.\n\nTyp handlera musi dokładnie zgadzać się z `request.getType()`. Nazwa zmiennej (np. `revese`) nie ma znaczenia, liczy się wartość tekstowa."
+    },
+    {
+      "id": "e",
+      "title": "Spring Boot (Lab 6.3)",
+      "text": "W projekcie Spring Boot (start.spring.io, Gradle Kotlin DSL, Java 21) zamieniamy `spring-boot-starter-web` na `spring-boot-starter`, bo nie potrzebujemy serwera HTTP. Uruchamia się go przez `./gradlew bootRun`.\n\n`@SpringBootApplication` łączy `@Configuration`, `@EnableAutoConfiguration` i `@ComponentScan`. `SpringApplication.run(Application.class, args)` tworzy kontener, skanuje pakiet klasy i jego podpakiety i buduje beany z adnotacji. Nie ma już klasy `App1Config`: graf obiektów powstaje z adnotacji.\n\n`Dispatcher` i `RequestProcessor` wystarczy oznaczyć `@Component`, bo każdy występuje w jednej instancji. `Handler` nie może być komponentem, bo Spring nie wie, jaką wartość dać `requestType`, a Handlerów jest kilka. `StringProcessing` jest interfejsem, który nie ma instancji, więc dla każdej funkcji tworzy się klasę z `@Component` i nazwą beana, np. `@Component(\"upperCaseProcessing\")` (`UpperCaseProcessing`, `LowerCaseProcessing`, `ReverseProcessing`). Każdy handler to podklasa `Handler` z konstruktorem `@Qualifier(\"upperCaseProcessing\") StringProcessing sp` i `super(\"upper\", sp)`. `RequestProcessor` dostaje `List<Handler>` ze wszystkich takich komponentów.\n\nProjekt ma pakiety `model`, `requestprocessorlibrary` (z 6.1, `Dispatcher` i `RequestProcessor` dostały `@Component`), `implementations` (`processing` i `handlers`) oraz klasę `Application`. Test `@SpringBootTest` z pustym `contextLoads()` to „smoke test”: uruchamia cały kontekst Springa, więc zawiedzie, gdy beany nie dają się utworzyć.\n\nPorównanie: 6.1 – ręczne `new` i konstruktory, 6.2 – Spring bez Boota z `@Configuration` i `@Bean`, 6.3 – Spring Boot z `@Component` i autoskanowaniem. Logika jest ta sama, zmienia się tylko „montaż”."
+    }
+  ],
   "questions": [
     {
       "id": "l06-01",
+      "s": "a",
       "q": "Lab 6 – wzorzec Request Processor. Jakie role mają jego elementy?",
       "a": [
         "RequestProcessor – zewnętrzny kontener; Dispatcher – przyjmuje żądanie i kieruje do właściwego Handlera; Handler – wykonuje jeden rodzaj przetwarzania; Request (type, data) i Response (message, data) – dane",
@@ -20,6 +48,7 @@
     },
     {
       "id": "l06-02",
+      "s": "a",
       "q": "Lab 6.1 – klasy modelu:\n```\n@Getter @AllArgsConstructor @Builder @ToString\npublic class Request {\n    final private String type;\n    final private String data;\n}\n```\nCo generuje każda adnotacja Lomboka?",
       "a": [
         "@Getter – gettery (getType, getData); @AllArgsConstructor – konstruktor ze wszystkimi polami; @Builder – wzorzec Builder (Request.builder()…build()); @ToString – metodę toString()",
@@ -36,6 +65,7 @@
     },
     {
       "id": "l06-03",
+      "s": "a",
       "q": "Interfejs `StringProcessing`:\n```\n@FunctionalInterface\npublic interface StringProcessing {\n    String processString(String data);\n}\n```\nDlaczego jest interfejsem funkcyjnym?",
       "a": [
         "Ma jedną metodę abstrakcyjną, więc przetwarzanie można zapisać jako lambdę s -> s.toUpperCase() i traktować jak obiekt",
@@ -52,6 +82,7 @@
     },
     {
       "id": "l06-04",
+      "s": "b",
       "q": "Klasa `Handler`:\n```\n@AllArgsConstructor\npublic class Handler {\n    private String requestType;\n    private StringProcessing stringProcessing;\n    public boolean isYourJob(String requestType) { return this.requestType.equals(requestType); }\n    public String processData(String data) { return stringProcessing.processString(data); }\n}\n```\nCo robi?",
       "a": [
         "Przechowuje typ danych, który obsługuje, i funkcję przetwarzającą; isYourJob sprawdza, czy typ żądania pasuje, a processData wykonuje przetwarzanie",
@@ -68,6 +99,7 @@
     },
     {
       "id": "l06-05",
+      "s": "b",
       "q": "`Dispatcher.processRequest(Request, List<Handler>)` – co zwraca, gdy lista handlerów jest pusta (lub null) i gdy żaden handler nie pasuje do typu?",
       "a": [
         "Pusta lista/null → Response z message „No handlers registered” i data=null; brak dopasowania → message „No matching handler registered” i data=null",
@@ -84,6 +116,7 @@
     },
     {
       "id": "l06-06",
+      "s": "b",
       "q": "Jaka jest odpowiedź na `Request.builder().type(\"unknown\").data(\"Some data\").build()`?",
       "a": [
         "Response(message=No matching handler registered, data=null)",
@@ -100,6 +133,7 @@
     },
     {
       "id": "l06-07",
+      "s": "b",
       "q": "Co wypisze `request1` typu `reverse` z danymi „Ala ma kota Filemona”?",
       "a": [
         "anomeliF atok am alA",
@@ -116,6 +150,7 @@
     },
     {
       "id": "l06-08",
+      "s": "b",
       "q": "Czym jest `RequestProcessor` z perspektywy zależności?\n```\n@AllArgsConstructor\npublic class RequestProcessor {\n    private Dispatcher dispatcher;\n    private List<Handler> handlers;\n    public Response processRequest(Request request) { return dispatcher.processRequest(request, handlers); }\n}\n```",
       "a": [
         "Fasadą: kontenerem, który zawiera Dispatcher i listę Handlerów (jego zależności dostarczane z zewnątrz konstruktorem) i deleguje do dispatchera",
@@ -132,6 +167,7 @@
     },
     {
       "id": "l06-09",
+      "s": "c",
       "q": "Lab 6.1 – `App0Generator.getRequestProcessor()` w „klasycznym” podejściu:\n```\nStringProcessing upperCaseProcessing = s -> s.toUpperCase();\nHandler upperCaseHandler = new Handler(\"upper\", upperCaseProcessing);\nDispatcher dispatcher = new Dispatcher();\nRequestProcessor rp = new RequestProcessor(dispatcher, List.of(upperCaseHandler, lowerCaseHandler, reverseHandler));\n```\nNa czym polega „klasyczne agregowanie obiektów”?",
       "a": [
         "Ręcznie tworzymy każdy obiekt operatorem new i przekazujemy zależności konstruktorami – to my budujemy cały graf obiektów",
@@ -148,6 +184,7 @@
     },
     {
       "id": "l06-10",
+      "s": "c",
       "q": "Czym jest Inversion of Control (IoC) i Dependency Injection (DI)?",
       "a": [
         "IoC – to kontener (framework) tworzy obiekty i zarządza ich cyklem życia, a nie sam kod aplikacji; DI – konkretny sposób: zależności są wstrzykiwane (np. przez konstruktor) do obiektu z zewnątrz",
@@ -164,6 +201,7 @@
     },
     {
       "id": "l06-11",
+      "s": "d",
       "q": "Lab 6.2 – jaką zależność dodaje się, by użyć Springa bez Boota?",
       "a": [
         "implementation(\"org.springframework:spring-context:6.2.12\")",
@@ -180,6 +218,7 @@
     },
     {
       "id": "l06-12",
+      "s": "d",
       "q": "Co robi adnotacja `@Configuration` na klasie `App1Config`?",
       "a": [
         "Oznacza klasę jako źródło definicji beanów (metod z @Bean) dla kontenera Springa – konfiguracja w Javie (Java-based configuration)",
@@ -196,6 +235,7 @@
     },
     {
       "id": "l06-13",
+      "s": "d",
       "q": "Adnotacja `@Bean` nad metodą oznacza, że:",
       "a": [
         "Spring wywoła tę metodę raz i zarejestruje zwróconą wartość jako bean w kontenerze (domyślnie singleton), nazwany jak metoda",
@@ -212,6 +252,7 @@
     },
     {
       "id": "l06-14",
+      "s": "d",
       "q": "W `App1Config` są trzy beany typu `StringProcessing`. Po co `@Qualifier(\"upperCaseProcessing\")` w parametrze?\n```\n@Bean\npublic Handler upperCaseHandler(@Qualifier(\"upperCaseProcessing\") StringProcessing sp) {\n    return new Handler(upper, sp);\n}\n```",
       "a": [
         "Bo jest kilka kandydatów tego samego typu – @Qualifier wskazuje po nazwie konkretny bean; bez tego Spring nie wie, który wstrzyknąć (NoUniqueBeanDefinitionException)",
@@ -228,6 +269,7 @@
     },
     {
       "id": "l06-15",
+      "s": "d",
       "q": "Dlaczego `requestProcessor(Dispatcher dispatcher, List<Handler> handlers)` dostaje automatycznie wszystkie handlery?",
       "a": [
         "Spring przy parametrze typu List<T> wstrzykuje kolekcję wszystkich beanów typu T (tu: upperCaseHandler, lowerCaseHandler, reverseHandler)",
@@ -244,6 +286,7 @@
     },
     {
       "id": "l06-16",
+      "s": "d",
       "q": "Jak uruchamia się kontener Springa w `App1`?\n```\nAnnotationConfigApplicationContext context = new AnnotationConfigApplicationContext(App1Config.class);\nRequestProcessor requestProcessor = context.getBean(RequestProcessor.class);\n...\ncontext.close();\n```",
       "a": [
         "Tworzy kontener z klasy konfiguracyjnej, pobiera bean RequestProcessor po typie i na końcu zamyka kontener",
@@ -260,6 +303,7 @@
     },
     {
       "id": "l06-17",
+      "s": "d",
       "q": "W `App1Config` jest `String upper = \"upper\", lower = \"lower\", revese = \"reverse\";`, a `lowerCaseHandler` używa literału `\"lower\"`. Co to pokazuje?",
       "a": [
         "Stałe typu (nazwa obsługiwanego typu żądania) można trzymać jako pola konfiguracji lub wpisać literałem – to tylko kwestia stylu; ważne, by zgadzały się z `type` w Request",
@@ -276,6 +320,7 @@
     },
     {
       "id": "l06-18",
+      "s": "e",
       "q": "Lab 6.3 – Spring Boot: dlaczego w `build.gradle.kts` zamieniamy `spring-boot-starter-web` na `spring-boot-starter`?",
       "a": [
         "Projekt nie potrzebuje komponentów webowych (serwer HTTP) – wystarczy podstawowy Spring Boot",
@@ -292,6 +337,7 @@
     },
     {
       "id": "l06-19",
+      "s": "e",
       "q": "Co robi `@SpringBootApplication` na klasie `Application`?\n```\n@SpringBootApplication\npublic class Application {\n    public static void main(String[] args) {\n        ApplicationContext context = SpringApplication.run(Application.class, args);\n        RequestProcessor requestProcessor = context.getBean(RequestProcessor.class);\n        ...\n```",
       "a": [
         "Łączy @Configuration, @EnableAutoConfiguration i @ComponentScan – włącza autokonfigurację i skanowanie komponentów w pakiecie klasy i jego podpakietach",
@@ -308,6 +354,7 @@
     },
     {
       "id": "l06-20",
+      "s": "e",
       "q": "Dlaczego `Dispatcher` i `RequestProcessor` w 6.3 wystarczy oznaczyć `@Component`, a `Handler` – nie?\n```\n@Component @NoArgsConstructor public class Dispatcher { ... }\n@Component @AllArgsConstructor public class RequestProcessor { private Dispatcher dispatcher; private List<Handler> handlers; ... }\n```",
       "a": [
         "Dispatcher i RequestProcessor występują jako jedna instancja; Handlerów jest kilka (po jednym na typ), więc jedna klasa Handler nie może być jednym komponentem – tworzy się podklasy",
@@ -324,6 +371,7 @@
     },
     {
       "id": "l06-21",
+      "s": "e",
       "q": "Dlaczego `StringProcessing` nie może być bezpośrednio komponentem i co zamiast tego robimy?\n```\n@Component(\"upperCaseProcessing\")\npublic class UpperCaseProcessing implements StringProcessing {\n    @Override public String processString(String s) { return s.toUpperCase(); }\n}\n```",
       "a": [
         "Interfejs nie ma instancji – trzeba klasy implementującej; dla każdej funkcji tworzymy klasę (UpperCase/LowerCase/ReverseProcessing) z @Component i nazwą beana",
@@ -340,6 +388,7 @@
     },
     {
       "id": "l06-22",
+      "s": "e",
       "q": "Jak dziedziczenie i @Qualifier są użyte w handlerach?\n```\n@Component\npublic class UpperCaseHandler extends Handler {\n    public UpperCaseHandler(@Qualifier(\"upperCaseProcessing\") StringProcessing sp) {\n        super(\"upper\", sp);\n    }\n}\n```",
       "a": [
         "Każdy handler to podklasa Handler: konstruktor dostaje wskazany @Qualifier'em bean funkcji i przekazuje go z typem „upper” do konstruktora nadrzędnego",
@@ -356,6 +405,7 @@
     },
     {
       "id": "l06-23",
+      "s": "e",
       "q": "Jaką strukturę pakietów ma projekt 6.3?",
       "a": [
         "model i requestprocessorlibrary skopiowane z 6.1, implementations (podział na processing i handlers) oraz klasa Application",
@@ -372,6 +422,7 @@
     },
     {
       "id": "l06-24",
+      "s": "e",
       "q": "Dlaczego w testach jest `@SpringBootTest` i pusty test `contextLoads()`?\n```\n@SpringBootTest class ApplicationTests { @Test void contextLoads() {} }\n```",
       "a": [
         "Test uruchamia cały kontekst Springa – jeśli beany nie dają się utworzyć (np. brak/niejednoznaczna zależność), test się nie powiedzie",
@@ -388,6 +439,7 @@
     },
     {
       "id": "l06-25",
+      "s": "e",
       "q": "Porównaj trzy sposoby złożenia aplikacji z Lab 6.",
       "a": [
         "6.1 – ręczne `new` i konstruktory; 6.2 – Spring bez Boota z @Configuration/@Bean; 6.3 – Spring Boot z @Component i autoskanowaniem",

@@ -1,9 +1,37 @@
 {
   "id": "l03",
   "title": "L3 · XML i JAXB (3.1–3.4)",
+  "sections": [
+    {
+      "id": "a",
+      "title": "JAXB i zależności",
+      "text": "**JAXB** (Jakarta XML Binding) mapuje obiekty Javy na XML (**marshalling**) i XML na obiekty (**unmarshalling**) oraz generuje schematy XSD z klas. W projekcie są dwie zależności: `jakarta.xml.bind-api` jako `implementation` (kod kompiluje się względem API: adnotacje, `JAXBContext`, `Marshaller`, `Unmarshaller`) oraz `jaxb-runtime` jako `runtimeOnly` (implementacja potrzebna dopiero przy uruchomieniu). Bez runtime program się skompiluje, ale `JAXBContext.newInstance(...)` zgłosi błąd. Od Jakarta EE 9 pakiety to `jakarta.xml.bind.*` (dawniej `javax.xml.bind.*`)."
+    },
+    {
+      "id": "b",
+      "title": "Model Observation i adnotacje JAXB",
+      "text": "Model `Observation` to pomiar temperatury z polami: `timeStamp` (`LocalDateTime`), `unit` (enum `TemperatureUnit`: Celsius, Fahrenheit, Kelvin), `value` (double) i `comment` (String, opcjonalny). Klasa ma konstruktor domyślny, wymagany przez JAXB przy unmarshallingu.\n\n• `@XmlRootElement(name = \"weather-observation\", namespace = \"...\")` oznacza klasę jako element główny dokumentu o danej nazwie i przestrzeni nazw (prefiks `ns2` jest generowany automatycznie),\n• `@XmlAccessorType(XmlAccessType.FIELD)` – JAXB mapuje pola (także prywatne), a nie gettery i settery,\n• `@XmlElement(required = false)` na `comment` daje w XSD `minOccurs=\"0\"`, a gdy komentarz to `null`, w XML nie pojawia się tag. Pozostałe pola są wymagane,\n• `LocalDateTimeAdapter extends XmlAdapter<String, LocalDateTime>` zamienia `LocalDateTime` na `String` (ISO) przy zapisie i odwrotnie przy odczycie, bo JAXB nie serializuje go wprost. W XSD to pole ma więc typ `xs:string`. Użycie: `@XmlJavaTypeAdapter(LocalDateTimeAdapter.class)`."
+    },
+    {
+      "id": "c",
+      "title": "Zapis XML, generowanie XSD i dane losowe (Lab 3.1)",
+      "text": "`XmlFileWriter.write` tworzy `JAXBContext` dla klasy obiektu, `Marshaller` z `JAXB_FORMATTED_OUTPUT = true` (czytelne wcięcia) i zapisuje obiekt do pliku. Zwraca `true` po sukcesie, a `false` po `JAXBException`. Marshalling to obiekt → XML, a unmarshalling to XML → obiekt.\n\n`XsdFileGenerator.generate(...)` generuje pliki schematu (`schema1.xsd`, `schema2.xsd`) na podstawie adnotacji JAXB (`context.generateSchema(SchemaOutputResolver)`). Powstają dwa pliki, bo klasy mają przestrzeń nazw. Enum `TemperatureUnit` staje się typem prostym z ograniczeniem `xs:enumeration`, więc walidacja odrzuci jednostkę spoza zbioru. Lista pomiarów to `observation minOccurs=\"0\" maxOccurs=\"unbounded\"`.\n\n`RandomObservation.generate()` losuje jednostkę, dobiera właściwy dla niej zakres wartości (`switch` jako wyrażenie, musi być wyczerpujący), losowo daje komentarz albo `null`, a czas z ostatnich 7 dni. `App` generuje 1000 pomiarów w pętli i zapisuje całą listę jednym marshallingiem do `observations.xml`."
+    },
+    {
+      "id": "d",
+      "title": "Walidacja, odczyt i filtrowanie (Lab 3.2)",
+      "text": "**Walidacja** to sprawdzenie XML względem XSD bez mapowania na obiekty: `SchemaFactory.newInstance(W3C_XML_SCHEMA_NS_URI)` → `newSchema(schemaFiles)` → `schema.newValidator()` → `validate(new StreamSource(xmlFile))`. `XmlValidator.validate` zwraca `true`, gdy dokument spełnia schemat, a `false` po `SAXException` (niezgodność) lub `IOException`. Oba pliki schematu wczytuje się razem, bo importują się wzajemnie.\n\n`XmlFileReader.readObservation(String, Class<T>)` to metoda generyczna. Dzięki tokenowi `Class<T>` i `clazz.cast(...)` dla `Observation.class` zwraca `Observation`, a dla `ObservationList.class` `ObservationList`, bez rzutowania po stronie wywołującego. Przy `JAXBException` zwraca `null`.\n\nFiltr „pomiary z komentarzem, z zakresu −1…+1 °C, rosnąco” wymaga przeliczenia jednostek przed drugim filtrem, bo wartości są w różnych skalach: Fahrenheit → `(F − 32) · 5.0 / 9.0`, Kelvin → `K − 273.15`. Zapis `5.0 / 9.0` zapobiega dzieleniu całkowitemu (5/9 na intach to 0). Nowe obiekty w Celsjuszach powstają bez modyfikowania oryginałów."
+    },
+    {
+      "id": "e",
+      "title": "Statystyki i kursy NBP (Lab 3.3 i 3.4)",
+      "text": "W zadaniu 3.3 wczytujemy XML bezpośrednio z adresu URL (np. przez JAXB z `InputStream`), mapujemy go na `ObservationList` i liczymy statystyki strumieniem:\n• `partitioningBy(o -> o.getComment() != null, counting())` – z komentarzem i bez,\n• `groupingBy(Observation::getUnit, counting())` – liczba pomiarów na jednostkę,\n• `groupingBy(Observation::getUnit, averagingDouble(Observation::getValue))` – średnia na jednostkę (`Map<TemperatureUnit, Double>`). Średnia w tej samej jednostce ma sens, mieszana (°C + °F + K) nie.\n\nW zadaniu 3.4 (gwiazdka) pobieramy tabele A kursów z API NBP (XML) dla kolejnych dni, mapujemy je na obiekty i wybieramy pozycje `USD` i `EUR`. Nie każdy dzień ma tabelę (weekendy, święta), dlatego liczy się „ostatnie n dostępnych dni”. Wynik to średnia arytmetyczna kursów `mid`."
+    }
+  ],
   "questions": [
     {
       "id": "l03-01",
+      "s": "a",
       "q": "Lab 3.1 – JAXB. Do czego służy ta biblioteka?",
       "a": [
         "Do mapowania obiektów Javy na XML (marshalling) i XML na obiekty (unmarshalling) oraz do generowania schematów XSD z klas",
@@ -20,6 +48,7 @@
     },
     {
       "id": "l03-02",
+      "s": "a",
       "q": "Dlaczego w `build.gradle.kts` API jest jako `implementation`, a runtime JAXB jako `runtimeOnly`?\n```\nimplementation(\"jakarta.xml.bind:jakarta.xml.bind-api:4.0.2\")\nruntimeOnly(\"org.glassfish.jaxb:jaxb-runtime:4.0.5\")\n```",
       "a": [
         "Kod kompiluje się tylko względem API (adnotacje, JAXBContext); implementacja potrzebna jest dopiero przy uruchomieniu i nie musi być na classpath kompilacji",
@@ -36,6 +65,7 @@
     },
     {
       "id": "l03-03",
+      "s": "b",
       "q": "Model `Observation` to pomiar temperatury. Jakie pola ma według kodu?",
       "a": [
         "timeStamp (LocalDateTime), unit (enum TemperatureUnit: Celsius/Fahrenheit/Kelvin), value (double), comment (String, opcjonalny)",
@@ -52,6 +82,7 @@
     },
     {
       "id": "l03-04",
+      "s": "b",
       "q": "Co robi `@XmlRootElement(name = \"weather-observation\", namespace = \"http://example.org/weather-observation\")`?",
       "a": [
         "Oznacza klasę jako element główny dokumentu XML o podanej nazwie i przestrzeni nazw",
@@ -68,6 +99,7 @@
     },
     {
       "id": "l03-05",
+      "s": "b",
       "q": "Co oznacza `@XmlAccessorType(XmlAccessType.FIELD)`?",
       "a": [
         "JAXB mapuje na XML pola klasy (także prywatne), a nie pary getter/setter",
@@ -84,6 +116,7 @@
     },
     {
       "id": "l03-06",
+      "s": "b",
       "q": "`@XmlElement(required = false)` na polu `comment` powoduje, że:",
       "a": [
         "W wygenerowanym XSD element ma minOccurs=\"0\" – komentarz jest opcjonalny, a gdy jest null, w XML w ogóle nie pojawia się tag",
@@ -100,6 +133,7 @@
     },
     {
       "id": "l03-07",
+      "s": "b",
       "q": "Po co jest `LocalDateTimeAdapter extends XmlAdapter<String, LocalDateTime>`?",
       "a": [
         "JAXB nie umie wprost serializować LocalDateTime – adapter zamienia go na String (ISO) przy zapisie i z powrotem przy odczycie",
@@ -116,6 +150,7 @@
     },
     {
       "id": "l03-08",
+      "s": "c",
       "q": "Jak `XmlFileWriter.write` zapisuje obiekt do pliku XML?\n```\nJAXBContext context = JAXBContext.newInstance(data.getClass());\nMarshaller marshaller = context.createMarshaller();\nmarshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, true);\nmarshaller.marshal(data, new File(fileName));\n```",
       "a": [
         "Tworzy kontekst JAXB dla klasy obiektu, Marshaller z ładnym formatowaniem (wcięcia) i zapisuje obiekt do pliku",
@@ -132,6 +167,7 @@
     },
     {
       "id": "l03-09",
+      "s": "c",
       "q": "Czym różni się marshalling od unmarshallingu?",
       "a": [
         "Marshalling: obiekt Javy → XML; unmarshalling: XML → obiekt Javy",
@@ -148,6 +184,7 @@
     },
     {
       "id": "l03-10",
+      "s": "c",
       "q": "Co robi `XsdFileGenerator.generate(Observation.class, ObservationList.class)`?",
       "a": [
         "Generuje pliki schematu XSD (schema1.xsd, schema2.xsd) na podstawie adnotacji JAXB w klasach",
@@ -164,6 +201,7 @@
     },
     {
       "id": "l03-11",
+      "s": "c",
       "q": "W `schema2.xsd` jest:\n```\n<xs:simpleType name=\"temperatureUnit\">\n  <xs:restriction base=\"xs:string\">\n    <xs:enumeration value=\"Celsius\"/> <xs:enumeration value=\"Fahrenheit\"/> <xs:enumeration value=\"Kelvin\"/>\n  </xs:restriction>\n</xs:simpleType>\n```\nSkąd się wzięło?",
       "a": [
         "Z enuma `TemperatureUnit` w klasie Observation – JAXB generuje z niego typ prosty z ograniczeniem do wartości wyliczeniowych",
@@ -180,6 +218,7 @@
     },
     {
       "id": "l03-12",
+      "s": "c",
       "q": "Jak działa `RandomObservation.generate()`?\n```\ndouble value = switch (unit) {\n    case Celsius    -> -10 + RANDOM.nextDouble() * 45;\n    case Fahrenheit ->  14 + RANDOM.nextDouble() * 95;\n    case Kelvin     -> 263 + RANDOM.nextDouble() * 45;\n};\nString comment = RANDOM.nextBoolean() ? COMMENTS[RANDOM.nextInt(COMMENTS.length)] : null;\n```",
       "a": [
         "Losuje jednostkę, dobiera zakres wartości właściwy dla niej (switch jako wyrażenie), losowo daje komentarz albo null, a czas z ostatnich 7 dni",
@@ -196,6 +235,7 @@
     },
     {
       "id": "l03-13",
+      "s": "c",
       "q": "`App` w Lab 3.1 generuje 1000 pomiarów. Jak to robi?",
       "a": [
         "Pętla `for(i<1000) observationList.addObservation(RandomObservation.generate())`, potem zapis całej listy jednym marshalingiem do observations.xml",
@@ -212,6 +252,7 @@
     },
     {
       "id": "l03-14",
+      "s": "d",
       "q": "Lab 3.2 – walidacja:\n```\nSchemaFactory factory = SchemaFactory.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);\nSchema schema = factory.newSchema(schemaFiles);   // Source[]\nValidator validator = schema.newValidator();\nvalidator.validate(new StreamSource(xmlFile));\n```\nCo zwraca `XmlValidator.validate`?",
       "a": [
         "true, gdy dokument spełnia schemat; false po SAXException (niezgodność) lub IOException",
@@ -228,6 +269,7 @@
     },
     {
       "id": "l03-15",
+      "s": "d",
       "q": "W `App` (Lab 3.2) filtr „pomiary z komentarzem, z zakresu −1…+1 °C, rosnąco” zapisano przez:\n```\n.filter(o -> o.getComment() != null)\n.map(o -> /* przelicz na Celsjusze */ ...)\n.filter(o -> o.getValue() > -1 && o.getValue() < 1)\n.sorted(Comparator.comparingDouble(Observation::getValue))\n```\nDlaczego `map` do Celsjusza jest PRZED drugim `filter`?",
       "a": [
         "Bo dane są w różnych jednostkach – zakres −1…+1 °C ma sens tylko po przeliczeniu F i K na °C",
@@ -244,6 +286,7 @@
     },
     {
       "id": "l03-16",
+      "s": "d",
       "q": "Wzór na konwersję z Fahrenheita w kodzie: `(o.getValue() - 32) * 5.0 / 9.0`. Dlaczego `5.0`, a nie `5`?",
       "a": [
         "Żeby dzielenie było zmiennoprzecinkowe; przy samych int-ach 5/9 = 0",
@@ -260,6 +303,7 @@
     },
     {
       "id": "l03-17",
+      "s": "d",
       "q": "Czym jest `XmlFileReader.readObservation(String, Class<T>)`?\n```\npublic static <T> T readObservation(String xmlFileName, Class<T> clazz) { ... clazz.cast(unmarshaller.unmarshal(xmlFile)) }\n```",
       "a": [
         "Metodą generyczną: dla Observation.class zwraca Observation, dla ObservationList.class zwraca ObservationList – bez rzutowania po stronie wywołującego",
@@ -276,6 +320,7 @@
     },
     {
       "id": "l03-18",
+      "s": "e",
       "q": "Lab 3.3 – dane z `https://nowicki.house/java2/labs/observations.xml`. Co należy zrobić?",
       "a": [
         "Wczytać XML bezpośrednio z URL (np. przez JAXB z InputStream), zmapować na ObservationList i policzyć statystyki strumieniem: liczba pomiarów, z komentarzem/bez, wg jednostek, średnia temperatura per jednostka",
@@ -292,6 +337,7 @@
     },
     {
       "id": "l03-19",
+      "s": "e",
       "q": "Które `Collectors` pasuje do „średnia temperatura dla każdej jednostki”?",
       "a": [
         "groupingBy(Observation::getUnit, averagingDouble(Observation::getValue))",
@@ -308,6 +354,7 @@
     },
     {
       "id": "l03-20",
+      "s": "e",
       "q": "Lab 3.4 (gwiazdka) – kursy NBP: `https://api.nbp.pl/api/exchangerates/tables/a/YYYY-MM-DD/?format=xml`. Co należy policzyć?",
       "a": [
         "Średni kurs USD i EUR z ostatnich n dostępnych dni",

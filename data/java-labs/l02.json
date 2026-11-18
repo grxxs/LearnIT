@@ -1,9 +1,27 @@
 {
   "id": "l02",
   "title": "L2 · Strumienie, pliki tekstowe i CSV (2.1–2.4)",
+  "sections": [
+    {
+      "id": "a",
+      "title": "Strumienie na liście tekstów (Lab 2.1)",
+      "text": "`List.of(...)` tworzy listę **niemodyfikowalną** (próba `add` lub `remove` rzuci `UnsupportedOperationException`, nie dopuszcza też elementów `null`). Strumienie nie modyfikują danych wejściowych, tylko budują nowe wyniki.\n\nStrumień to sekwencja elementów, na której wykonuje się potok: źródło → operacje pośrednie (`filter`, `map`, `distinct`, `sorted`; leniwe, zwracają Stream) → operacja końcowa (`toList`, `collect`, `forEach`, `count`; uruchamia przetwarzanie). Bez operacji końcowej nic się nie wykona, a po niej strumień jest „zużyty”. `sorted()` i `distinct()` są pośrednie, ale „stanowe” (muszą zobaczyć wszystkie elementy).\n\n• `clean`: `map(toUpperCase)` → `distinct()` → `sorted()` → `toList()`. Kolejność ma znaczenie: najpierw ujednolicamy wielkość liter, dopiero potem usuwamy duplikaty, bo `distinct()` używa `equals()` i traktowałby „a” i „A” jako różne napisy. Dla 32 identyfikatorów zostaje 20.\n• `filterByPrefix`: `filter(s -> s.toUpperCase().startsWith(prefix.toUpperCase()))`, czyli dopasowanie bez rozróżniania wielkości liter, a wyniki zachowują oryginalny zapis. Pułapka w kodzie: strumień jest budowany z pola `dataRaw`, a nie z parametru `rawData`, więc parametr jest ignorowany.\n• `countBySuffix`: wycina fragment po ostatnim myślniku (`lastIndexOf('-') + 1`), zamienia na małe litery (`String::toLowerCase`) i grupuje: `groupingBy(s -> s, counting())` zwraca `Map<String, Long>` (a → 14, b → 10, c → 8).\n\n**Referencja do metody** (np. `String::toLowerCase`) to skrót lambdy `s -> s.toLowerCase()`. Rodzaje: do metody statycznej (`Integer::parseInt`), do metody konkretnego obiektu (`System.out::println`), do metody dowolnego obiektu danego typu (`String::toLowerCase`) i do konstruktora (`ArrayList::new`)."
+    },
+    {
+      "id": "b",
+      "title": "Pliki tekstowe (Lab 2.2)",
+      "text": "Przetwarzanie pliku strumieniem: `Files.lines(path)` → filtr i mapowanie poprawnych liczb (błędne linie pomijamy) → `sorted()` → zapis wynikowych linii do pliku. Liczby trzeba sortować jako liczby, a nie jako napisy (leksykograficznie „10” < „9”).\n\n`Files.lines` zwraca strumień, który trzyma otwarty plik, dlatego otwiera się go w **try-with-resources**. Każdy zasób implementujący `AutoCloseable` (np. `Stream`, `Reader`, `Socket`) jest wtedy zamykany automatycznie, także po wyjątku, w odwrotnej kolejności deklaracji."
+    },
+    {
+      "id": "c",
+      "title": "CSV i sortowanie (Lab 2.3 i 2.4)",
+      "text": "**OpenCSV** czyta i zapisuje pliki CSV i potrafi mapować wiersze na obiekty Javy (np. adnotacja `@CsvBindByName`, `CsvToBeanBuilder`, `StatefulBeanToCsv`). Plik `data2d.csv` ma kolumny `x`, `y`, `value`.\n\nPunkt (x, y) leży wewnątrz koła o środku (0, 1) i promieniu 0,5, gdy `(x − 0)² + (y − 1)² ≤ 0,5²`. Porównujemy kwadraty, więc unikamy pierwiastka. Wyniki sortujemy rosnąco po odległości od środka, a przy remisie malejąco po `value`: `Comparator.comparingDouble(odległość).thenComparing(wartość, Comparator.reverseOrder())`. `thenComparing` działa tylko wtedy, gdy poprzedni komparator zwróci 0. Zbiór ma powtórzone pary (x, y) o różnych wartościach. Każdy wiersz to osobny obiekt, a identyczne współrzędne mają tę samą odległość, więc rozstrzyga drugie kryterium.\n\nW zadaniu 2.4 program uruchamia się z argumentami `java -jar data2dCircleFilter.jar data2d.csv data2d_X0.0_Y1.0_D0.5`. Pierwszy to plik wejściowy, drugi nazwa pliku wyjściowego kodująca parametry filtra (x, y i promień). Trafiają one do `main(String[] args)`."
+    }
+  ],
   "questions": [
     {
       "id": "l02-01",
+      "s": "a",
       "q": "Lab 2.1 – dane wejściowe to `static List<String> dataRaw = List.of(...)` (32 identyfikatory typu `ID-30492-a`, `key-330345-C`). Co oznacza użycie `List.of(...)`?",
       "a": [
         "Tworzy niemodyfikowalną (immutable) listę – próba add/remove rzuci UnsupportedOperationException",
@@ -20,6 +38,7 @@
     },
     {
       "id": "l02-02",
+      "s": "a",
       "q": "Stream w Javie to:",
       "a": [
         "Sekwencja elementów, na której wykonuje się potok operacji (źródło → operacje pośrednie → operacja końcowa); sam niczego nie przechowuje i nie modyfikuje źródła",
@@ -36,6 +55,7 @@
     },
     {
       "id": "l02-03",
+      "s": "a",
       "q": "Metoda `clean`:\n```\nstatic List<String> clean(List<String> dataRaw) {\n    return dataRaw.stream()\n            .map(s -> s.toUpperCase())\n            .distinct()\n            .sorted()\n            .toList();\n}\n```\nIle elementów zwróci dla 32 danych z zadania?",
       "a": [
         "20 – po zamianie na wielkie litery duplikaty (np. key-330494-c, KEY-330494-c) są usuwane",
@@ -52,6 +72,7 @@
     },
     {
       "id": "l02-04",
+      "s": "a",
       "q": "Co by się stało, gdyby w `clean` zamienić kolejność: najpierw `.distinct()`, potem `.map(toUpperCase)`?",
       "a": [
         "Duplikaty różniące się tylko wielkością liter pozostałyby, bo distinct porównywałby napisy przed ujednoliceniem",
@@ -68,6 +89,7 @@
     },
     {
       "id": "l02-05",
+      "s": "a",
       "q": "`filterByPrefix`:\n```\nstatic List<String> filterByPrefix(List<String> rawData, String prefix) {\n    return dataRaw.stream()\n            .filter(s -> s.toUpperCase().startsWith(prefix.toUpperCase()))\n            .toList();\n}\n```\nJakie ma właściwości (i jaką pułapkę w kodzie)?",
       "a": [
         "Dopasowanie bez rozróżniania wielkości liter, a wyniki zachowują oryginalny zapis; pułapka: stream jest budowany z pola dataRaw, a nie z parametru rawData – parametr jest ignorowany",
@@ -84,6 +106,7 @@
     },
     {
       "id": "l02-06",
+      "s": "a",
       "q": "Jak działa `countBySuffix`?\n```\nreturn data.stream()\n        .map(s -> s.substring(s.lastIndexOf('-') + 1))\n        .map(String::toLowerCase)\n        .collect(Collectors.groupingBy(s -> s, Collectors.counting()));\n```",
       "a": [
         "Wycina fragment po ostatnim myślniku (np. „a”), zamienia na małe litery, grupuje identyczne sufiksy i zlicza je – zwraca Map<String, Long>",
@@ -100,6 +123,7 @@
     },
     {
       "id": "l02-07",
+      "s": "a",
       "q": "Co oznacza `String::toLowerCase` w `.map(String::toLowerCase)`?",
       "a": [
         "Referencję do metody – skrócony zapis lambdy s -> s.toLowerCase()",
@@ -116,6 +140,7 @@
     },
     {
       "id": "l02-08",
+      "s": "a",
       "q": "Różnica między operacją pośrednią a końcową: do której grupy należą `filter`, `map`, `distinct`, `sorted`, a do której `toList`, `collect`, `forEach`?",
       "a": [
         "filter/map/distinct/sorted są pośrednie (leniwe, zwracają Stream); toList/collect/forEach są końcowe (uruchamiają potok)",
@@ -132,6 +157,7 @@
     },
     {
       "id": "l02-09",
+      "s": "a",
       "q": "Co wypisuje `clean(dataRaw).forEach(System.out::println)`?",
       "a": [
         "20 posortowanych wierszy z wielkimi literami, np. ID-30262-C, ID-30435-B, …",
@@ -148,6 +174,7 @@
     },
     {
       "id": "l02-10",
+      "s": "b",
       "q": "Lab 2.2 – wczytujemy `dane-raw.txt`, zostawiamy tylko poprawnie sformatowane liczby, sortujemy i zapisujemy do `dane-clean.txt`. Który schemat strumieniowy jest właściwy?",
       "a": [
         "Files.lines(path) → filtr/mapowanie poprawnych liczb (pomijanie błędnych linii) → sorted → zapis wynikowych linii do pliku",
@@ -164,6 +191,7 @@
     },
     {
       "id": "l02-11",
+      "s": "b",
       "q": "Dlaczego `Stream<String>` z `Files.lines()` zaleca się otwierać w try-with-resources?",
       "a": [
         "Bo strumień trzyma otwarty zasób (plik) i musi zostać zamknięty – try-with-resources zamyka go automatycznie, także po wyjątku",
@@ -180,6 +208,7 @@
     },
     {
       "id": "l02-12",
+      "s": "c",
       "q": "Lab 2.3 – biblioteka OpenCSV. Do czego służy w zadaniu?",
       "a": [
         "Czyta i zapisuje pliki CSV oraz potrafi mapować wiersze bezpośrednio na obiekty Javy (beany)",
@@ -196,6 +225,7 @@
     },
     {
       "id": "l02-13",
+      "s": "c",
       "q": "Lab 2.3: wybieramy punkty z wnętrza koła o środku (0, 1) i promieniu 0,5. Jaki warunek filtrowania jest poprawny?",
       "a": [
         "(x − 0)² + (y − 1)² ≤ 0,5² (kwadrat odległości od środka nie większy niż kwadrat promienia)",
@@ -212,6 +242,7 @@
     },
     {
       "id": "l02-14",
+      "s": "c",
       "q": "Lab 2.3 wymaga: „posortuj po odległości od środka rosnąco, a przy równych odległościach po wartości malejąco”. Jak to zapisać komparatorem?",
       "a": [
         "Comparator.comparingDouble(odległość).thenComparing(wartość, Comparator.reverseOrder())",
@@ -228,6 +259,7 @@
     },
     {
       "id": "l02-15",
+      "s": "c",
       "q": "Lab 2.4 (gwiazdka): `java -jar data2dCircleFilter.jar data2d.csv data2d_X0.0_Y1.0_D0.5`. Co oznaczają argumenty?",
       "a": [
         "Pierwszy: plik wejściowy; drugi: nazwa pliku wyjściowego kodująca parametry filtra (x=0.0, y=1.0, promień 0.5)",
@@ -244,6 +276,7 @@
     },
     {
       "id": "l02-16",
+      "s": "c",
       "q": "Zbiór danych z zadania 2.3 zawiera powtórzone pary współrzędnych (x, y) o różnych wartościach. Jak to wpływa na rozwiązanie?",
       "a": [
         "Dla każdego wiersza powstaje osobny obiekt – powtórzenia nie są scalane; sortowanie wtórne po `value` rozstrzyga kolejność przy tej samej odległości",

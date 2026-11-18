@@ -1,9 +1,37 @@
 {
   "id": "l05",
   "title": "L5 · Hibernate/JPA, Lombok, Thymeleaf (5.1–5.2)",
+  "sections": [
+    {
+      "id": "a",
+      "title": "Model danych „Let's brainstorm” (Lab 5.1)",
+      "text": "Aplikacja ma trzy tabele: **Users** (nick, info), **Problems** (questioner, title, question) i **Ideas** (originator, problem, answer). Każda ma automatyczny klucz główny `Id` oraz automatyczny znacznik czasu (Registration dla Users, Publication dla Problems i Ideas).\n\nRelacje: User 1–N Problem (autor), User 1–N Idea (autor) i Problem 1–N Idea. Klucz obcy jest zawsze po stronie „wiele” (`@ManyToOne`). W `Problem` lista `ideas` (`@OneToMany(mappedBy = \"problem\")`) to tylko odwrotny kierunek relacji i nie tworzy kolumny."
+    },
+    {
+      "id": "b",
+      "title": "Lombok",
+      "text": "**Lombok** generuje w czasie kompilacji kod na podstawie adnotacji: gettery i settery, konstruktory, `toString`, `equals`/`hashCode` i builder. W `build.gradle.kts` jest `compileOnly` oraz `annotationProcessor` (`compileOnly`, bo potrzebny tylko do kompilacji). W IDE trzeba zainstalować plugin Lombok, inaczej IDE zgłasza błędy brakujących metod (kompilacja Gradle działa i tak).\n\nAdnotacje: `@Builder` daje metodę `builder()` (np. `User.builder().nick(\"x\").build()`), `@NoArgsConstructor` konstruktor domyślny (JPA go wymaga), `@Data` pakiet getter, setter, `toString`, `equals`, `hashCode`.\n\nW encji `Problem` pole `ideas` jest wyłączone z `toString`, `equals` i `hashCode` (`@ToString.Exclude`, `@EqualsAndHashCode.Exclude`). Relacja dwukierunkowa Problem → ideas → Idea → problem → ideas… powodowałaby nieskończoną rekurencję (`StackOverflowError`). Builder bez wartości domyślnej ustawiłby listę na `null`, więc używa się `@Builder.Default private List<Idea> ideas = new ArrayList<>();`."
+    },
+    {
+      "id": "c",
+      "title": "Hibernate, JPA i SQLite",
+      "text": "**JPA** to specyfikacja (`jakarta.persistence-api`), **Hibernate** to jej implementacja (`hibernate-core`), a SQLite to baza (sterownik JDBC `sqlite-jdbc` plus dialekt z modułu `hibernate-community-dialects`, bo SQLite nie jest oficjalnie wspierany przez rdzeń Hibernate). **ORM** mapuje obiekty Javy (encje) na tabele relacyjne i odwrotnie, więc większość operacji wykonuje się na obiektach, bez ręcznego SQL.\n\nPlik `hibernate.properties` zawiera sterownik, URL `jdbc:sqlite:BrainStormDataBase.sqlite`, dialekt oraz `hibernate.hbm2ddl.auto=update` (przy starcie Hibernate tworzy lub aktualizuje tabele według encji) i `show_sql`.\n\nEncja `User`: `@Entity` oznacza klasę jako encję JPA, `@Table(name = \"users\")` nadaje nazwę tabeli. Pole `id` ma `@Id` i `@GeneratedValue` (automatyczny klucz), znacznik czasu rejestracji ustawia się automatycznie przy pierwszym zapisie (np. `@CreationTimestamp`), a `nick` jest wymagany, unikalny i bez aktualizacji: `@Column(nullable = false, unique = true, updatable = false)`. Drugie uruchomienie `App_1` kończy się więc błędem (nicki już istnieją), trzeba usunąć plik `BrainStormDataBase.sqlite`.\n\nJPA tworzy obiekty przez refleksję, dlatego encja potrzebuje konstruktora bezargumentowego (`@NoArgsConstructor`). W kodzie aplikacji używa się buildera, a pola są prywatne (enkapsulacja)."
+    },
+    {
+      "id": "d",
+      "title": "Session, lazy loading i podgląd bazy",
+      "text": "**Session** to jednostka pracy z bazą (połączenie plus kontekst trwałości). Klasa `HibernateSessionFactory` buduje `SessionFactory` w bloku `static`, a `getNewSession()` wydaje nową sesję, którą otwiera się w try-with-resources. **Shutdown hook** (`Runtime.getRuntime().addShutdownHook(...)`) to osobny wątek uruchamiany przy kończeniu aplikacji, który zamyka połączenie z bazą.\n\n`App_1` buduje użytkowników, problemy i pomysły przez buildery, wypisuje je (`toString` z Lomboka) i zapisuje przez `session.persist(...)` w transakcji. `App_2` odczytuje użytkowników, `App_3` problemy z pomysłami i autorami w jednej sesji, a `App_4` ma dane dostępne po zamknięciu sesji.\n\nTo ostatnie ma znaczenie, bo relacje są domyślnie ładowane **leniwie** (lazy). `problem.getIdeas()` zwraca proxy, które dociąga dane dopiero przy użyciu, a do tego potrzebna jest otwarta sesja. Po jej zamknięciu dostęp do niezaładowanej kolekcji da `LazyInitializationException`. Trzeba więc wczytać dane z góry, np. `join fetch`.\n\nZawartość pliku `BrainStormDataBase.sqlite` można obejrzeć wtyczką „SQLite Viewer” w VS Code albo na sqliteviewer.app."
+    },
+    {
+      "id": "e",
+      "title": "Thymeleaf (Lab 5.2)",
+      "text": "**Thymeleaf** w trybie standalone (bez Springa) to silnik szablonów, który generuje HTML z szablonów i danych z bazy, bez serwera webowego. Program (`App_5`, `App_6`) pobiera dane z bazy, wypełnia szablon i zapisuje gotowy plik HTML. `App_5` generuje listę użytkowników (`users.html`), a `App_6` listę problemów z pomysłami i autorami (`problems.html`, trzeba pobrać dane razem z pomysłami, bo działa lazy loading).\n\nTypowe atrybuty: `th:each=\"user : ${users}\"` (pętla), `th:text=\"${user.nick}\"` (tekst), `th:if` / `th:unless` (warunek, np. komunikat „No problems found.” dla pustej listy), `th:href` i `th:src` (adresy).\n\nGdy strona wygląda inaczej niż oczekiwano, może to być błędna ścieżka do CSS-a. W Gradle 9 projekt ma katalog `app/`, a ścieżka do `style.css` musi wskazywać istniejący plik względem miejsca zapisu HTML."
+    }
+  ],
   "questions": [
     {
       "id": "l05-01",
+      "s": "a",
       "q": "Lab 5 – aplikacja „Let's brainstorm⚡”. Jakie trzy tabele tworzy model danych (zadanie 5.1)?",
       "a": [
         "Users (użytkownicy), Problems (problemy zgłoszone przez użytkowników), Ideas (propozycje rozwiązań konkretnego problemu)",
@@ -20,6 +48,7 @@
     },
     {
       "id": "l05-02",
+      "s": "a",
       "q": "Jakie relacje (kardynalność) występują między tabelami?",
       "a": [
         "User 1—N Problem (autor), User 1—N Idea (autor), Problem 1—N Idea; po stronie „wiele” jest klucz obcy (@ManyToOne), a Problem ma odwrotną kolekcję ideas",
@@ -36,6 +65,7 @@
     },
     {
       "id": "l05-03",
+      "s": "b",
       "q": "Do czego służy Lombok w tym projekcie?",
       "a": [
         "Generuje w czasie kompilacji kod: gettery/settery, konstruktory, toString, equals/hashCode, builder – na podstawie adnotacji",
@@ -52,6 +82,7 @@
     },
     {
       "id": "l05-04",
+      "s": "b",
       "q": "Która adnotacja Lomboka daje klasie metodę `builder()`, pozwalającą napisać `User.builder().nick(\"x\").build()`?",
       "a": [
         "@Builder",
@@ -68,6 +99,7 @@
     },
     {
       "id": "l05-05",
+      "s": "c",
       "q": "Które zależności dostarczają Hibernate/JPA i SQLite w zadaniu 5.1?",
       "a": [
         "jakarta.persistence-api (JPA), hibernate-core, slf4j-api, sqlite-jdbc (sterownik), hibernate-community-dialects (dialekt SQLite)",
@@ -84,6 +116,7 @@
     },
     {
       "id": "l05-06",
+      "s": "c",
       "q": "Co robi ustawienie `hibernate.hbm2ddl.auto=update`?",
       "a": [
         "Przy starcie Hibernate tworzy lub aktualizuje tabele według klas encji – nie trzeba pisać CREATE TABLE ręcznie",
@@ -100,6 +133,7 @@
     },
     {
       "id": "l05-07",
+      "s": "c",
       "q": "Co oznacza adnotacja `@Entity` i `@Table(name = \"users\")` na klasie `User`?",
       "a": [
         "@Entity – klasa jest encją JPA mapowaną na tabelę; @Table(name = \"users\") ustawia nazwę tabeli",
@@ -116,6 +150,7 @@
     },
     {
       "id": "l05-08",
+      "s": "c",
       "q": "Pole `nick` w encji User jest „wymagane, unikalne i bez możliwości aktualizacji”. Którą konfiguracją kolumny to się osiąga?",
       "a": [
         "@Column(nullable = false, unique = true, updatable = false)",
@@ -132,6 +167,7 @@
     },
     {
       "id": "l05-09",
+      "s": "c",
       "q": "Jak Hibernate nadaje wartość kluczowi głównemu `id` i jak pole `registration` dostaje czas rejestracji?",
       "a": [
         "id – generowane automatycznie przy zapisie (@GeneratedValue); registration/publication – znacznik czasu ustawiany automatycznie przy pierwszym zapisie rekordu",
@@ -148,6 +184,7 @@
     },
     {
       "id": "l05-10",
+      "s": "b",
       "q": "W encji `Problem` pole `ideas` jest wyłączone z `toString`, `equals` i `hashCode`, a builder nie ustawia go na null. Dlaczego?",
       "a": [
         "Relacja dwukierunkowa (Problem ↔ Idea) powodowałaby w toString/hashCode nieskończoną rekurencję (StackOverflowError); lista jest też leniwie ładowana; builder bez wartości domyślnej zostawiłby null",
@@ -164,6 +201,7 @@
     },
     {
       "id": "l05-11",
+      "s": "d",
       "q": "Czym jest `Session` w Hibernate i jak powstaje w `HibernateSessionFactory`?",
       "a": [
         "Session to jednostka pracy z bazą (połączenie + kontekst trwałości); klasa statyczna buduje SessionFactory w bloku static i wydaje nowy Session metodą getNewSession()",
@@ -180,6 +218,7 @@
     },
     {
       "id": "l05-12",
+      "s": "d",
       "q": "Do czego służy shutdown hook (`Runtime.getRuntime().addShutdownHook(new Thread(...))`) w `HibernateSessionFactory`?",
       "a": [
         "Uruchamia się przy kończeniu aplikacji (JVM exit) i zamyka SessionFactory/połączenie z bazą",
@@ -196,6 +235,7 @@
     },
     {
       "id": "l05-13",
+      "s": "d",
       "q": "Co robi App_1 z zadania 5.1?",
       "a": [
         "Buduje przez buildery trzech użytkowników, dwa problemy i ich pomysły, wypisuje je (toString z Lomboka) i zapisuje w sesji (try-with-resources); tworzy plik BrainStormDataBase.sqlite",
@@ -212,6 +252,7 @@
     },
     {
       "id": "l05-14",
+      "s": "d",
       "q": "Dlaczego różnica między App_3 (dane czytane w jednej sesji) a App_4 (dane dostępne po zamknięciu sesji) ma znaczenie?",
       "a": [
         "Relacje są domyślnie ładowane leniwie (lazy) – po zamknięciu sesji dostęp do niezaładowanej kolekcji da LazyInitializationException, więc trzeba je wczytać z góry (np. JOIN FETCH / initialize)",
@@ -228,6 +269,7 @@
     },
     {
       "id": "l05-15",
+      "s": "d",
       "q": "Które narzędzie służy do sprawdzenia zawartości pliku `BrainStormDataBase.sqlite`?",
       "a": [
         "Przeglądarka SQLite (wtyczka „SQLite Viewer” w VS Code lub online sqliteviewer.app)",
@@ -244,6 +286,7 @@
     },
     {
       "id": "l05-16",
+      "s": "e",
       "q": "Lab 5.2 – po co Thymeleaf w trybie standalone (bez Springa)?",
       "a": [
         "Do generowania HTML z szablonów i danych z bazy – silnik szablonów używamy samodzielnie, bez serwera webowego",
@@ -260,6 +303,7 @@
     },
     {
       "id": "l05-17",
+      "s": "e",
       "q": "Jak w szablonie Thymeleaf wyświetla się listę elementów, np. użytkowników?",
       "a": [
         "th:each=\"user : ${users}\" powtarza element dla każdego elementu kolekcji, a th:text=\"${user.nick}\" wstawia wartość",
@@ -276,6 +320,7 @@
     },
     {
       "id": "l05-18",
+      "s": "e",
       "q": "W szablonie `problems.html` dla pustej listy wyświetlany jest komunikat „No problems found.”. Którym atrybutem Thymeleaf realizuje się taki warunek?",
       "a": [
         "th:if (lub th:unless) z warunkiem na pustą listę, np. ${#lists.isEmpty(problems)}",
@@ -292,6 +337,7 @@
     },
     {
       "id": "l05-19",
+      "s": "e",
       "q": "Na slajdzie jest uwaga: jeśli wygenerowana strona wygląda inaczej niż oczekiwano, może to oznaczać błędną ścieżkę do CSS-a. Dlaczego ścieżka bywa problemem?",
       "a": [
         "W Gradle 9 projekt ma katalog app/ i ścieżka do style.css (np. app/src/main/resources/static/style.css) liczona jest względem miejsca zapisu pliku HTML, więc musi być poprawnie wskazana",
@@ -308,6 +354,7 @@
     },
     {
       "id": "l05-20",
+      "s": "e",
       "q": "Co różni zadania App_5 i App_6 w 5.2?",
       "a": [
         "App_5 – lista użytkowników (users.html); App_6 – lista problemów z pomysłami i autorami (problems.html)",
@@ -324,6 +371,7 @@
     },
     {
       "id": "l05-21",
+      "s": "c",
       "q": "Po co `private`-pola w encji + gettery/settery i konstruktor bezargumentowy wymagany przez JPA?",
       "a": [
         "JPA tworzy obiekty refleksją (konstruktor domyślny) i ustawia pola; enkapsulacja chroni stan, a Lombok generuje boilerplate",
@@ -340,6 +388,7 @@
     },
     {
       "id": "l05-22",
+      "s": "c",
       "q": "Które zdanie najlepiej opisuje ORM (np. Hibernate)?",
       "a": [
         "Mapuje obiekty Javy (encje) na tabele relacyjne i odwrotnie, więc większość operacji na bazie wykonuje się na obiektach, bez ręcznego SQL",
