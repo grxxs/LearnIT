@@ -1,0 +1,84 @@
+{
+  "id": "t02",
+  "title": "T2 · Sieć TCP/IP i Java NIO",
+  "sections": [
+    {
+      "id": "a",
+      "title": "Gniazda w java.net",
+      "text": "W pakiecie `java.net` serwer TCP/IP używa klasy **ServerSocket**. Jest to **gniazdo nasłuchujące**: serwer tworzy je po to, by **nasłuchiwać połączeń** na wybranym porcie. Metoda `accept()` zwraca wtedy **Socket**, czyli **gniazdo połączeniowe** obsługujące konkretnego klienta. `InetSocketAddress` to tylko adres IP z portem, a `DatagramSocket` służy do protokołu UDP."
+    },
+    {
+      "id": "b",
+      "title": "Pakiet java.nio i kanały",
+      "text": "Pakiet **java.nio** oferuje **nieblokujące wejście i wyjście** (non-blocking I/O). Podstawą są kanały (`Channel`): dwukierunkowy odpowiednik strumienia, który może działać blokująco lub nieblokująco. `SocketChannel` obsługuje połączenia TCP w trybie nieblokującym, a `ServerSocketChannel` odpowiada klasie `ServerSocket`. `DatagramChannel` jest dla UDP, a klasa `java.net.ServerSocket` działa w trybie blokującym.\n\nSam interfejs `Channel` z pakietu `java.nio.channels` opisuje ogólny kanał operacji wejścia i wyjścia. Nie ogranicza się do jednego kierunku ani do trybu blokującego lub nieblokującego."
+    }
+  ],
+  "questions": [
+    {
+      "id": "t02-01",
+      "s": "a",
+      "q": "Serwer TCP/IP tworzy obiekt klasy `java.net.ServerSocket` w celu:",
+      "a": [
+        "nasłuchiwania połączeń",
+        "zamiany go na `ServerSocketChannel`",
+        "zapisania adresu IP klienta"
+      ],
+      "e": "`ServerSocket` służy serwerowi do nasłuchiwania połączeń na danym porcie. Gdy klient się połączy, `accept()` zwraca gniazdo `Socket` dla tego klienta."
+    },
+    {
+      "id": "t02-02",
+      "s": "b",
+      "q": "Po nawiązaniu połączenia TCP/IP z klientem serwer może obsługiwać jego żądania w trybie nieblokującym używając:",
+      "a": [
+        "`java.nio.channels.SocketChannel`",
+        "`java.nio.channels.DatagramChannel`",
+        "`java.net.ServerSocket`"
+      ],
+      "e": "`SocketChannel` obsługuje połączenia TCP i może pracować w trybie nieblokującym. `DatagramChannel` służy do UDP, a `ServerSocket` działa blokująco."
+    },
+    {
+      "id": "t02-03",
+      "s": "a",
+      "q": "Gniazdo nasłuchujące serwera TCP/IP to:",
+      "a": [
+        "`ServerSocket`",
+        "`InetSocketAddress`",
+        "`DatagramSocket`"
+      ],
+      "e": "`ServerSocket` nasłuchuje połączeń. `InetSocketAddress` jest tylko adresem z portem, a `DatagramSocket` używa się do UDP."
+    },
+    {
+      "id": "t02-04",
+      "s": "a",
+      "q": "Gniazdo połączeniowe TCP/IP to:",
+      "a": [
+        "`Socket`",
+        "`URLConnection`",
+        "`InetSocketAddress`"
+      ],
+      "e": "`Socket` reprezentuje połączenie TCP z drugą stroną (po stronie klienta i serwera). `URLConnection` służy do połączeń przez URL, a `InetSocketAddress` to sam adres."
+    },
+    {
+      "id": "t02-05",
+      "s": "b",
+      "q": "Klasa `Channel` z pakietu `java.nio.channels` definiuje tylko operacje:",
+      "a": [
+        "wejścia i wyjścia",
+        "jednokierunkowe nieblokujące",
+        "dwukierunkowe blokujące"
+      ],
+      "e": "`Channel` jest ogólnym interfejsem kanału operacji wejścia i wyjścia. Kanały mogą być dwukierunkowe, a tryb blokujący lub nieblokujący zależy od konkretnej klasy i ustawień. Odpowiedzi wskazujące jeden kierunek lub jeden tryb są zbyt wąskie."
+    },
+    {
+      "id": "t02-06",
+      "s": "b",
+      "q": "Pakiet `java.nio` obejmuje klasy realizujące:",
+      "a": [
+        "nieblokujące wejście wyjście",
+        "nowe interfejsy sieciowe",
+        "szyfrowanie transmisji TCP/IP"
+      ],
+      "e": "`java.nio` (New I/O) wprowadza m.in. kanały, bufory i selektory do nieblokującego wejścia i wyjścia. Szyfrowanie TLS należy do `javax.net.ssl`."
+    }
+  ]
+}

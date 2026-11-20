@@ -12,6 +12,7 @@ Otwórz plik **`dist/index.html`** w przeglądarce (dwuklik). Nic nie trzeba ins
   - *Inteligentna* – najpierw zaległe powtórki, potem nowe pytania. Domyślna do codziennej nauki.
   - *Nowe* – tylko pytania jeszcze niewidziane, na pierwsze przejście materiału.
   - *Słabe* – pytania z ostatnią złą odpowiedzią albo strzałem.
+  - *Nauka* – pytania w losowej kolejności, z materiałem do przeczytania (jeśli przedmiot go ma). Odpowiedzi nie są zapisywane w postępie ani w powtórkach.
   - *Egzamin próbny* – bez podpowiedzi, wynik i wyjaśnienia na końcu.
 - Po dobrej odpowiedzi wybierz **Wiedziałem** (Enter) albo **Strzelałem** (S). Strzał jest traktowany jak niewiedza i pytanie szybko wróci.
 - Błędne pytanie wraca jeszcze w tej samej sesji, kilka pytań później.
@@ -45,11 +46,11 @@ npm run build    # -> dist/index.html (jeden plik do wysłania)
      ] }
    ```
    **Pierwsza odpowiedź w `a` jest zawsze poprawna**, aplikacja sama miesza kolejność. `id` pytań muszą być stałe, bo postęp jest do nich przypisany.
-   **Materiał do czytania** (opcjonalnie, widoczny w trybach nauki, ukryty w egzaminie): w pliku wykładu dodaj `"sections": [{ "id": "a", "title": "…", "text": "…" }]`, a w pytaniu `"s": "a"`. Dotychczas dla ZPWO.
+   **Materiał do czytania** (opcjonalnie, widoczny tylko w trybie Nauka): w pliku wykładu dodaj `"sections": [{ "id": "a", "title": "…", "text": "…" }]`, a w pytaniu `"s": "a"`. Mają go wszystkie przedmioty.
 3. `npm run build` i wysyłasz nowy `dist/index.html`.
 
 ## Źródła pytań
 
 KPWA: slajdy W1–W15 dr. T. Nowickiego (tomeknowicki.pl/kpwa). Lokalne pliki W5, W13 i W15 były puste (0 B), więc ich treść pochodzi z oryginalnych slajdów online: *objects-relationship*, *platform-2* i *business-automation-flows*.
 
-**Java – laboratoria** (`data/java-labs/`): pytania z wyjaśnionymi kodami z labów 1–6 (kody w podfolderach `La1`, `Lab1.2`, … `05-2-spring-boot`) oraz treści zadań ze stron nowicki.house/java2/labs i slajdów zad-5.x / zad-6.x. Lab 5 (Hibernate/Thymeleaf) oraz zadania 2.2–2.4, 3.3–3.4, 4.2 nie mają kodu w repo – pytania opierają się na opisie zadań i slajdach (kod na slajdach jest obrazkami). W pytaniach i wyjaśnieniach można używać bloków kodu w ```…``` i `kodu inline`.
+**Java – testy** (`data/java-labs/`): pytania z testów z wykładu i laboratorium (plik „Test”, Zaawansowane programowanie w Java). Klucza odpowiedzi nie było, więc poprawne odpowiedzi ustalono na podstawie materiału z wykładów i labów.

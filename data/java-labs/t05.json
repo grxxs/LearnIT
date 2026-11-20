@@ -1,0 +1,292 @@
+{
+  "id": "t05",
+  "title": "T5 · Spring: DI, beany i MVC",
+  "sections": [
+    {
+      "id": "a",
+      "title": "Dependency Injection i beany",
+      "text": "**Bean** to obiekt zarządzany przez kontener Spring IoC. **Dependency Injection (DI)** służy do zarządzania **zależnościami między komponentami (beanami)** aplikacji: kontener sam przekazuje obiektom to, czego potrzebują. Zależności można wstrzykiwać przez konstruktor, przez setter, a także bezpośrednio do pól (także `private`), więc nie ogranicza się to do jednego sposobu."
+    },
+    {
+      "id": "b",
+      "title": "Adnotacje konfiguracyjne",
+      "text": "• `@SpringBootApplication` oznacza klasę startową aplikacji. Łączy `@Configuration`, `@EnableAutoConfiguration` i `@ComponentScan`, więc jest **klasą konfiguracyjną** frameworka Spring. Uruchamia też skanowanie pakietów projektu.\n• `@Configuration` oznacza klasę z definicjami beanów. Wewnątrz używa się metod z adnotacją **`@Bean`**.\n• `@Component` oznacza klasę jako **komponent** zarządzany przez Spring (jej specjalizacje to `@Service`, `@Repository`, `@Controller`).\n• `@Qualifier` wskazuje, który bean wstrzyknąć, gdy kandydatów jest kilku."
+    },
+    {
+      "id": "c",
+      "title": "Spring MVC: kontrolery i mapowanie",
+      "text": "W architekturze Spring MVC żądania HTTP trafiają do **front kontrolera** (`DispatcherServlet`), który **przekierowuje** je do właściwych kontrolerów. Mapowanie opiera się na adresie, metodzie HTTP, parametrach i nagłówkach żądania, a nie na wersji API JVM.\n\nAdnotacje:\n• `@RequestMapping` mapuje żądania (z `method = RequestMethod.GET` może **zastąpić `@GetMapping`**),\n• `@RequestParam`, `@PathVariable`, `@RequestHeader`, `@ModelAttribute` **pobierają dane z żądania**. `@PathVariable` przekazuje fragment ścieżki,\n• `@RestController` = `@Controller` + `@ResponseBody`,\n• `@ControllerAdvice` pozwala obsługiwać wyjątki w jednym miejscu dla wielu kontrolerów (`@ExceptionHandler`); `@RestControllerAdvice` to jej odmiana dla REST.\n\n`Model` (`org.springframework.ui.Model`) to kontekstowa struktura danych, którą kontroler wypełnia i przekazuje do widoku (szablonu)."
+    },
+    {
+      "id": "d",
+      "title": "Analiza kodu kontrolerów",
+      "text": "• W `@GetMapping(\"/list\")` w kontrolerze z `@RequestMapping(\"/users\")` słowo `list` jest składową adresu URL (pełna ścieżka to `/users/list`). Zwrócony `String` (np. `\"users-list\"`) to **nazwa szablonu** (widoku).\n• W `@RestController` format zwracanych danych (np. JSON) wynika z `@RestController` (czyli `@ResponseBody`). `ResponseEntity.ok(...)` ustawia status 200.\n• Metoda `orElseGet(() -> ResponseEntity.notFound().build())` zwraca odpowiedź **404 Not Found**, gdy `Optional` jest pusty, czyli gdy w bazie nie ma problemu o danym `id`.\n• Mapowanie encji na DTO realizuje prywatna metoda `toDto(...)`.\n• Wartość `@Qualifier(\"reverseProcessing\")` wskazuje bean, który jest wstrzykiwany podczas tworzenia komponentu `ReverseHandler`. Wartość w `@Component(\"reverseProcessing\")` nadaje nazwę beanowi `ReverseProcessing`, której używa się przy tworzeniu zarówno tego komponentu, jak i komponentu, który go zawiera."
+    }
+  ],
+  "questions": [
+    {
+      "id": "t05-01",
+      "s": "a",
+      "q": "W *Spring Framework* Dependency Injection (DI) służy do zarządzania:",
+      "a": [
+        "zależnościami pomiędzy komponentami (beans) aplikacji",
+        "kontekstem aplikacji",
+        "bibliotekami zewnętrznymi"
+      ],
+      "e": "DI zarządza zależnościami między beanami: kontener tworzy je i przekazuje obiektom. Kontekst aplikacji to sam kontener, a biblioteki zewnętrzne zarządza się narzędziami budowania."
+    },
+    {
+      "id": "t05-02",
+      "s": "a",
+      "q": "Bean w *Spring Framework* to:",
+      "a": [
+        "każdy obiekt zarządzany przez kontener",
+        "synonim `@Component`",
+        "prototyp"
+      ],
+      "e": "Bean to obiekt tworzony i zarządzany przez kontener Spring. `@Component` jest tylko jednym ze sposobów jego zdefiniowania, a „prototyp” to jeden z zakresów (scope)."
+    },
+    {
+      "id": "t05-03",
+      "s": "a",
+      "q": "Do pól klasy typu `private` można wstrzykiwać zależności:",
+      "a": [
+        "zarówno przez setter, jak i konstruktor",
+        "tylko przez setter (Setter Injection)",
+        "tylko przez konstruktor (Constructor Injection)"
+      ],
+      "e": "Spring wspiera wstrzykiwanie przez konstruktor i setter (a także bezpośrednio do pola, choć niezalecane). Nie ma ograniczenia do jednego sposobu."
+    },
+    {
+      "id": "t05-04",
+      "s": "b",
+      "q": "Klasa oznaczona adnotacją `@SpringBootApplication`:",
+      "a": [
+        "jest klasą konfiguracyjną framework-a *Spring*",
+        "jest komponentem framework-a *Spring*",
+        "jest statyczna"
+      ],
+      "e": "`@SpringBootApplication` zawiera `@Configuration`, więc klasa jest klasą konfiguracyjną (oraz włącza auto-konfigurację i skanowanie komponentów). Klasa nie musi być statyczna."
+    },
+    {
+      "id": "t05-05",
+      "s": "b",
+      "q": "W klasie oznaczonej adnotacją `@Configuration` można używać adnotacji:",
+      "a": [
+        "`@Bean`",
+        "`@Component`",
+        "`@ComponentScan`"
+      ],
+      "e": "Wewnątrz klasy `@Configuration` metody z `@Bean` definiują beany. `@Component` oznacza klasy komponentów, a `@ComponentScan` wskazuje pakiety do skanowania, więc nie są używane w ten sposób."
+    },
+    {
+      "id": "t05-06",
+      "s": "b",
+      "q": "Adnotacji `@Component` używamy:",
+      "a": [
+        "do oznaczenia klasy komponentu",
+        "w klasie konfiguracyjnej",
+        "do oznaczenia klasy konfiguracyjnej"
+      ],
+      "e": "`@Component` oznacza klasę jako komponent zarządzany przez Spring. Klasę konfiguracyjną oznacza się `@Configuration`."
+    },
+    {
+      "id": "t05-07",
+      "s": "c",
+      "q": "Adnotację `@RestController` można zastąpić adnotacjami:",
+      "a": [
+        "`@Controller` + `@ResponseBody`",
+        "`@Controller` + `@ServiceBody`",
+        "`@Controller` + `@GetBody`"
+      ],
+      "e": "`@RestController` to złożenie `@Controller` i `@ResponseBody`. Pozostałe adnotacje nie istnieją."
+    },
+    {
+      "id": "t05-08",
+      "s": "c",
+      "q": "W architekturze MVC mapowanie żądań http nie może odbyć się na podstawie:",
+      "a": [
+        "wersji API JVM",
+        "typu danych wejściowych",
+        "parametrów żądania"
+      ],
+      "e": "Mapowanie opiera się na ścieżce, metodzie HTTP, parametrach, nagłówkach i typie danych żądania. Wersja API JVM nie ma z tym związku."
+    },
+    {
+      "id": "t05-09",
+      "s": "c",
+      "q": "Do pobierania danych z żądania http nie służy adnotacja:",
+      "a": [
+        "`@RequestMapping`",
+        "`@ModelAttribute`",
+        "`@RequestParam`"
+      ],
+      "e": "`@RequestMapping` mapuje adres na metodę, a nie pobiera danych. Dane z żądania pobierają m.in. `@RequestParam` i `@ModelAttribute`."
+    },
+    {
+      "id": "t05-10",
+      "s": "c",
+      "q": "Przekazywanie fragmentu ścieżki jako danych do kontrolera zapewnia adnotacja:",
+      "a": [
+        "`@PathVariable`",
+        "`@RequestParam`",
+        "`@RequestHeader`"
+      ],
+      "e": "`@PathVariable` wiąże fragment ścieżki (np. `/{id}`) z parametrem metody. `@RequestParam` pobiera parametry zapytania, a `@RequestHeader` nagłówki."
+    },
+    {
+      "id": "t05-11",
+      "s": "c",
+      "q": "Adnotacja `@RequestMapping`:",
+      "a": [
+        "może zastąpić `@GetMapping`",
+        "nie może określić typu mediów",
+        "może przekierować żądanie"
+      ],
+      "e": "`@RequestMapping(method = GET)` jest równoważna `@GetMapping`. Może też określać typy mediów (`consumes`, `produces`), a nie służy do przekierowań."
+    },
+    {
+      "id": "t05-12",
+      "s": "c",
+      "q": "W architekturze MVC front kontroler:",
+      "a": [
+        "przekierowuje żądania http",
+        "wykonuje wszystkie żądania http",
+        "zawsze korzysta z szablonów widoków"
+      ],
+      "e": "Front kontroler (`DispatcherServlet`) przyjmuje żądania i przekierowuje je do odpowiednich kontrolerów. Sam ich nie wykonuje i nie zawsze używa szablonów (np. w REST zwraca JSON)."
+    },
+    {
+      "id": "t05-13",
+      "s": "c",
+      "q": "W architekturze MVC `Model` jest dostępny w kontekście:",
+      "a": [
+        "servlet-a",
+        "tylko aplikacji",
+        "tylko front kontrolera"
+      ],
+      "e": "Dane modelu są przekazywane w ramach obsługi żądania w kontekście servletu (`DispatcherServlet`). Nie są ograniczone do całej aplikacji ani wyłącznie do front kontrolera."
+    },
+    {
+      "id": "t05-14",
+      "s": "c",
+      "q": "Adnotacja `@ControllerAdvice`:",
+      "a": [
+        "pozwala obsługiwać wyjątki Java w klasie, która jest nią oznaczona",
+        "jest specjalizacją `@RestControllerAdvice`",
+        "pozwala obsługiwać wyjątki http w klasie, która jest nią oznaczona"
+      ],
+      "e": "`@ControllerAdvice` oznacza klasę z metodami `@ExceptionHandler`, które obsługują wyjątki Javy zgłaszane przez kontrolery. To `@RestControllerAdvice` jest jej specjalizacją (odmianą dla REST), a nie odwrotnie."
+    },
+    {
+      "id": "t05-15",
+      "s": "d",
+      "q": "```\n@Controller\n@RequiredArgsConstructor\n@RequestMapping(\"/users\")\npublic class UserController {\n\n    private final UserService userService;\n\n    @GetMapping(\"/list\")\n    public String listUsers(Model model) {\n        model.addAttribute(\"users\",\n                userService.getAllUsers());\n        return \"users-list\";\n    }\n}\n```\n\nW kodzie `list` to:",
+      "a": [
+        "składowa adresu URL",
+        "nazwa modelu danych kontrolera",
+        "nazwa szablonu"
+      ],
+      "e": "`list` pochodzi z `@GetMapping(\"/list\")`, więc jest częścią adresu URL (`/users/list`). Nazwa modelu to `users`, a nazwa szablonu to `users-list`."
+    },
+    {
+      "id": "t05-16",
+      "s": "d",
+      "q": "```\n@Controller\n@RequiredArgsConstructor\n@RequestMapping(\"/users\")\npublic class UserController {\n\n    private final UserService userService;\n\n    @GetMapping(\"/list\")\n    public String listUsers(Model model) {\n        model.addAttribute(\"users\",\n                userService.getAllUsers());\n        return \"users-list\";\n    }\n}\n```\n\nW kodzie `users-list` to:",
+      "a": [
+        "nazwa szablonu",
+        "nazwa encji",
+        "część ścieżki adresu URL"
+      ],
+      "e": "Metoda `listUsers` zwraca `String`, który w klasie `@Controller` oznacza nazwę widoku (szablonu). Ścieżką adresu jest `/users/list`."
+    },
+    {
+      "id": "t05-17",
+      "s": "c",
+      "q": "```\n@PostMapping(\"/add\")\npublic String processAddUser(@ModelAttribute(\"user\") User user, Model model) {\n    try {\n        User saved = userService.addUser(user);\n        model.addAttribute(\"user\", saved);\n        return \"user-added\";\n    } catch (IllegalArgumentException ex) {\n        model.addAttribute(\"error\", ex.getMessage());\n        return \"add-user\";\n    }\n}\n```\n\nSłowo `Model` w kodzie to:",
+      "a": [
+        "kontekstowa struktura danych",
+        "wszystkie encje używane w programie",
+        "tylko encja `User`"
+      ],
+      "e": "`Model` to obiekt, do którego kontroler dodaje atrybuty (`addAttribute`), a widok je odczytuje, czyli kontekstowa struktura danych przekazywana do szablonu. Nie jest encją ani zbiorem wszystkich encji."
+    },
+    {
+      "id": "t05-18",
+      "s": "d",
+      "q": "```\n@RestController\n@RequestMapping(\"/api/problems\")\n@RequiredArgsConstructor\npublic class ProblemApiController {\n\n    private final ProblemService problemService;\n\n    @GetMapping(\"/{id}\")\n    public ResponseEntity<ProblemDto> getProblem(@PathVariable Long id) {\n        return problemService.getProblemById(id)\n                .map(problem -> ResponseEntity.ok(toDto(problem)))\n                .orElseGet(() -> ResponseEntity.notFound().build());\n    }\n\n    private ProblemDto toDto(Problem problem) {\n        return ProblemDto.builder()\n                .questionerNick(problem.getQuestioner().getNick())\n                .publication(problem.getPublication())\n                .title(problem.getTitle())\n                .question(problem.getQuestion())\n                .build();\n    }\n}\n```\n\nFormat danych zwracanych przez kontroler, czyli JSON, definiuje:",
+      "a": [
+        "adnotacja `@RestController`",
+        "metoda `ResponseEntity.ok`",
+        "metoda `toDto`"
+      ],
+      "e": "`@RestController` powoduje, że zwracane obiekty trafiają do ciała odpowiedzi (zwykle jako JSON). `ResponseEntity.ok` ustawia status 200, a `toDto` zamienia encję na DTO."
+    },
+    {
+      "id": "t05-19",
+      "s": "d",
+      "q": "```\n@RestController\n@RequestMapping(\"/api/problems\")\n@RequiredArgsConstructor\npublic class ProblemApiController {\n\n    private final ProblemService problemService;\n\n    @GetMapping(\"/{id}\")\n    public ResponseEntity<ProblemDto> getProblem(@PathVariable Long id) {\n        return problemService.getProblemById(id)\n                .map(problem -> ResponseEntity.ok(toDto(problem)))\n                .orElseGet(() -> ResponseEntity.notFound().build());\n    }\n\n    private ProblemDto toDto(Problem problem) {\n        return ProblemDto.builder()\n                .questionerNick(problem.getQuestioner().getNick())\n                .publication(problem.getPublication())\n                .title(problem.getTitle())\n                .question(problem.getQuestion())\n                .build();\n    }\n}\n```\n\nJeśli w bazie danych nie istnieje `Problem` o podanym `id`, wówczas kontroler:",
+      "a": [
+        "zwróci odpowiedź ze statusem 404 Not Found",
+        "zwróci pusty obiekt `ProblemDto` ze statusem 200 OK",
+        "zgłosi wyjątek `NullPointerException`"
+      ],
+      "e": "`getProblemById(id)` zwraca pusty `Optional`, więc `orElseGet(...)` buduje `ResponseEntity.notFound().build()`, czyli odpowiedź 404. Nie ma tu `null`, więc nie wystąpi `NullPointerException`."
+    },
+    {
+      "id": "t05-20",
+      "s": "d",
+      "q": "```\n@RestController\n@RequestMapping(\"/api/problems\")\n@RequiredArgsConstructor\npublic class ProblemApiController {\n\n    private final ProblemService problemService;\n\n    @GetMapping(\"/{id}\")\n    public ResponseEntity<ProblemDto> getProblem(@PathVariable Long id) {\n        return problemService.getProblemById(id)\n                .map(problem -> ResponseEntity.ok(toDto(problem)))\n                .orElseGet(() -> ResponseEntity.notFound().build());\n    }\n\n    private ProblemDto toDto(Problem problem) {\n        return ProblemDto.builder()\n                .questionerNick(problem.getQuestioner().getNick())\n                .publication(problem.getPublication())\n                .title(problem.getTitle())\n                .question(problem.getQuestion())\n                .build();\n    }\n}\n```\n\nMapowanie encji `Problem` na obiekt `ProblemDto` definiuje:",
+      "a": [
+        "metoda `toDto`",
+        "adnotacja `@RestController`",
+        "metoda `ResponseEntity.ok`"
+      ],
+      "e": "Za mapowanie odpowiada prywatna metoda `toDto`, która buduje DTO z pól encji. `@RestController` i `ResponseEntity.ok` dotyczą formatu i statusu odpowiedzi."
+    },
+    {
+      "id": "t05-21",
+      "s": "d",
+      "q": "```\n@Component\npublic class ReverseHandler extends Handler {\n\n    public ReverseHandler(@Qualifier(\"reverseProcessing\") StringProcessing sp) {\n        super(\"reverse\", sp);\n    }\n}\n```\n\nWartość adnotacji `@Qualifier` jest używana przy:",
+      "a": [
+        "tworzeniu komponentu `ReverseHandler`",
+        "tworzeniu komponentu, którego częścią jest `ReverseHandler`",
+        "nie można tego określić"
+      ],
+      "e": "Wartość `@Qualifier(\"reverseProcessing\")` wskazuje, który bean `StringProcessing` zostanie wstrzyknięty do konstruktora podczas tworzenia komponentu `ReverseHandler`."
+    },
+    {
+      "id": "t05-22",
+      "s": "d",
+      "q": "```\n@Component(\"reverseProcessing\")\npublic class ReverseProcessing implements StringProcessing {\n    @Override\n    public String processString(String s) {\n        return new StringBuilder(s).reverse().toString();\n    }\n}\n```\n\nWartość adnotacji `@Component` jest używana przy tworzeniu:",
+      "a": [
+        "zarówno komponentu `ReverseProcessing`, jak i komponentu zawierającego ten komponent",
+        "tylko komponentu `ReverseProcessing`",
+        "tylko komponentu, zawierającego komponent `ReverseProcessing`"
+      ],
+      "e": "Nazwa `\"reverseProcessing\"` nadaje nazwę beanowi `ReverseProcessing`, a jednocześnie jest używana przez `@Qualifier` przy tworzeniu komponentu, który go wstrzykuje (tu `ReverseHandler`)."
+    },
+    {
+      "id": "t05-23",
+      "s": "b",
+      "q": "```\n@SpringBootApplication\npublic class BrainstormApplication {\n    public static void main(String[] args) {\n        SpringApplication.run(BrainstormApplication.class, args);\n    }\n}\n```\n\nKlasa `BrainstormApplication`:",
+      "a": [
+        "jest klasą konfiguracyjną",
+        "uruchamia metodę `main` w odrębnym wątku",
+        "jest klasą statyczną"
+      ],
+      "e": "`@SpringBootApplication` zawiera `@Configuration`, więc klasa jest klasą konfiguracyjną. `main` działa w głównym wątku, a klasa nie jest statyczna."
+    },
+    {
+      "id": "t05-24",
+      "s": "b",
+      "q": "```\n@SpringBootApplication\npublic class BrainstormApplication {\n    public static void main(String[] args) {\n        SpringApplication.run(BrainstormApplication.class, args);\n    }\n}\n```\n\nKlasa `BrainstormApplication`:",
+      "a": [
+        "uruchamia skanowanie pakietów projektu",
+        "jest klasą statyczną",
+        "wymaga pliku konfiguracyjnego"
+      ],
+      "e": "Adnotacja `@SpringBootApplication` zawiera `@ComponentScan`, który skanuje pakiet klasy i jego podpakiety w poszukiwaniu komponentów. Plik konfiguracyjny nie jest wymagany."
+    }
+  ]
+}

@@ -1,0 +1,177 @@
+{
+  "id": "t06",
+  "title": "T6 · Spring Data JPA i wzorce Repository i DAO",
+  "sections": [
+    {
+      "id": "a",
+      "title": "Repozytoria Spring Data JPA",
+      "text": "Bazowym interfejsem wszystkich repozytoriów Spring Data jest **`Repository<T, ID>`**. Rozszerza go `CrudRepository<T, ID>` (metody CRUD: create, read, update, delete), a `JpaRepository<T, ID>` dodaje funkcje specyficzne dla JPA. `JpaRepository` jest **interfejsem**, a nie klasą. Implementację repozytorium Spring generuje sam, więc interfejs, np. `IdeaRepository extends JpaRepository<Idea, Long>`, może być pusty i **nie wymaga jawnej implementacji**. Adnotacja `@NoRepositoryBean` zapobiega tworzeniu beana z danego **interfejsu** (używa się jej na interfejsach bazowych).\n\nMetody `CrudRepository`: `Iterable<T> findAll()` zwraca kolekcję, w razie braku danych pustą (nigdy `null`). `Optional<T> findById(ID id)` zawsze zwraca obiekt `Optional`, pusty gdy nie znaleziono encji."
+    },
+    {
+      "id": "b",
+      "title": "Metody wyprowadzane z nazw",
+      "text": "Spring Data tworzy zapytania z **nazw metod**: `countBy...`, `existsBy...`, `deleteBy...`, `findBy...`. Przykłady: `long countByActiveTrue()` zlicza encje z `active = true`, `boolean existsByEmail(String email)` sprawdza istnienie encji o danym e-mailu, a `long deleteByStatus(String status)` usuwa encje o danym statusie i zwraca ich liczbę. Nazwy typu `emailExists`, `deleteIfStatus` czy `countByTrueActive` nie są rozpoznawane. **Query by Example** to funkcja Spring Data JPA, pozwalająca wyszukiwać encje na podstawie przykładowego obiektu."
+    },
+    {
+      "id": "c",
+      "title": "Wzorce Repository i DAO",
+      "text": "**DAO** (Data Access Object) służy do **oddzielenia logiki biznesowej od dostępu do danych**. Nie jest ograniczony do JDBC ani do JPA. **Repository** opiera się na **encjach modelowych** (obiektach domeny) i pozwala skupić się na logice domenowej bez zajmowania się szczegółami trwałości. Nie wyklucza użycia SQL ani wzorca DAO."
+    }
+  ],
+  "questions": [
+    {
+      "id": "t06-01",
+      "s": "a",
+      "q": "Interfejsem bazowym dla wszystkich repozytoriów *Spring Data JPA* jest:",
+      "a": [
+        "`Repository<T,ID>`",
+        "`CrudRepository<T, ID>`",
+        "`JpaRepository<T>`"
+      ],
+      "e": "Wszystkie repozytoria Spring Data wywodzą się z `Repository<T, ID>`. `CrudRepository` i `JpaRepository` go rozszerzają, a `JpaRepository<T>` w takiej postaci nie istnieje."
+    },
+    {
+      "id": "t06-02",
+      "s": "b",
+      "q": "Metoda `JpaRepository` zliczająca encje, dla których pole `active` jest `true` to:",
+      "a": [
+        "`long countByActiveTrue()`",
+        "`long countByTrueActive()`",
+        "`long countByActiveIsTrue()`"
+      ],
+      "e": "Spring Data rozpoznaje słowo kluczowe `True`, więc `countByActiveTrue()` zlicza encje z `active = true`. Zapis `countByTrueActive()` jest niepoprawny. Uwaga: `countByActiveIsTrue()` również jest rozpoznawane przez Spring Data (`IsTrue`), ale jako wzorcową odpowiedź przyjęto zapis `...True`."
+    },
+    {
+      "id": "t06-03",
+      "s": "b",
+      "q": "*Query by Example* jest częścią:",
+      "a": [
+        "*Spring Data JPA*",
+        "*Hibernate*",
+        "JDBC"
+      ],
+      "e": "Query by Example to mechanizm Spring Data (m.in. `QueryByExampleExecutor`, z którego korzysta `JpaRepository`). Nie jest elementem Hibernate ani JDBC."
+    },
+    {
+      "id": "t06-04",
+      "s": "b",
+      "q": "Metoda `JpaRepository` usuwająca encje, których pole `status` ma określoną wartość to:",
+      "a": [
+        "`long deleteByStatus(String status)`",
+        "`long deleteIfStatus(String status)`",
+        "`long removeIfStatus(String status)`"
+      ],
+      "e": "Zapytania usuwające tworzy się z prefiksem `deleteBy` (lub `removeBy`), a po nim następuje nazwa pola: `deleteByStatus`. Warianty `...IfStatus` nie są rozpoznawane."
+    },
+    {
+      "id": "t06-05",
+      "s": "b",
+      "q": "Metoda `JpaRepository` sprawdzająca, czy encja o podanej wartości pola `email` istnieje to:",
+      "a": [
+        "`boolean existsByEmail(String email)`",
+        "`boolean emailExists(String email)`",
+        "`User existsByEmail(String email)`"
+      ],
+      "e": "Zapytanie sprawdzające istnienie ma prefiks `existsBy` i zwraca `boolean`. Nazwa `emailExists` nie jest rozpoznawana, a typ zwracany `User` nie pasuje do `exists...`."
+    },
+    {
+      "id": "t06-06",
+      "s": "a",
+      "q": "Adnotacja `@NoRepositoryBean` zapobiega generowaniu komponentu na podstawie:",
+      "a": [
+        "interfejsu",
+        "klasy",
+        "rekordu"
+      ],
+      "e": "Repozytoria Spring Data są interfejsami. `@NoRepositoryBean` oznacza interfejs pośredni (np. własny bazowy interfejs repozytorium), z którego Spring nie powinien tworzyć beana."
+    },
+    {
+      "id": "t06-07",
+      "s": "a",
+      "q": "Metoda CRUDE `Iterable<T> findAll()`:",
+      "a": [
+        "nie może zwrócić `null`",
+        "może zwrócić tablicę obiektów",
+        "gwarantuje zwracany typ"
+      ],
+      "e": "Metody repozytorium zwracające kolekcje nie zwracają `null`. Gdy brak wyników, zwracają pustą kolekcję. Zwracany jest `Iterable` (zwykle `List`), a nie tablica."
+    },
+    {
+      "id": "t06-08",
+      "s": "c",
+      "q": "Wzorzec Repository:",
+      "a": [
+        "wyklucza konieczność posługiwania się inną logiką niż domenową",
+        "wyklucza użycie SQL",
+        "wyklucza użycie wzorca DAO"
+      ],
+      "e": "Repository ukrywa szczegóły dostępu do danych, więc kod aplikacji operuje wyłącznie na logice domenowej. Nie zabrania SQL ani wzorca DAO, bo za repozytorium mogą kryć się właśnie takie rozwiązania."
+    },
+    {
+      "id": "t06-09",
+      "s": "c",
+      "q": "Wzorzec Repository opiera się na:",
+      "a": [
+        "encjach modelowych",
+        "języku SQL",
+        "obiektach DAO"
+      ],
+      "e": "Repository działa na encjach modelu domeny (kolekcje obiektów domenowych). Nie jest zależny od SQL ani od DAO."
+    },
+    {
+      "id": "t06-10",
+      "s": "c",
+      "q": "Wzorzec projektowy DAO jest używany:",
+      "a": [
+        "w celu oddzielenia logiki biznesowej i dostępu do danych",
+        "wyłącznie z JDBC",
+        "wyłącznie z JPA"
+      ],
+      "e": "DAO izoluje kod dostępu do danych od logiki biznesowej. Można go stosować z JDBC, JPA i innymi technologiami."
+    },
+    {
+      "id": "t06-11",
+      "s": "a",
+      "q": "W *Spring Data* `JpaRepository` to:",
+      "a": [
+        "interfejs",
+        "klasa",
+        "typ wyliczeniowy"
+      ],
+      "e": "`JpaRepository` jest interfejsem. Implementację generuje Spring Data w czasie działania aplikacji."
+    },
+    {
+      "id": "t06-12",
+      "s": "a",
+      "q": "Metoda repozytorium `Optional<T> findById(ID id)`:",
+      "a": [
+        "zawsze zwraca obiekt Java",
+        "może zwrócić `null`",
+        "jest asynchroniczna"
+      ],
+      "e": "Metoda zawsze zwraca obiekt `Optional`, który może być pusty (`Optional.empty()`), ale sam nie jest `null`. Nie jest asynchroniczna."
+    },
+    {
+      "id": "t06-13",
+      "s": "a",
+      "q": "```\n@Repository\npublic interface IdeaRepository extends JpaRepository<Idea, Long>{}\n```\n\nInterfejs `IdeaRepository`:",
+      "a": [
+        "zawiera metody CRUDE",
+        "wymaga jawnej implementacji",
+        "musi być pusty"
+      ],
+      "e": "Dzięki dziedziczeniu po `JpaRepository` interfejs ma gotowe metody CRUD (`save`, `findById`, `findAll`, `deleteById`…), mimo że jego ciało jest puste."
+    },
+    {
+      "id": "t06-14",
+      "s": "a",
+      "q": "```\n@Repository\npublic interface IdeaRepository extends JpaRepository<Idea, Long>{}\n```\n\nInterfejs `IdeaRepository`:",
+      "a": [
+        "nie wymaga wykonania implementacji",
+        "musi być pusty",
+        "jest statyczny"
+      ],
+      "e": "Implementację repozytorium generuje Spring Data, więc nie trzeba jej pisać. Interfejs nie musi być pusty (można dodawać własne metody zapytań) i nie jest statyczny."
+    }
+  ]
+}

@@ -14,6 +14,7 @@ function prepare(q, again = false) {
 
 export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinish }) {
   const exam = mode === 'exam';
+  const study = mode === 'study'; // reading material shown, answers are not recorded in progress
   const [queue, setQueue] = useState(() => questions.map((q) => prepare(q)));
   const [idx, setIdx] = useState(0);
   const [picked, setPicked] = useState(null);
@@ -55,7 +56,7 @@ export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinis
         setResults(res);
       }
       if (!ok) {
-        onAnswer(item.q.uid, 'wrong');
+        if (!study) onAnswer(item.q.uid, 'wrong');
         if (!exam && !requeued.has(item.q.uid)) {
           setRequeued((s) => new Set(s).add(item.q.uid));
           setQueue((qu) => {
@@ -69,13 +70,13 @@ export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinis
       }
       if (exam) setTimeout(() => advance(res), 180);
     },
-    [picked, item, results, firstAttempt, onAnswer, exam, requeued, idx, advance]
+    [picked, item, results, firstAttempt, onAnswer, exam, study, requeued, idx, advance]
   );
 
   // Correct answers in learning mode: user says whether they knew or guessed.
   const confirmCorrect = useCallback(
     (guess) => {
-      onAnswer(item.q.uid, guess ? 'guess' : 'correct');
+      if (!study) onAnswer(item.q.uid, guess ? 'guess' : 'correct');
       let res = results;
       const last = res[res.length - 1];
       if (guess && last && last.q.uid === item.q.uid) {
@@ -84,7 +85,7 @@ export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinis
       }
       advance(res);
     },
-    [item, onAnswer, advance, results]
+    [item, onAnswer, advance, results, study]
   );
 
   useEffect(() => {
@@ -102,7 +103,7 @@ export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinis
         if (k === 'enter' || k === ' ') {
           e.preventDefault();
           ok ? confirmCorrect(false) : advance();
-        } else if (ok && k === 's') {
+        } else if (ok && !study && k === 's') {
           e.preventDefault();
           confirmCorrect(true);
         }
@@ -111,7 +112,7 @@ export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinis
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [picked, revealed, item, choose, confirmCorrect, advance, onExit]);
+  }, [picked, revealed, item, choose, confirmCorrect, advance, onExit, study]);
 
   if (!item) return null;
 
@@ -147,7 +148,7 @@ export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinis
         {item.again && <span className="tag again">powtórka</span>}
         <h2 className="question"><Rich text={item.q.q} /></h2>
 
-        {!exam && item.q.section && (
+        {study && item.q.section && (
           <details className="material" open>
             <summary>📖 Materiał: {item.q.section.title}</summary>
             <p><Rich text={item.q.section.text} /></p>
@@ -193,7 +194,7 @@ export default function Quiz({ questions, mode, title, onAnswer, onExit, onFinis
 
       {revealed && (
         <div className="quiz-actions">
-          {pickedOk ? (
+          {pickedOk && !study ? (
             <>
               <button className="btn ghost" onClick={() => confirmCorrect(true)} title="Skrót: S">
                 Strzelałem <kbd>S</kbd>

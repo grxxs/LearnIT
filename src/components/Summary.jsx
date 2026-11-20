@@ -16,8 +16,8 @@ export default function Summary({ results, mode, title, onBack, onRetry }) {
     <>
       <section className="hero">
         <span className="muted small">{title}</span>
-        <h1>{mode === 'exam' ? 'Wynik egzaminu próbnego' : 'Koniec sesji'}</h1>
-        <p className="muted">{verdict}</p>
+        <h1>{mode === 'exam' ? 'Wynik egzaminu próbnego' : mode === 'study' ? 'Koniec nauki' : 'Koniec sesji'}</h1>
+        <p className="muted">{mode === 'study' ? 'Tryb nauki nie zmienia postępu ani powtórek.' : verdict}</p>
       </section>
 
       <section className="card score-card">

@@ -1,7 +1,15 @@
 {
   "id": "java-labs",
-  "name": "Java – laboratoria (kody i zadania)",
-  "short": "Java lab",
-  "description": "Wyjaśnione kody z labów 1–6: generyki, lambdy, adnotacje, strumienie, JAXB, TCP, Hibernate, Spring i Spring Boot.",
-  "lectures": ["l01", "l02", "l03", "l04", "l05", "l06"]
+  "name": "Java – testy z wykładu i laboratorium",
+  "short": "Java testy",
+  "description": "Pytania z testów: strumienie, XML, TCP/IP i NIO, Lombok, Thymeleaf, Hibernate/JPA, Spring (DI, MVC, Data JPA, Security) oraz analiza kodu z laboratoriów.",
+  "lectures": [
+    "t01",
+    "t02",
+    "t03",
+    "t04",
+    "t05",
+    "t06",
+    "t07"
+  ]
 }

@@ -1,0 +1,144 @@
+{
+  "id": "t07",
+  "title": "T7 · Spring Security",
+  "sections": [
+    {
+      "id": "a",
+      "title": "Uwierzytelnianie i autoryzacja",
+      "text": "**Uwierzytelnianie** (authentication) to proces **potwierdzania tożsamości** użytkownika (kim jest). **Autoryzacja** (authorization) to **sprawdzanie prawa dostępu** do zasobu (co mu wolno). Nie należy mylić uwierzytelniania z nieistniejącym w tym kontekście „logowaniem” jako pojęciem procesu bezpieczeństwa."
+    },
+    {
+      "id": "b",
+      "title": "Filtry Spring Security",
+      "text": "Spring Security działa jako **łańcuch filtrów** servletowych. Filtry działają w **kontekście servletu** (przed kontrolerami), więc konteksty filtrów i kontrolera MVC **nigdy się nie pokrywają**. Elementem łańcucha jest filtr. Filtr **może wygenerować odpowiedź HTTP** (np. przekierować na logowanie albo zwrócić 401 lub 403). **Kolejność filtrów zawsze wpływa** na działanie łańcucha.\n\n• `DelegatingFilterProxy` to filtr servletowy, który deleguje pracę do filtra zdefiniowanego jako **bean** Springa,\n• `FilterChainProxy` zarządza łańcuchami filtrów Spring Security i **umożliwia zbudowanie własnego łańcucha filtrów** (`SecurityFilterChain`),\n• `ExceptionTranslationFilter` **przekształca wyjątki** bezpieczeństwa (`AuthenticationException`, `AccessDeniedException`) w odpowiedzi HTTP, np. przekierowanie do logowania."
+    },
+    {
+      "id": "c",
+      "title": "Konfiguracja zabezpieczeń",
+      "text": "W konfiguracji `SecurityFilterChain`: `permitAll()` otwiera wskazane adresy dla wszystkich, `anyRequest().authenticated()` wymaga logowania dla pozostałych, a `formLogin(...)` włącza formularz logowania. `logout.logoutSuccessUrl(\"/\")` ustawia, że po poprawnym wylogowaniu użytkownik jest przekierowywany **na stronę główną „/”**."
+    }
+  ],
+  "questions": [
+    {
+      "id": "t07-01",
+      "s": "a",
+      "q": "Proces potwierdzania tożsamości użytkownika to:",
+      "a": [
+        "uwierzytelnianie",
+        "logowane",
+        "autoryzacja"
+      ],
+      "e": "Potwierdzenie tożsamości to uwierzytelnianie (authentication). Autoryzacja dotyczy uprawnień."
+    },
+    {
+      "id": "t07-02",
+      "s": "a",
+      "q": "Proces sprawdzania prawa dostępu do zasobu to:",
+      "a": [
+        "autoryzacja",
+        "autentykacja",
+        "uwierzytelnianie"
+      ],
+      "e": "Sprawdzanie, czy zalogowany użytkownik ma prawo do zasobu, to autoryzacja. Autentykacja i uwierzytelnianie dotyczą tożsamości."
+    },
+    {
+      "id": "t07-03",
+      "s": "b",
+      "q": "Filtry *Spring Security* działają w kontekście:",
+      "a": [
+        "servlet-a",
+        "aplikacji",
+        "kontrolera"
+      ],
+      "e": "Filtry są elementem warstwy servletowej i działają przed kontrolerami MVC, w kontekście servletu."
+    },
+    {
+      "id": "t07-04",
+      "s": "b",
+      "q": "Konteksty kontrolera architektury MVC i filtrów *Spring Security*:",
+      "a": [
+        "nigdy się nie pokrywają",
+        "zawsze się pokrywają",
+        "są wzajemnie wstrzykiwane"
+      ],
+      "e": "Filtry działają w kontekście servletu przed `DispatcherServlet`, a kontrolery w kontekście aplikacji MVC. Są to osobne konteksty, które się nie pokrywają."
+    },
+    {
+      "id": "t07-05",
+      "s": "b",
+      "q": "W *Spring Security* `FilterChainProxy` umożliwia:",
+      "a": [
+        "zbudowanie własnego łańcucha filtrów",
+        "buforowanie odpowiedzi filtrów",
+        "buforowanie żądań http"
+      ],
+      "e": "`FilterChainProxy` zarządza łańcuchami filtrów i pozwala skonfigurować własny `SecurityFilterChain`. Nie buforuje żądań ani odpowiedzi."
+    },
+    {
+      "id": "t07-06",
+      "s": "b",
+      "q": "W łańcuchu *Spring Security* transformer to:",
+      "a": [
+        "filtr",
+        "kontroler",
+        "servlet"
+      ],
+      "e": "Elementem łańcucha Spring Security jest filtr. Kontroler i servlet nie należą do łańcucha filtrów."
+    },
+    {
+      "id": "t07-07",
+      "s": "b",
+      "q": "Filtr *Spring Security*:",
+      "a": [
+        "może wygenerować odpowiedź http",
+        "nie może wygenerować odpowiedzi http",
+        "działa tylko po wywołaniu kontrolera"
+      ],
+      "e": "Filtr może samodzielnie zakończyć obsługę żądania, np. przekierowując do logowania albo zwracając 401 lub 403. Działa przed kontrolerem, a nie po jego wywołaniu."
+    },
+    {
+      "id": "t07-08",
+      "s": "b",
+      "q": "Kolejność filtrów w łańcuchu *Spring Security*:",
+      "a": [
+        "zawsze wpływa na jego działanie",
+        "nigdy nie wpływa na jego działanie",
+        "może wpływać na jego działanie"
+      ],
+      "e": "Filtry wykonują się po kolei, a każdy z nich zależy od efektów poprzednich (np. uwierzytelnienie przed autoryzacją). Kolejność ma więc zawsze znaczenie."
+    },
+    {
+      "id": "t07-09",
+      "s": "b",
+      "q": "W *Spring Security* obiekt `DelegatingFilterProxy` służy do:",
+      "a": [
+        "definicji logiki filtra za pomocą bean-a",
+        "definicji logiki filtra za pomocą serwisu",
+        "definicji pamięci podręcznej filtra"
+      ],
+      "e": "`DelegatingFilterProxy` jest standardowym filtrem servletowym, który deleguje pracę do filtra będącego beanem Springa. Dzięki temu logikę filtra można zdefiniować jako bean."
+    },
+    {
+      "id": "t07-10",
+      "s": "b",
+      "q": "W *Spring Security* `ExceptionTranslationFilter` służy do:",
+      "a": [
+        "przekształcania wyjątków",
+        "przekierowywania wyjątków",
+        "generowania odpowiedzi http"
+      ],
+      "e": "Filtr tłumaczy wyjątki bezpieczeństwa (`AuthenticationException`, `AccessDeniedException`) na odpowiednie reakcje HTTP, np. przekierowanie do logowania albo 403. Jego nazwa wskazuje właśnie na „przekształcanie” (translation)."
+    },
+    {
+      "id": "t07-11",
+      "s": "c",
+      "q": "```\n@Configuration\n@EnableWebSecurity\npublic class SecurityConfig {\n    @Bean\n    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {\n        return http\n                .authorizeHttpRequests(auth -> auth\n                        .requestMatchers(\"/\", \"/index.html\", \"/register\", \"/css/**\").permitAll()\n                        .anyRequest().authenticated())\n                .formLogin(Customizer.withDefaults())\n                .logout(logout -> logout.logoutSuccessUrl(\"/\").permitAll())\n                .build();\n    }\n}\n```\n\nWg kodu powyżej poprawne wylogowanie przekierowuje:",
+      "a": [
+        "na stronę główną „/”",
+        "na stronę „/register”",
+        "nie można tego określić"
+      ],
+      "e": "`logoutSuccessUrl(\"/\")` ustawia adres, na który użytkownik trafia po wylogowaniu, czyli stronę główną."
+    }
+  ]
+}
