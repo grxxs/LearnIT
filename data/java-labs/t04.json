@@ -1,0 +1,122 @@
+{
+  "id": "t04",
+  "title": "T4 · Hibernate i JPA",
+  "sections": [
+    {
+      "id": "a",
+      "title": "Session, SessionFactory i transakcje",
+      "text": "**SessionFactory** jest kosztowna, więc tworzy się ją raz przy starcie, jedną na bazę danych. Tworzenie wielu obiektów `SessionFactory` z jednej konfiguracji jest możliwe, ale **niezalecane**. **Session** to jednostka pracy z bazą: operacje zapisu (`persist`, `save`) wykonuje się za jej pomocą. Sesja może obsłużyć **wiele kolejnych transakcji**, ale w danej chwili aktywna jest tylko jedna.\n\nTransakcję trzeba zatwierdzić: samo `beginTransaction()` i `persist(...)` bez `commit()` nie zapisuje danych i nie kończy transakcji poprawnie. Sesję otwartą w `try-with-resources` zamyka się automatycznie po wyjściu z bloku, niezależnie od tego, czy transakcję zatwierdzono."
+    },
+    {
+      "id": "b",
+      "title": "JPA, Hibernate i Spring Data",
+      "text": "**JPA** to specyfikacja (adnotacje i interfejsy) mapowania obiektowo-relacyjnego (ORM). **Hibernate** jest jej implementacją. JDBC jest niskopoziomowym API do zapytań SQL i samo nie mapuje obiektów na tabele. **Spring Data JPA** to warstwa abstrakcji nad JPA, niezależna od konkretnego dostawcy, czyli nie jest implementacją Hibernate ani JPA.\n\nAdnotacje JPA to m.in. `@Entity`, `@Table`, `@Id`, `@OneToMany`. Adnotacje `@Data`, `@Builder`, `@NoArgsConstructor` i `@AllArgsConstructor` pochodzą z Lomboka."
+    },
+    {
+      "id": "c",
+      "title": "Relacje, leniwe ładowanie i wartości domyślne",
+      "text": "W relacji `@OneToMany(mappedBy = \"problem\", fetch = FetchType.LAZY, ...)` kolekcja `ideas` jest ładowana leniwie (dopiero przy użyciu). Pole jest zainicjalizowane (`= new HashSet<>()`), a `@Builder.Default` sprawia, że builder też zachowuje tę wartość. Dlatego pole **nigdy nie będzie `null`**. Bez `@Builder.Default` builder ustawiłby `null`. `@ToString.Exclude` i `@EqualsAndHashCode.Exclude` zapobiegają nieskończonej rekurencji w relacji dwukierunkowej."
+    }
+  ],
+  "questions": [
+    {
+      "id": "t04-01",
+      "s": "a",
+      "q": "Używając biblioteki *Hibernate* operacje zapisu do bazy danych realizuje się za pomocą obiektu klasy:",
+      "a": [
+        "`Session`",
+        "`SessionFactory`",
+        "`Configuration`"
+      ],
+      "e": "Operacje na danych, w tym zapis, wykonuje się przez obiekt `Session` (jednostkę pracy). `SessionFactory` tworzy sesje, a `Configuration` służy do konfiguracji."
+    },
+    {
+      "id": "t04-02",
+      "s": "a",
+      "q": "W *Hibernate* wygenerowanie wielu obiektów `SessionFactory` na podstawie pojedynczej konfiguracji jest:",
+      "a": [
+        "niezalecane",
+        "niemożliwe",
+        "zawsze konieczne"
+      ],
+      "e": "`SessionFactory` jest kosztowna i zwykle tworzy się ją raz (singleton) dla bazy danych. Technicznie można zbudować kilka, ale nie jest to zalecane."
+    },
+    {
+      "id": "t04-03",
+      "s": "a",
+      "q": "W *Hibernate* sesja:",
+      "a": [
+        "może zawierać wiele transakcji",
+        "musi zawierać jedną transakcję",
+        "odbywa się w wewnątrz transakcji"
+      ],
+      "e": "Jedna sesja może obsłużyć wiele kolejnych transakcji, choć w danym momencie aktywna jest tylko jedna. Nie jest więc ograniczona do jednej transakcji."
+    },
+    {
+      "id": "t04-04",
+      "s": "b",
+      "q": "Mapowanie obiektowo-relacyjne jest dostępne w:",
+      "a": [
+        "JPA",
+        "JDBC",
+        "JPA i JDBC"
+      ],
+      "e": "ORM zapewnia JPA (i jego implementacje, np. Hibernate). JDBC to niskopoziomowe API do wykonywania zapytań SQL i nie mapuje obiektów na tabele."
+    },
+    {
+      "id": "t04-05",
+      "s": "b",
+      "q": "*Spring Data* jest:",
+      "a": [
+        "niezależny od *Java Hibernate*",
+        "implementacją *Java Hibernate*",
+        "implementacją *Java JPA*"
+      ],
+      "e": "Spring Data JPA jest warstwą abstrakcji nad JPA i nie jest ani implementacją Hibernate, ani implementacją JPA. Może działać z różnymi dostawcami JPA, a Hibernate jest tylko jednym z nich."
+    },
+    {
+      "id": "t04-06",
+      "s": "b",
+      "q": "```\n@Entity\n@Table(name=\"ideas\")\n@Data\n@NoArgsConstructor\n@AllArgsConstructor\n@Builder\npublic class Idea {\n    //...\n}\n```\n\nAdnotacje związane z Java Persistence API to:",
+      "a": [
+        "`@Entity`, `@Table`",
+        "`@Entity`, `@Table`, `@Data`",
+        "tylko `@Entity`"
+      ],
+      "e": "`@Entity` i `@Table` należą do JPA. `@Data`, `@NoArgsConstructor`, `@AllArgsConstructor` i `@Builder` pochodzą z biblioteki Lombok."
+    },
+    {
+      "id": "t04-07",
+      "s": "a",
+      "q": "```\ntry(Session session = HibernateSessionFactory.getNewSession()) {\n    session.beginTransaction();\n    session.persist(adam);\n} catch(Exception ex) { ex.printStackTrace(); }\n```\n\nW kodzie sesja *Hibernate*:",
+      "a": [
+        "została poprawnie zamknięta",
+        "nie została poprawnie zamknięta",
+        "nie można tego stwierdzić"
+      ],
+      "e": "Sesja jest otwarta w `try-with-resources`, więc zamyka się automatycznie po wyjściu z bloku, także po wyjątku."
+    },
+    {
+      "id": "t04-08",
+      "s": "a",
+      "q": "```\ntry(Session session = HibernateSessionFactory.getNewSession()) {\n    session.beginTransaction();\n    session.persist(adam);\n} catch(Exception ex) { ex.printStackTrace(); }\n```\n\nW kodzie transakcja *Hibernate*:",
+      "a": [
+        "nie została poprawnie zakończona",
+        "została poprawnie zakończona",
+        "nie można tego stwierdzić"
+      ],
+      "e": "Transakcję rozpoczęto, ale nie ma `commit()` ani `rollback()`. Zapis nie zostanie zatwierdzony, więc transakcja nie została poprawnie zakończona."
+    },
+    {
+      "id": "t04-09",
+      "s": "c",
+      "q": "```\n@OneToMany(\n    mappedBy = \"problem\",\n    fetch = FetchType.LAZY,\n    cascade = CascadeType.ALL,\n    orphanRemoval = true)\n@Builder.Default\n@ToString.Exclude\n@EqualsAndHashCode.Exclude\nprivate Set<Idea> ideas = new HashSet<>();\n```\n\nWartość pola `ideas`:",
+      "a": [
+        "nigdy nie będzie `null`",
+        "będzie `null` przed pobraniem danych z tabeli `problem`",
+        "nie można stwierdzić, czy będzie kiedykolwiek `null`"
+      ],
+      "e": "Pole jest od razu zainicjalizowane pustym `HashSet`, a `@Builder.Default` sprawia, że to samo dotyczy obiektów tworzonych builderem. Leniwe ładowanie (`LAZY`) dotyczy zawartości kolekcji, a nie samej referencji."
+    }
+  ]
+}

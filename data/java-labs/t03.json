@@ -1,0 +1,78 @@
+{
+  "id": "t03",
+  "title": "T3 · Lombok, Thymeleaf i JUnit",
+  "sections": [
+    {
+      "id": "a",
+      "title": "Lombok: @RequiredArgsConstructor",
+      "text": "**Lombok** generuje kod w czasie kompilacji. Adnotacja `@RequiredArgsConstructor` tworzy konstruktor z parametrami dla pól **wymaganych**, czyli oznaczonych jako `final` (np. `private final UserService userService`) oraz dla pól z `@NonNull`. Jeśli takich pól nie ma, powstaje konstruktor bezargumentowy. Można ją łączyć z `@Setter`. Wygenerowany konstruktor wykorzystuje Spring do wstrzykiwania zależności."
+    },
+    {
+      "id": "b",
+      "title": "Thymeleaf",
+      "text": "**Thymeleaf** to silnik szablonów HTML. Jego atrybuty mają prefiks **`th:`**, np. `th:text`, `th:if`, `th:href`, `th:each`. Atrybut `th:each=\"user : ${users}\"` powtarza element dla każdego elementu kolekcji, czyli realizuje **iterację**. Dostęp do zmiennych modelu dają wyrażenia **`${...}`** (Thymeleaf Expression Language). Wyrażenie `@{...}` tworzy adresy URL, a `~{...}` odwołuje się do fragmentów szablonu."
+    },
+    {
+      "id": "c",
+      "title": "JUnit Jupiter",
+      "text": "W **JUnit Jupiter** (JUnit 5) test do wykonania oznacza się **dedykowanymi adnotacjami**, głównie `@Test`. Asercje (`assertEquals`, `assertTrue`…) sprawdzają wynik w ciele testu, a asumpcje (`assumeTrue`…) pozwalają pominąć test, gdy warunek nie jest spełniony. Same asercje i asumpcje nie określają, że metoda jest testem."
+    }
+  ],
+  "questions": [
+    {
+      "id": "t03-01",
+      "s": "a",
+      "q": "Adnotacja biblioteki *Lombok* `@RequiredArgsConstructor`:",
+      "a": [
+        "dotyczy pól klasy oznaczonych `private final`",
+        "zawsze utworzy konstruktor",
+        "wyklucza użycie `@Setter`"
+      ],
+      "e": "`@RequiredArgsConstructor` tworzy konstruktor dla pól wymaganych, czyli `final` (i `@NonNull`). Nie wyklucza `@Setter`, a konstruktor z parametrami powstaje tylko wtedy, gdy takie pola istnieją."
+    },
+    {
+      "id": "t03-02",
+      "s": "b",
+      "q": "W *Thymeleaf* Expression Language dostęp do zmiennych modelu zapewnia wyrażenie:",
+      "a": [
+        "`${...}`",
+        "`~{...}`",
+        "`@{...}`"
+      ],
+      "e": "Wyrażenie `${...}` odczytuje zmienne modelu. `@{...}` służy do adresów URL, a `~{...}` do odwołań do fragmentów szablonu."
+    },
+    {
+      "id": "t03-03",
+      "s": "b",
+      "q": "Prefiks atrybutów w szablonach *Thymeleaf* to:",
+      "a": [
+        "`th:`",
+        "`tf:`",
+        "`this:`"
+      ],
+      "e": "Atrybuty Thymeleaf zaczynają się od `th:`, np. `th:text`, `th:each`, `th:if`."
+    },
+    {
+      "id": "t03-04",
+      "s": "b",
+      "q": "Atrybut *Thymeleaf* `th:each` oznacza:",
+      "a": [
+        "iterację",
+        "instrukcję warunkową",
+        "przetwarzanie strumienia"
+      ],
+      "e": "`th:each` powtarza element dla każdego elementu kolekcji, czyli jest pętlą. Instrukcję warunkową realizuje `th:if`."
+    },
+    {
+      "id": "t03-05",
+      "s": "c",
+      "q": "Używając biblioteki *JUnit Jupiter*, test do wykonania definiuje się za pomocą:",
+      "a": [
+        "wyłącznie dedykowanych adnotacji",
+        "asercji, czyli metod z grupy `assert...`",
+        "asumpcji, czyli metod z grupy `assume...`"
+      ],
+      "e": "Metodę testową oznacza się adnotacją (np. `@Test`). Asercje sprawdzają wynik wewnątrz testu, a asumpcje warunkowo pomijają test, więc nie definiują samego testu."
+    }
+  ]
+}

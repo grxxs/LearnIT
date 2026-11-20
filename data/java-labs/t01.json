@@ -1,0 +1,171 @@
+{
+  "id": "t01",
+  "title": "T1 · Strumienie, adnotacje i XML",
+  "sections": [
+    {
+      "id": "a",
+      "title": "Tworzenie strumieni",
+      "text": "Strumień (`Stream`) tworzy się na kilka sposobów. `Stream.empty()` tworzy **pusty strumień**: nie zwraca `null`, nie sprawdza też, czy strumień jest pusty. `Stream.of(...)` tworzy strumień z podanych elementów (także jednego). Jego elementami są obiekty, więc nie da się w ten sposób utworzyć `Stream<int>` z elementami typu prostego `int`. Trzeba wtedy użyć opakowania `Integer` albo strumienia specjalnego `IntStream`.\n\nElementami strumienia mogą być wszystkie typy obiektowe: klasy, interfejsy, typy wyliczeniowe (`enum`), rekordy, tablice, kolekcje, a nawet inne strumienie."
+    },
+    {
+      "id": "b",
+      "title": "Operacje pośrednie i terminalne",
+      "text": "**Operacje pośrednie** (`filter`, `map`, `distinct`, `sorted`, `limit`, `skip`, `takeWhile`) zwracają strumień, więc można je łączyć w łańcuch i mogą poprzedzać operację terminalną. Mogą też zwrócić strumień pusty. **Operacje terminalne** (`allMatch`, `anyMatch`, `noneMatch`, `findFirst`, `count`, `min`, `max`, `reduce`, `collect`, `forEach`) kończą przetwarzanie i zwracają wynik. Strumienie są leniwe: bez operacji terminalnej nic się nie wykona."
+    },
+    {
+      "id": "c",
+      "title": "Marshalling, unmarshalling i przestrzenie nazw XML",
+      "text": "**Marshalling** to przekształcanie obiektu Javy do formatu zewnętrznego (np. XML, JSON). **Unmarshalling** to budowanie obiektu Javy z formatu zewnętrznego. Pojęcie „parsowanie” oznacza samo analizowanie tekstu, a nie mapowanie na obiekty.\n\nW plikach XML atrybut `xmlns` **deklaruje przestrzeń nazw** używaną w dokumencie, dzięki której nazwy elementów z różnych źródeł się nie mylą. Nie wstawia on innych plików ani nie mapuje danych na obiekty Javy."
+    },
+    {
+      "id": "d",
+      "title": "Adnotacje i RetentionPolicy",
+      "text": "Poziom widoczności adnotacji określa `RetentionPolicy`:\n• **SOURCE** – adnotacja istnieje tylko w kodzie źródłowym i **zostaje usunięta przez kompilator** (np. `@Override`),\n• **CLASS** – adnotacja jest zapisana w pliku `.class`, ale nie jest dostępna w czasie działania przez refleksję,\n• **RUNTIME** – jest zapisana w `.class` i dostępna w czasie działania przez refleksję."
+    }
+  ],
+  "questions": [
+    {
+      "id": "t01-01",
+      "s": "a",
+      "q": "Metoda `Stream.empty()`:",
+      "a": [
+        "tworzy pusty strumień",
+        "zwraca `null`",
+        "sprawdza, czy strumień jest pusty"
+      ],
+      "e": "`Stream.empty()` tworzy pusty strumień, czyli taki bez żadnego elementu. Nie zwraca `null` i niczego nie sprawdza, bo jest metodą fabryczną."
+    },
+    {
+      "id": "t01-02",
+      "s": "a",
+      "q": "Wywołanie `Stream.empty()` zwraca:",
+      "a": [
+        "pusty strumień",
+        "`null`",
+        "`true` lub `false`"
+      ],
+      "e": "Wynikiem `Stream.empty()` jest obiekt strumienia bez elementów. Wartość `null` byłaby błędem, a `true` lub `false` zwracają dopiero operacje takie jak `anyMatch`."
+    },
+    {
+      "id": "t01-03",
+      "s": "b",
+      "q": "Operacja pośrednia na strumieniu:",
+      "a": [
+        "może poprzedzać operację terminalną",
+        "zawsze kończy łańcuch przetwarzania strumienia",
+        "nie może zwrócić pustego strumienia"
+      ],
+      "e": "Operacje pośrednie zwracają strumień, dlatego tworzą łańcuch, na którego końcu jest operacja terminalna. To terminalna kończy przetwarzanie, a wynik operacji pośredniej może być pustym strumieniem (np. gdy `filter` odrzuci wszystko)."
+    },
+    {
+      "id": "t01-04",
+      "s": "b",
+      "q": "`distinct` jest operacją strumieniową:",
+      "a": [
+        "pośrednią",
+        "terminalną",
+        "bezpośrednią"
+      ],
+      "e": "`distinct()` zwraca strumień bez duplikatów, więc jest operacją pośrednią. Określenie „bezpośrednia” nie istnieje wśród rodzajów operacji strumieniowych."
+    },
+    {
+      "id": "t01-05",
+      "s": "b",
+      "q": "`allMatch` jest operacją strumieniową:",
+      "a": [
+        "terminalną",
+        "pośrednią",
+        "bezpośrednią"
+      ],
+      "e": "`allMatch` zwraca wartość `boolean` i kończy przetwarzanie strumienia, więc jest operacją terminalną."
+    },
+    {
+      "id": "t01-06",
+      "s": "a",
+      "q": "Czy obiekty typu `enum` mogą być elementami strumienia?",
+      "a": [
+        "tak",
+        "nie",
+        "zależy to od wersji JDK"
+      ],
+      "e": "Elementami strumienia mogą być wszystkie typy obiektowe, w tym typy wyliczeniowe. Nie zależy to od wersji JDK."
+    },
+    {
+      "id": "t01-07",
+      "s": "a",
+      "q": "Czy interfejsy mogą być elementami strumienia?",
+      "a": [
+        "tak",
+        "nie",
+        "zależy to od wersji JDK"
+      ],
+      "e": "Strumień może zawierać obiekty dowolnego typu referencyjnego, także typu interfejsowego (`Stream<Runnable>`, `Stream<List<String>>`)."
+    },
+    {
+      "id": "t01-08",
+      "s": "a",
+      "q": "Używając metody `Stream.of(...)` nie można wygenerować strumienia:",
+      "a": [
+        "z elementami typu `int`",
+        "pustego",
+        "jednoelementowego"
+      ],
+      "e": "`Stream.of(...)` tworzy strumień obiektów, więc nie da się nim utworzyć strumienia z elementami typu prostego `int`. Można tworzyć strumień pusty (`Stream.of()`) i jednoelementowy, a dla liczb całkowitych służy `IntStream`."
+    },
+    {
+      "id": "t01-09",
+      "s": "c",
+      "q": "Przekształcanie obiektu Java do formatu zewnętrznego (np. XML, JSON) to:",
+      "a": [
+        "marshalling",
+        "unmarshalling",
+        "parsowanie"
+      ],
+      "e": "Zamiana obiektu Javy na XML lub JSON to marshalling. Odwrotny proces, budowanie obiektu z formatu zewnętrznego, to unmarshalling."
+    },
+    {
+      "id": "t01-10",
+      "s": "c",
+      "q": "Budowanie obiektu Java z formatu zewnętrznego (np. XML, JSON) to:",
+      "a": [
+        "unmarshalling",
+        "marshalling",
+        "parsowanie"
+      ],
+      "e": "Odczyt XML lub JSON i utworzenie z niego obiektu Javy to unmarshalling. Marshalling działa w przeciwną stronę."
+    },
+    {
+      "id": "t01-11",
+      "s": "c",
+      "q": "W plikach XML atrybut `xmlns`:",
+      "a": [
+        "deklaruje używaną w dokumencie przestrzeń nazw",
+        "wstawia inny plik XML w miejscu wywołania",
+        "mapuje dane XML na obiekty Java"
+      ],
+      "e": "`xmlns` (XML namespace) deklaruje przestrzeń nazw. Nie włącza innych plików i nie mapuje danych na obiekty."
+    },
+    {
+      "id": "t01-12",
+      "s": "d",
+      "q": "`RetentionPolicy.SOURCE` oznacza, że adnotacja:",
+      "a": [
+        "zostanie usunięta przez kompilator",
+        "jest dostępna w runtime",
+        "jest zapisana w pliku `.class`"
+      ],
+      "e": "Przy `SOURCE` adnotacja jest widoczna tylko w kodzie źródłowym i kompilator ją usuwa. Nie trafia do `.class`, więc nie jest dostępna w czasie działania."
+    },
+    {
+      "id": "t01-13",
+      "s": "d",
+      "q": "`RetentionPolicy.CLASS` oznacza, że adnotacja:",
+      "a": [
+        "jest zapisana w pliku `.class`",
+        "zostanie usunięta przez kompilator",
+        "jest dostępna w runtime"
+      ],
+      "e": "Poziom `CLASS` (domyślny) zapisuje adnotację w pliku `.class`, ale nie udostępnia jej przez refleksję w czasie działania. Dostęp w runtime daje dopiero `RUNTIME`."
+    }
+  ]
+}
